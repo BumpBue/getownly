@@ -7,6 +7,7 @@ const TONE_BY_STATUS = {
   PENDING: "pending",
   APPROVED: "success",
   REJECTED: "destructive",
+  CANCELLED: "neutral",
 } as const;
 
 export function TopupStatusBadge({ status }: { status: TopupStatus }) {

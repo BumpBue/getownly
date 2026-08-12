@@ -15,7 +15,7 @@ import { ApiError } from "@/lib/api-client";
 import { formatBaht, formatBahtShort, formatDate, formatTime } from "@/lib/format";
 import { authMessages } from "@/lib/messages/auth";
 import { walletMessages } from "@/lib/messages/wallet";
-import { listMyTopups, requestTopupQuote, submitTopup } from "@/lib/wallet/api";
+import { cancelTopup, listMyTopups, requestTopupQuote, submitTopup } from "@/lib/wallet/api";
 import { QUICK_TOPUP_AMOUNTS, type PaginatedTopups, type TopupQuote } from "@/lib/wallet/types";
 import { QrPanel } from "./QrPanel";
 import { SlipDropzone } from "./SlipDropzone";
@@ -47,6 +47,7 @@ export function TopupForm({ initialAmount }: { initialAmount: string | null }) {
   const [historyPage, setHistoryPage] = useState(1);
   const [history, setHistory] = useState<PaginatedTopups | null>(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const loadHistory = useCallback(async (page: number) => {
     try {
@@ -60,6 +61,27 @@ export function TopupForm({ initialAmount }: { initialAmount: string | null }) {
   useEffect(() => {
     void loadHistory(historyPage);
   }, [loadHistory, historyPage]);
+
+  const cancelRequest = useCallback(
+    async (id: string) => {
+      if (!window.confirm(topup.cancelConfirm)) {
+        return;
+      }
+
+      setCancellingId(id);
+      setHistoryError(null);
+
+      try {
+        await cancelTopup(id);
+        await loadHistory(historyPage);
+      } catch (caught) {
+        setHistoryError(caught instanceof ApiError ? caught.message : authMessages.errors.unexpected);
+      } finally {
+        setCancellingId(null);
+      }
+    },
+    [loadHistory, historyPage, topup.cancelConfirm],
+  );
 
   const createQuote = useCallback(async () => {
     const trimmed = amount.trim();
@@ -261,7 +283,11 @@ export function TopupForm({ initialAmount }: { initialAmount: string | null }) {
           </CardBody>
         ) : (
           <>
-            <HistoryTable items={history.items} />
+            <HistoryTable
+              items={history.items}
+              cancellingId={cancellingId}
+              onCancel={(id) => void cancelRequest(id)}
+            />
             <Pager page={history.page} totalPages={history.totalPages} onChange={setHistoryPage} />
           </>
         )}
@@ -270,8 +296,16 @@ export function TopupForm({ initialAmount }: { initialAmount: string | null }) {
   );
 }
 
-function HistoryTable({ items }: { items: PaginatedTopups["items"] }) {
-  const { historyColumns, viewSlip } = walletMessages.topup;
+function HistoryTable({
+  items,
+  cancellingId,
+  onCancel,
+}: {
+  items: PaginatedTopups["items"];
+  cancellingId: string | null;
+  onCancel: (id: string) => void;
+}) {
+  const { historyColumns, viewSlip, cancelRequest: cancelLabel, cancelling } = walletMessages.topup;
 
   return (
     <div className="overflow-x-auto">
@@ -292,6 +326,9 @@ function HistoryTable({ items }: { items: PaginatedTopups["items"] }) {
             </th>
             <th scope="col" className="px-5 py-3 font-medium">
               {historyColumns.slip}
+            </th>
+            <th scope="col" className="px-5 py-3 font-medium">
+              <span className="sr-only">{historyColumns.action}</span>
             </th>
           </tr>
         </thead>
@@ -321,6 +358,19 @@ function HistoryTable({ items }: { items: PaginatedTopups["items"] }) {
                   </a>
                 ) : (
                   "—"
+                )}
+              </td>
+              <td className="whitespace-nowrap px-5 py-3.5 text-right">
+                {item.status === "PENDING" && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={cancellingId !== null}
+                    onClick={() => onCancel(item.id)}
+                  >
+                    {cancellingId === item.id ? cancelling : cancelLabel}
+                  </Button>
                 )}
               </td>
             </tr>

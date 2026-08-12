@@ -82,10 +82,16 @@ export const walletMessages = {
       status: "สถานะ",
       note: "หมายเหตุ",
       slip: "สลิป",
+      action: "จัดการ",
     },
     viewSlip: "ดูสลิป",
     historyEmpty: "ยังไม่มีประวัติการเติมเงิน",
     loading: "กำลังโหลด...",
+
+    cancelRequest: "ยกเลิกคำขอ",
+    cancelling: "กำลังยกเลิก...",
+    cancelConfirm: "ยืนยันยกเลิกคำขอเติมเงินนี้ใช่หรือไม่",
+    cancelSuccess: "ยกเลิกคำขอเติมเงินแล้ว",
   },
 
   pager: {
@@ -101,6 +107,7 @@ export const walletMessages = {
     PENDING: "รอตรวจสอบ",
     APPROVED: "อนุมัติแล้ว",
     REJECTED: "ถูกปฏิเสธ",
+    CANCELLED: "ยกเลิกแล้ว",
   },
 
   myCourses: {
@@ -189,6 +196,7 @@ export const walletMessages = {
       approveSuccess: "อนุมัติเรียบร้อย เงินเข้ากระเป๋าผู้ใช้แล้ว",
       rejectSuccess: "ปฏิเสธคำขอเรียบร้อยแล้ว",
       reviewedNotice: "คำขอนี้ถูกตรวจสอบไปแล้ว",
+      cancelledNotice: "ผู้ใช้ยกเลิกคำขอนี้เอง ก่อนที่จะมีการตรวจสอบ",
     },
   },
 } as const;

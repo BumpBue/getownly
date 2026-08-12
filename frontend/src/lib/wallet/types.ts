@@ -10,7 +10,7 @@
  * Every amount is a fixed-point string ("1290.00"), never a number.
  */
 
-export const TOPUP_STATUSES = ["PENDING", "APPROVED", "REJECTED"] as const;
+export const TOPUP_STATUSES = ["PENDING", "APPROVED", "REJECTED", "CANCELLED"] as const;
 export type TopupStatus = (typeof TOPUP_STATUSES)[number];
 
 export const LEDGER_TX_TYPES = ["TOPUP", "PURCHASE"] as const;

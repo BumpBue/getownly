@@ -42,6 +42,8 @@ enum TopupStatus {
   PENDING
   APPROVED
   REJECTED
+  /// Withdrawn by the student themselves, before an admin reviewed it.
+  CANCELLED
 }
 
 enum AccountKind {

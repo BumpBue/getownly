@@ -5,7 +5,10 @@ import type { AuthenticatedUser } from '@/common/types/authenticated-user';
 import { PrismaService } from '@/infra/prisma.service';
 import { StorageService } from '@/infra/storage/storage.service';
 import type { TopupReviewResultDto } from '@/modules/ledger/dto/ledger-response.dto';
-import { TopupRequestNotFoundException } from '@/modules/ledger/ledger.errors';
+import {
+  TopupNotPendingException,
+  TopupRequestNotFoundException,
+} from '@/modules/ledger/ledger.errors';
 import { WalletService } from '@/modules/ledger/wallet.service';
 import { parseObjectKey } from '@/modules/uploads/upload-rules';
 import { PromptPayService } from './promptpay.service';
@@ -142,6 +145,36 @@ export class TopupsService {
     });
 
     return this.toRequestDto(request);
+  }
+
+  /**
+   * Withdraws a request the caller made themselves, before anyone reviewed it.
+   *
+   * No money has moved yet - a PENDING request never posted a ledger entry -
+   * so this is a plain status flip, not a job for WalletService.
+   */
+  async cancel(topupRequestId: string, user: AuthenticatedUser): Promise<TopupRequestDto> {
+    const request = await this.prisma.topupRequest.findUnique({
+      where: { id: topupRequestId },
+      select: { studentId: true, status: true },
+    });
+
+    // Same answer whether the id is wrong or belongs to someone else - a 403
+    // here would confirm to the caller that a guessed id exists.
+    if (!request || request.studentId !== user.id) {
+      throw new TopupRequestNotFoundException();
+    }
+    if (request.status !== TopupStatus.PENDING) {
+      throw new TopupNotPendingException(request.status);
+    }
+
+    const cancelled = await this.prisma.topupRequest.update({
+      where: { id: topupRequestId },
+      data: { status: TopupStatus.CANCELLED },
+      select: requestSelect,
+    });
+
+    return this.toRequestDto(cancelled);
   }
 
   /** The student's own history, newest first. */

@@ -228,6 +228,63 @@ describe('TopupsService', () => {
   });
 
   // -------------------------------------------------------------------------
+  // Cancel
+  // -------------------------------------------------------------------------
+
+  describe('cancel', () => {
+    it('withdraws a request that is still waiting for review', async () => {
+      const request = await topups.create(asAuthUser(student), {
+        amount: '300',
+        slipKey: putSlip(student),
+      });
+
+      const cancelled = await topups.cancel(request.id, asAuthUser(student));
+
+      expect(cancelled.status).toBe(TopupStatus.CANCELLED);
+    });
+
+    it('frees the pending-request cap, the same as a rejection does', async () => {
+      const created = [];
+      for (let index = 0; index < 5; index += 1) {
+        created.push(
+          await topups.create(asAuthUser(student), { amount: '20', slipKey: putSlip(student) }),
+        );
+      }
+      await topups.cancel(created[0].id, asAuthUser(student));
+
+      const next = await topups.create(asAuthUser(student), {
+        amount: '20',
+        slipKey: putSlip(student),
+      });
+      expect(next.status).toBe(TopupStatus.PENDING);
+    });
+
+    it('refuses to cancel a request that was already reviewed', async () => {
+      const request = await topups.create(asAuthUser(student), {
+        amount: '300',
+        slipKey: putSlip(student),
+      });
+      await topups.reject(request.id, asAuthUser(admin), 'สลิปไม่ชัด');
+
+      await expect(topups.cancel(request.id, asAuthUser(student))).rejects.toThrow(
+        TopupNotPendingException,
+      );
+    });
+
+    it('refuses to cancel somebody else`s request', async () => {
+      const other = await createUser(prisma, { role: 'STUDENT' });
+      const request = await topups.create(asAuthUser(other), {
+        amount: '300',
+        slipKey: putSlip(other),
+      });
+
+      await expect(topups.cancel(request.id, asAuthUser(student))).rejects.toThrow(
+        'ไม่พบคำขอเติมเงินที่ระบุ',
+      );
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // History
   // -------------------------------------------------------------------------
 

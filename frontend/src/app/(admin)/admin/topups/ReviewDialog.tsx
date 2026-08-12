@@ -209,7 +209,9 @@ export function ReviewDialog({
           ) : (
             <div className="flex flex-col gap-2 rounded-control border border-border bg-background px-3 py-3 text-sm">
               <div className="flex items-center gap-2">
-                <span className="text-muted">{labels.reviewedNotice}</span>
+                <span className="text-muted">
+                  {request.status === "CANCELLED" ? labels.cancelledNotice : labels.reviewedNotice}
+                </span>
                 <TopupStatusBadge status={request.status} />
               </div>
               {request.note && <p className="text-muted">{request.note}</p>}

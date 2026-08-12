@@ -35,6 +35,11 @@ export function listMyTopups(page = 1, limit = 10): Promise<PaginatedTopups> {
   return apiRequest<PaginatedTopups>(`/topups/mine?page=${page}&limit=${limit}`);
 }
 
+/** Withdraws a request that is still PENDING. */
+export function cancelTopup(id: string): Promise<TopupRequest> {
+  return apiRequest<TopupRequest>(`/topups/${id}/cancel`, { method: "POST" });
+}
+
 // --- courses ---------------------------------------------------------------
 
 export function purchaseCourse(courseId: string): Promise<PurchaseResult> {

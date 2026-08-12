@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { Roles } from '@/common/decorators/roles.decorator';
@@ -40,5 +40,14 @@ export class TopupsController {
     @Query() query: ListTopupsQueryDto,
   ): Promise<PaginatedTopupsDto> {
     return this.topups.listMine(user, query);
+  }
+
+  /** Withdraws a request that is still waiting for review. */
+  @Post(':id/cancel')
+  cancel(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ): Promise<TopupRequestDto> {
+    return this.topups.cancel(id, user);
   }
 }
