@@ -52,6 +52,13 @@ interface RequestOptions {
   body?: unknown;
   /** Set on the auth endpoints themselves, so a 401 there is not retried. */
   skipRefresh?: boolean;
+  /**
+   * Set where a 401 surviving the refresh attempt is a normal answer rather
+   * than a dead session - the navbar's own-session check on a public page,
+   * where "nobody is signed in" is not an error. Skips the auto-redirect to
+   * /login that every other caller relies on.
+   */
+  silentOn401?: boolean;
   signal?: AbortSignal;
 }
 
@@ -121,7 +128,9 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     // route middleware.ts already gates on being signed in, so a 401 here
     // is never a normal answer — retrying it or showing an error state
     // would just strand the user on a dead screen with no way out.
-    if (response.status === 401) {
+    // `silentOn401` is the one deliberate exception: a guest is a normal
+    // outcome there, not a dead session.
+    if (response.status === 401 && !options.silentOn401) {
       redirectToLogin();
     }
   }

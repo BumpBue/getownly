@@ -37,8 +37,13 @@ export function logout(): Promise<{ message: string }> {
   });
 }
 
-export function me(): Promise<{ user: UserProfile }> {
-  return apiRequest<{ user: UserProfile }>("/auth/me");
+/**
+ * `silentOn401` is for callers where "nobody is signed in" is a normal
+ * result rather than a dead session - the shared navbar checks this on
+ * public pages a guest is perfectly entitled to be looking at.
+ */
+export function me(options?: { silentOn401?: boolean }): Promise<{ user: UserProfile }> {
+  return apiRequest<{ user: UserProfile }>("/auth/me", { silentOn401: options?.silentOn401 });
 }
 
 export function forgotPassword(email: string): Promise<{ message: string }> {
