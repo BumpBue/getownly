@@ -10,13 +10,16 @@
  * Every amount is a fixed-point string ("1290.00"), never a number.
  */
 
-export const TOPUP_STATUSES = ["PENDING", "APPROVED", "REJECTED", "CANCELLED"] as const;
-export type TopupStatus = (typeof TOPUP_STATUSES)[number];
+import { TOPUP_STATUSES, TX_TYPES, type EntryDirection, type TopupStatus, type TxType } from "@getownly/shared";
 
-export const LEDGER_TX_TYPES = ["TOPUP", "PURCHASE"] as const;
-export type LedgerTxType = (typeof LEDGER_TX_TYPES)[number];
+export { TOPUP_STATUSES };
+export type { TopupStatus, EntryDirection };
 
-export type EntryDirection = "DEBIT" | "CREDIT";
+// Named LedgerTxType/LEDGER_TX_TYPES here rather than TxType/TX_TYPES: this
+// module is specifically about wallet ledger entries, and the longer name
+// reads clearer next to WalletEntry below than the bare "tx" would.
+export const LEDGER_TX_TYPES = TX_TYPES;
+export type LedgerTxType = TxType;
 
 export interface WalletEntry {
   entryId: string;

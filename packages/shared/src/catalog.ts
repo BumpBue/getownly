@@ -16,13 +16,6 @@ import type { MoneyString } from './api';
 export const COURSE_SORTS = ['latest', 'popular', 'price_asc', 'price_desc'] as const;
 export type CourseSort = (typeof COURSE_SORTS)[number];
 
-export const COURSE_SORT_LABEL_TH: Record<CourseSort, string> = {
-  latest: 'ใหม่ล่าสุด',
-  popular: 'ยอดนิยม',
-  price_asc: 'ราคาน้อยไปมาก',
-  price_desc: 'ราคามากไปน้อย',
-};
-
 export interface CourseInstructor {
   id: string;
   displayName: string;

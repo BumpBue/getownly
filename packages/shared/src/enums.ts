@@ -1,74 +1,43 @@
 /**
  * Mirrors the enums declared in backend/prisma/schema.prisma.
- * Prisma generates its own enums for the backend; the frontend imports these
- * so both sides agree on the exact string values.
+ *
+ * Prisma generates its own enums for the backend from that same schema, so
+ * the backend already has one source of truth and never imports this file -
+ * doing so would just add a second, unenforced copy of what Prisma already
+ * derives correctly. This file exists for the frontend, which has no build
+ * step reading schema.prisma and would otherwise hand-type these values
+ * itself in every module that needs them.
+ *
+ * Thai labels are deliberately not here: CLAUDE.md keeps every domain's
+ * user-facing text in frontend/src/lib/messages/*.ts, one place per domain.
+ * This file is only the value lists both sides must agree on.
  *
  * When an enum changes in schema.prisma, change it here in the same commit.
  */
 
-export const Role = {
-  STUDENT: 'STUDENT',
-  INSTRUCTOR: 'INSTRUCTOR',
-  ADMIN: 'ADMIN',
-} as const;
-export type Role = (typeof Role)[keyof typeof Role];
+export const ROLES = ['STUDENT', 'INSTRUCTOR', 'ADMIN'] as const;
+export type Role = (typeof ROLES)[number];
 
-export const UserStatus = {
-  ACTIVE: 'ACTIVE',
-  SUSPENDED: 'SUSPENDED',
-} as const;
-export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus];
+export const USER_STATUSES = ['ACTIVE', 'SUSPENDED'] as const;
+export type UserStatus = (typeof USER_STATUSES)[number];
 
-export const CourseStatus = {
-  DRAFT: 'DRAFT',
-  PENDING_REVIEW: 'PENDING_REVIEW',
-  PUBLISHED: 'PUBLISHED',
-  REJECTED: 'REJECTED',
-} as const;
-export type CourseStatus = (typeof CourseStatus)[keyof typeof CourseStatus];
+export const COURSE_STATUSES = [
+  'DRAFT',
+  'PENDING_REVIEW',
+  'PUBLISHED',
+  'REJECTED',
+  'UNPUBLISHED',
+] as const;
+export type CourseStatus = (typeof COURSE_STATUSES)[number];
 
-export const TopupStatus = {
-  PENDING: 'PENDING',
-  APPROVED: 'APPROVED',
-  REJECTED: 'REJECTED',
-} as const;
-export type TopupStatus = (typeof TopupStatus)[keyof typeof TopupStatus];
+export const TOPUP_STATUSES = ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'] as const;
+export type TopupStatus = (typeof TOPUP_STATUSES)[number];
 
-export const AccountKind = {
-  USER_WALLET: 'USER_WALLET',
-  PLATFORM_REVENUE: 'PLATFORM_REVENUE',
-  EXTERNAL_BANK: 'EXTERNAL_BANK',
-} as const;
-export type AccountKind = (typeof AccountKind)[keyof typeof AccountKind];
+export const ACCOUNT_KINDS = ['USER_WALLET', 'PLATFORM_REVENUE', 'EXTERNAL_BANK'] as const;
+export type AccountKind = (typeof ACCOUNT_KINDS)[number];
 
-export const EntryDirection = {
-  DEBIT: 'DEBIT',
-  CREDIT: 'CREDIT',
-} as const;
-export type EntryDirection = (typeof EntryDirection)[keyof typeof EntryDirection];
+export const ENTRY_DIRECTIONS = ['DEBIT', 'CREDIT'] as const;
+export type EntryDirection = (typeof ENTRY_DIRECTIONS)[number];
 
-export const TxType = {
-  TOPUP: 'TOPUP',
-  PURCHASE: 'PURCHASE',
-} as const;
-export type TxType = (typeof TxType)[keyof typeof TxType];
-
-/** Thai labels for values that are shown to the user. */
-export const ROLE_LABEL_TH: Record<Role, string> = {
-  STUDENT: 'ผู้เรียน',
-  INSTRUCTOR: 'ผู้สอน',
-  ADMIN: 'ผู้ดูแลระบบ',
-};
-
-export const COURSE_STATUS_LABEL_TH: Record<CourseStatus, string> = {
-  DRAFT: 'ฉบับร่าง',
-  PENDING_REVIEW: 'รอตรวจสอบ',
-  PUBLISHED: 'เผยแพร่แล้ว',
-  REJECTED: 'ถูกปฏิเสธ',
-};
-
-export const TOPUP_STATUS_LABEL_TH: Record<TopupStatus, string> = {
-  PENDING: 'รอตรวจสอบ',
-  APPROVED: 'อนุมัติแล้ว',
-  REJECTED: 'ถูกปฏิเสธ',
-};
+export const TX_TYPES = ['TOPUP', 'PURCHASE'] as const;
+export type TxType = (typeof TX_TYPES)[number];

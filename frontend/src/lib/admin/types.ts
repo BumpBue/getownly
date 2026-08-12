@@ -9,13 +9,17 @@
  * Every amount is a fixed-point string ("1290.00"), never a number.
  */
 
+import { ROLES, USER_STATUSES, type Role, type UserStatus } from "@getownly/shared";
 import type { CourseStatus } from "@/lib/catalog/types";
 
-export const USER_ROLES = ["STUDENT", "INSTRUCTOR", "ADMIN"] as const;
-export type UserRole = (typeof USER_ROLES)[number];
+// Named UserRole/USER_ROLES here rather than Role/ROLES: this module is about
+// the admin's view of an account, and "user role" reads better on that screen
+// than the bare "role" lib/auth/types.ts uses for the signed-in caller.
+export const USER_ROLES = ROLES;
+export type UserRole = Role;
 
-export const USER_STATUSES = ["ACTIVE", "SUSPENDED"] as const;
-export type UserStatus = (typeof USER_STATUSES)[number];
+export { USER_STATUSES };
+export type { UserStatus };
 
 export interface AdminUser {
   id: string;

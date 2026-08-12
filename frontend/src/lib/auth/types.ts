@@ -1,5 +1,10 @@
-export const ROLES = ["STUDENT", "INSTRUCTOR", "ADMIN"] as const;
-export type Role = (typeof ROLES)[number];
+import { ROLES, type Role, type UserStatus } from "@getownly/shared";
+
+// Re-exported so the rest of the app can keep importing Role/ROLES from this
+// module rather than reaching into @getownly/shared directly (same pattern
+// modules/ledger/ledger.errors.ts uses on the backend for a shared exception).
+export { ROLES };
+export type { Role };
 
 /** The two roles a visitor may pick; ADMIN exists only through the seed. */
 export const SELF_SERVICE_ROLES = ["STUDENT", "INSTRUCTOR"] as const;
@@ -11,7 +16,7 @@ export interface UserProfile {
   username: string;
   displayName: string;
   role: Role;
-  status: "ACTIVE" | "SUSPENDED";
+  status: UserStatus;
   avatarUrl: string | null;
   bio: string | null;
   expertise: string | null;

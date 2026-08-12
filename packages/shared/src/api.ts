@@ -7,7 +7,10 @@ export interface ApiErrorResponse {
   statusCode: number;
   code: string;
   message: string;
-  details?: Record<string, string[]>;
+  /** Per-field validation messages from class-validator. */
+  errors?: Record<string, string[]>;
+  /** Extra context a BusinessException attached, e.g. `{ missing: [...] }`. */
+  details?: Record<string, unknown>;
   timestamp: string;
   path: string;
 }
