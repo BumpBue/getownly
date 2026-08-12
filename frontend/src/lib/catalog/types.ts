@@ -10,7 +10,13 @@
  * lesson video only ever arrives as bytes from GET /lessons/:id/stream.
  */
 
-export const COURSE_STATUSES = ["DRAFT", "PENDING_REVIEW", "PUBLISHED", "REJECTED"] as const;
+export const COURSE_STATUSES = [
+  "DRAFT",
+  "PENDING_REVIEW",
+  "PUBLISHED",
+  "REJECTED",
+  "UNPUBLISHED",
+] as const;
 export type CourseStatus = (typeof COURSE_STATUSES)[number];
 
 export const COURSE_SORTS = ["latest", "popular", "price_asc", "price_desc"] as const;

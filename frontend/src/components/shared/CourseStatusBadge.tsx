@@ -8,6 +8,7 @@ const TONE_BY_STATUS = {
   PENDING_REVIEW: "pending",
   PUBLISHED: "success",
   REJECTED: "destructive",
+  UNPUBLISHED: "neutral",
 } as const;
 
 export function CourseStatusBadge({ status }: { status: CourseStatus }) {

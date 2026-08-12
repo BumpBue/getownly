@@ -63,6 +63,17 @@ export class CourseNotSubmittableException extends BusinessException {
   }
 }
 
+export class CourseNotUnpublishableException extends BusinessException {
+  constructor(currentStatus: string) {
+    super(
+      HttpStatus.CONFLICT,
+      'COURSE_NOT_UNPUBLISHABLE',
+      'ถอดออกจากการขายได้เฉพาะคอร์สที่เผยแพร่อยู่เท่านั้น',
+      { currentStatus },
+    );
+  }
+}
+
 /** The checklist a course must pass before an admin is asked to look at it. */
 export class CourseIncompleteException extends BusinessException {
   constructor(missing: string[]) {

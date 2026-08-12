@@ -7,6 +7,7 @@ import {
   CourseNotEditableException,
   CourseNotFoundException,
   CourseNotSubmittableException,
+  CourseNotUnpublishableException,
 } from '@/common/exceptions/catalog.exceptions';
 import type { AuthenticatedUser } from '@/common/types/authenticated-user';
 import { PrismaService } from '@/infra/prisma.service';
@@ -375,6 +376,30 @@ export class CoursesService {
         // The previous rejection no longer describes the current submission.
         rejectReason: null,
       },
+    });
+
+    return this.findOne(courseId, user);
+  }
+
+  /**
+   * Takes a published course off the market.
+   *
+   * The alternative to delete for a course that already has buyers: `remove()`
+   * refuses anything but an untouched draft, because deleting would strand
+   * Enrollment rows that reports and "my courses" still need to read. This
+   * only flips visibility - existing students keep access, nobody new can
+   * find or buy it (PLAN.md ข้อ 1.2).
+   */
+  async unpublish(courseId: string, user: AuthenticatedUser): Promise<CourseDetailDto> {
+    const course = await this.access.assertCourseOwner(courseId, user);
+
+    if (course.status !== CourseStatus.PUBLISHED) {
+      throw new CourseNotUnpublishableException(course.status);
+    }
+
+    await this.prisma.course.update({
+      where: { id: courseId },
+      data: { status: CourseStatus.UNPUBLISHED },
     });
 
     return this.findOne(courseId, user);

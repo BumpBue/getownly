@@ -3,14 +3,22 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowRight, ClipboardList, ExternalLink, ServerCrash, Send, Trash2 } from "lucide-react";
+import {
+  ArrowRight,
+  ClipboardList,
+  ExternalLink,
+  EyeOff,
+  ServerCrash,
+  Send,
+  Trash2,
+} from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CourseStatusBadge } from "@/components/shared/CourseStatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ApiError } from "@/lib/api-client";
-import { deleteCourse, getCourse, submitCourse } from "@/lib/catalog/api";
+import { deleteCourse, getCourse, submitCourse, unpublishCourse } from "@/lib/catalog/api";
 import type { CourseDetail } from "@/lib/catalog/types";
 import { authMessages } from "@/lib/messages/auth";
 import { instructorMessages } from "@/lib/messages/instructor";
@@ -42,6 +50,7 @@ export default function CourseEditorPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [missing, setMissing] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [unpublishing, setUnpublishing] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -76,6 +85,25 @@ export default function CourseEditorPage() {
       }
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function onUnpublish(): Promise<void> {
+    if (!window.confirm(editor.unpublishConfirm)) {
+      return;
+    }
+
+    setUnpublishing(true);
+    setNotice(null);
+    setError(null);
+
+    try {
+      setCourse(await unpublishCourse(courseId));
+      setNotice(editor.unpublishSuccess);
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : authMessages.errors.unexpected);
+    } finally {
+      setUnpublishing(false);
     }
   }
 
@@ -144,6 +172,18 @@ export default function CourseEditorPage() {
             </Button>
           )}
 
+          {course.status === "PUBLISHED" && (
+            <Button
+              variant="outline"
+              disabled={unpublishing}
+              onClick={() => void onUnpublish()}
+              className="text-destructive"
+            >
+              <EyeOff aria-hidden />
+              {unpublishing ? editor.unpublishing : editor.unpublishCourse}
+            </Button>
+          )}
+
           {course.status === "DRAFT" && (
             <Button variant="ghost" onClick={() => void onDelete()} className="text-destructive">
               <Trash2 aria-hidden />
@@ -179,6 +219,7 @@ export default function CourseEditorPage() {
         </Alert>
       )}
       {readOnly && <Alert tone="pending">{editor.lockedNotice}</Alert>}
+      {course.status === "UNPUBLISHED" && <Alert tone="pending">{editor.unpublishedNotice}</Alert>}
       {course.status === "REJECTED" && (
         <Alert tone="error">
           <span>

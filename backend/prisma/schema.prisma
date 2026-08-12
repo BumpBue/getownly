@@ -36,6 +36,9 @@ enum CourseStatus {
   PENDING_REVIEW
   PUBLISHED
   REJECTED
+  /// Taken off the market by its instructor. Existing buyers keep access
+  /// through their Enrollment; nobody new can find or purchase it.
+  UNPUBLISHED
 }
 
 enum TopupStatus {

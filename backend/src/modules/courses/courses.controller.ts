@@ -101,4 +101,15 @@ export class CoursesController {
   ): Promise<CourseDetailDto> {
     return this.courses.submitForReview(id, user);
   }
+
+  /** Takes a published course off the market without deleting it. */
+  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @Post(':id/unpublish')
+  unpublish(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<CourseDetailDto> {
+    return this.courses.unpublish(id, user);
+  }
 }

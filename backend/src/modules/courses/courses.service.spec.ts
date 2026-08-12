@@ -6,6 +6,7 @@ import {
   CourseNotEditableException,
   CourseNotFoundException,
   CourseNotSubmittableException,
+  CourseNotUnpublishableException,
   NotCourseOwnerException,
 } from '@/common/exceptions/catalog.exceptions';
 import { PrismaService } from '@/infra/prisma.service';
@@ -499,6 +500,77 @@ describe('CoursesService', () => {
 
       await expect(courses.submitForReview(courseId, asAuthUser(owner))).rejects.toBeInstanceOf(
         CourseNotSubmittableException,
+      );
+    });
+  });
+
+  describe('unpublish', () => {
+    it('takes a published course off the market', async () => {
+      const courseId = await createCourse(prisma, {
+        instructorId: owner.id,
+        categoryId,
+        price: '100.00',
+        status: CourseStatus.PUBLISHED,
+      });
+
+      const result = await courses.unpublish(courseId, asAuthUser(owner));
+
+      expect(result.status).toBe(CourseStatus.UNPUBLISHED);
+    });
+
+    it('leaves an already-bought course reachable by its buyer, just not for sale', async () => {
+      const courseId = await createCourse(prisma, {
+        instructorId: owner.id,
+        categoryId,
+        price: '100.00',
+        status: CourseStatus.PUBLISHED,
+      });
+      await enrol(prisma, { courseId, studentId: student.id });
+
+      await courses.unpublish(courseId, asAuthUser(owner));
+
+      expect(await prisma.enrollment.count({ where: { courseId } })).toBe(1);
+      const stored = await prisma.course.findUniqueOrThrow({ where: { id: courseId } });
+      expect(stored.status).toBe(CourseStatus.UNPUBLISHED);
+    });
+
+    it('drops out of the public catalog once unpublished', async () => {
+      const courseId = await createCourse(prisma, {
+        instructorId: owner.id,
+        categoryId,
+        price: '100.00',
+        status: CourseStatus.PUBLISHED,
+      });
+
+      await courses.unpublish(courseId, asAuthUser(owner));
+
+      const listed = await courses.listPublished({});
+      expect(listed.items.map((item) => item.id)).not.toContain(courseId);
+    });
+
+    it('refuses to unpublish anything that is not currently published', async () => {
+      const courseId = await createCourse(prisma, {
+        instructorId: owner.id,
+        categoryId,
+        price: '100.00',
+        status: CourseStatus.DRAFT,
+      });
+
+      await expect(courses.unpublish(courseId, asAuthUser(owner))).rejects.toBeInstanceOf(
+        CourseNotUnpublishableException,
+      );
+    });
+
+    it('refuses an instructor who does not own the course', async () => {
+      const courseId = await createCourse(prisma, {
+        instructorId: owner.id,
+        categoryId,
+        price: '100.00',
+        status: CourseStatus.PUBLISHED,
+      });
+
+      await expect(courses.unpublish(courseId, asAuthUser(otherInstructor))).rejects.toBeInstanceOf(
+        NotCourseOwnerException,
       );
     });
   });

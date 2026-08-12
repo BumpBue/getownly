@@ -72,5 +72,6 @@ export const courseMessages = {
     PENDING_REVIEW: "รอตรวจสอบ",
     PUBLISHED: "เผยแพร่แล้ว",
     REJECTED: "ถูกปฏิเสธ",
+    UNPUBLISHED: "ถอดออกจากการขาย",
   },
 } as const;

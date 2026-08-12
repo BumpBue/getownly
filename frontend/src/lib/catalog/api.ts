@@ -62,6 +62,11 @@ export function submitCourse(courseId: string): Promise<CourseDetail> {
   return apiRequest<CourseDetail>(`/courses/${courseId}/submit`, { method: "POST" });
 }
 
+/** Takes a published course off the market without deleting it. */
+export function unpublishCourse(courseId: string): Promise<CourseDetail> {
+  return apiRequest<CourseDetail>(`/courses/${courseId}/unpublish`, { method: "POST" });
+}
+
 // --- instructor: lessons ---------------------------------------------------
 
 export function listLessons(courseId: string): Promise<Lesson[]> {
