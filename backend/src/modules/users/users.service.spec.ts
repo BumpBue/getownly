@@ -5,12 +5,14 @@ import { PrismaService } from '@/infra/prisma.service';
 import { TokenService } from '@/modules/auth/token.service';
 import { UsersService } from './users.service';
 import { asAuthUser, createUser, resetDatabase, type TestUser } from '../../../test/factories';
+import { FakeStorage } from '../../../test/fake-storage';
 
 /** Cost 4 rather than the configured 12: these tests hash, they do not defend. */
 const TEST_BCRYPT_COST = 4;
 
 describe('UsersService', () => {
   let prisma: PrismaService;
+  let storage: FakeStorage;
   let users: UsersService;
 
   let admin: TestUser;
@@ -28,6 +30,7 @@ describe('UsersService', () => {
 
   beforeEach(async () => {
     await resetDatabase(prisma);
+    storage = new FakeStorage();
 
     const config = new ConfigService({ BCRYPT_COST: String(TEST_BCRYPT_COST) });
     // Only `revokeAllForUser` is exercised here, and that never signs anything.
@@ -36,7 +39,7 @@ describe('UsersService', () => {
       { signAsync: () => Promise.resolve('') } as never,
       config,
     );
-    users = new UsersService(prisma, tokens, config);
+    users = new UsersService(prisma, tokens, config, storage.asService());
 
     admin = await createUser(prisma, { role: 'ADMIN' });
     instructor = await createUser(prisma, { role: 'INSTRUCTOR', displayName: 'ครูทดสอบ' });
@@ -69,6 +72,53 @@ describe('UsersService', () => {
     const profile = await users.updateProfile(student.id, { displayName: 'ใครสักคน' });
 
     expect(JSON.stringify(profile)).not.toContain('passwordHash');
+  });
+
+  // --- avatar -----------------------------------------------------------
+
+  it('swaps the avatar and signs the new key into a URL', async () => {
+    const key = `avatar/${student.id}/new.jpg`;
+    storage.put(key, Buffer.from('fake-image'), 'image/jpeg');
+
+    const profile = await users.updateAvatar(student.id, key);
+
+    expect(profile.avatarUrl).toContain(key);
+  });
+
+  it('removes the previous avatar once the row points at the new one', async () => {
+    const oldKey = `avatar/${student.id}/old.jpg`;
+    const newKey = `avatar/${student.id}/new.jpg`;
+    storage.put(oldKey, Buffer.from('old'), 'image/jpeg');
+    storage.put(newKey, Buffer.from('new'), 'image/jpeg');
+
+    await users.updateAvatar(student.id, oldKey);
+    await users.updateAvatar(student.id, newKey);
+
+    expect(storage.removed).toContain(oldKey);
+  });
+
+  it('refuses a key nothing was ever uploaded to', async () => {
+    await expect(
+      users.updateAvatar(student.id, `avatar/${student.id}/ghost.jpg`),
+    ).rejects.toMatchObject({ code: 'AVATAR_NOT_UPLOADED' });
+  });
+
+  it('refuses a key that belongs to somebody else', async () => {
+    const key = `avatar/${instructor.id}/theirs.jpg`;
+    storage.put(key, Buffer.from('not-yours'), 'image/jpeg');
+
+    await expect(users.updateAvatar(student.id, key)).rejects.toMatchObject({
+      code: 'INVALID_AVATAR_KEY',
+    });
+  });
+
+  it('refuses a key that is not an avatar upload at all', async () => {
+    const key = `slip/${student.id}/receipt.jpg`;
+    storage.put(key, Buffer.from('wrong-kind'), 'image/jpeg');
+
+    await expect(users.updateAvatar(student.id, key)).rejects.toMatchObject({
+      code: 'INVALID_AVATAR_KEY',
+    });
   });
 
   it('refuses a password change that does not know the current password', async () => {

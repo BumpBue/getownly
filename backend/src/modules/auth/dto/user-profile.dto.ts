@@ -1,4 +1,5 @@
 import type { Role, User, UserStatus } from '@prisma/client';
+import type { StorageService } from '@/infra/storage/storage.service';
 
 /**
  * The only user shape that ever leaves the API.
@@ -21,7 +22,12 @@ export interface UserProfileDto {
   createdAt: string;
 }
 
-export function toUserProfile(user: User): UserProfileDto {
+/**
+ * `avatarKey` is a MinIO object key, never stored as a URL because a signed
+ * URL expires - the same reason `CoursesService.signCover` exists. Async on
+ * that account, so every caller now awaits it.
+ */
+export async function toUserProfile(user: User, storage: StorageService): Promise<UserProfileDto> {
   return {
     id: user.id,
     email: user.email,
@@ -29,7 +35,7 @@ export function toUserProfile(user: User): UserProfileDto {
     displayName: user.displayName,
     role: user.role,
     status: user.status,
-    avatarUrl: user.avatarUrl,
+    avatarUrl: await storage.presignGetOrNull(user.avatarKey),
     bio: user.bio,
     expertise: user.expertise,
     commissionRate: user.commissionRate.toFixed(4),

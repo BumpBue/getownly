@@ -42,6 +42,13 @@ export class UpdateProfileDto {
   expertise?: string;
 }
 
+export class UpdateAvatarDto {
+  /** Object key from POST /uploads/presign with kind "avatar", not a URL. */
+  @IsString()
+  @MaxLength(300)
+  avatarKey!: string;
+}
+
 export class ChangePasswordDto {
   @IsString({ message: 'กรุณากรอกรหัสผ่านปัจจุบัน' })
   @MaxLength(72)

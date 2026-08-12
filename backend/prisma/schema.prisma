@@ -78,7 +78,10 @@ model User {
   status       UserStatus @default(ACTIVE)
 
   displayName String
-  avatarUrl   String?
+  /// MinIO object key of the avatar image, e.g. "avatar/<userId>/<uuid>.jpg".
+  /// The API signs this into a short-lived URL on the way out; a URL is never
+  /// stored, because the bucket is private and every signed URL expires.
+  avatarKey   String?
   bio         String?
   expertise   String?
 

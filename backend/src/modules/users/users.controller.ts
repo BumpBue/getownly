@@ -2,7 +2,7 @@ import { Body, Controller, Patch } from '@nestjs/common';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '@/common/types/authenticated-user';
 import type { UserProfileDto } from '@/modules/auth/dto/user-profile.dto';
-import { ChangePasswordDto, UpdateProfileDto } from './dto/user-request.dto';
+import { ChangePasswordDto, UpdateAvatarDto, UpdateProfileDto } from './dto/user-request.dto';
 import { UsersService } from './users.service';
 
 /**
@@ -30,5 +30,13 @@ export class UsersController {
     @Body() dto: ChangePasswordDto,
   ): Promise<{ message: string }> {
     return this.users.changePassword(user.id, dto);
+  }
+
+  @Patch('avatar')
+  updateAvatar(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: UpdateAvatarDto,
+  ): Promise<UserProfileDto> {
+    return this.users.updateAvatar(user.id, dto.avatarKey);
   }
 }

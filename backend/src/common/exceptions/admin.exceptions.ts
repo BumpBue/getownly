@@ -75,6 +75,28 @@ export class WrongCurrentPasswordException extends BusinessException {
   }
 }
 
+/** The key is not shaped like an avatar upload, or it belongs to someone else. */
+export class InvalidAvatarKeyException extends BusinessException {
+  constructor() {
+    super(
+      HttpStatus.BAD_REQUEST,
+      'INVALID_AVATAR_KEY',
+      'ไฟล์รูปโปรไฟล์ไม่ถูกต้อง กรุณาอัปโหลดใหม่อีกครั้ง',
+    );
+  }
+}
+
+/** The client asked to use a key that has nothing behind it in MinIO. */
+export class AvatarNotUploadedException extends BusinessException {
+  constructor() {
+    super(
+      HttpStatus.BAD_REQUEST,
+      'AVATAR_NOT_UPLOADED',
+      'ยังไม่พบไฟล์รูปโปรไฟล์ที่อัปโหลด กรุณาอัปโหลดแล้วลองใหม่อีกครั้ง',
+    );
+  }
+}
+
 /** `from` later than `to`, which would silently report zero of everything. */
 export class InvalidDateRangeException extends BusinessException {
   constructor() {

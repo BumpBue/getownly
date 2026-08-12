@@ -5,6 +5,7 @@ import { AccountKind, UserStatus, type User } from '@prisma/client';
 import { compare, hash } from 'bcrypt';
 import { PrismaService } from '@/infra/prisma.service';
 import { MailService } from '@/infra/mail/mail.service';
+import { StorageService } from '@/infra/storage/storage.service';
 import {
   AccountSuspendedException,
   EmailAlreadyUsedException,
@@ -45,6 +46,7 @@ export class AuthService {
     private readonly tokens: TokenService,
     private readonly mail: MailService,
     private readonly config: ConfigService,
+    private readonly storage: StorageService,
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthResult> {
@@ -83,7 +85,7 @@ export class AuthService {
       return { user: created, tokens: issued };
     });
 
-    return { user: toUserProfile(user), tokens };
+    return { user: await toUserProfile(user, this.storage), tokens };
   }
 
   async login(dto: LoginDto): Promise<AuthResult> {
@@ -108,7 +110,7 @@ export class AuthService {
     }
 
     const tokens = await this.tokens.issueTokens(user);
-    return { user: toUserProfile(user), tokens };
+    return { user: await toUserProfile(user, this.storage), tokens };
   }
 
   async refresh(rawRefreshToken: string | undefined): Promise<IssuedTokens> {
@@ -127,7 +129,7 @@ export class AuthService {
     if (!user) {
       throw new UnauthenticatedException();
     }
-    return toUserProfile(user);
+    return toUserProfile(user, this.storage);
   }
 
   /**

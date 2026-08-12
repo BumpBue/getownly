@@ -3,15 +3,19 @@ import { ConfigService } from '@nestjs/config';
 import { Prisma, Role, UserStatus } from '@prisma/client';
 import { compare, hash } from 'bcrypt';
 import {
+  AvatarNotUploadedException,
   CannotSuspendSelfException,
   CommissionNotApplicableException,
+  InvalidAvatarKeyException,
   UserNotFoundException,
   WrongCurrentPasswordException,
 } from '@/common/exceptions/admin.exceptions';
 import type { AuthenticatedUser } from '@/common/types/authenticated-user';
 import { PrismaService } from '@/infra/prisma.service';
+import { StorageService } from '@/infra/storage/storage.service';
 import { TokenService } from '@/modules/auth/token.service';
 import { toUserProfile, type UserProfileDto } from '@/modules/auth/dto/user-profile.dto';
+import { parseObjectKey } from '@/modules/uploads/upload-rules';
 import { MAX_COMMISSION_RATE, type ListUsersQueryDto } from './dto/user-request.dto';
 import type { AdminUserDto, PaginatedAdminUsersDto, UserCountsDto } from './dto/user-response.dto';
 
@@ -47,6 +51,7 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly tokens: TokenService,
     config: ConfigService,
+    private readonly storage: StorageService,
   ) {
     this.bcryptCost = Number(config.getOrThrow<string>('BCRYPT_COST'));
   }
@@ -78,7 +83,44 @@ export class UsersService {
       },
     });
 
-    return toUserProfile(user);
+    return toUserProfile(user, this.storage);
+  }
+
+  /**
+   * Swaps the caller's avatar for one they just uploaded.
+   *
+   * The key is proven to be theirs and to actually exist before it is
+   * trusted, the same way TopupsService.assertSlipUsable checks a slip key:
+   * presigning only checks what the client *claims* it will upload, and the
+   * same URL accepts anything afterwards.
+   */
+  async updateAvatar(userId: string, avatarKey: string): Promise<UserProfileDto> {
+    const parsed = parseObjectKey(avatarKey);
+    if (!parsed || parsed.kind !== 'avatar' || parsed.ownerId !== userId) {
+      throw new InvalidAvatarKeyException();
+    }
+
+    const stored = await this.storage.stat(avatarKey);
+    if (!stored) {
+      throw new AvatarNotUploadedException();
+    }
+
+    const previous = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatarKey: true },
+    });
+
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarKey },
+    });
+
+    // The old image has no other reference once the row points elsewhere.
+    if (previous?.avatarKey && previous.avatarKey !== avatarKey) {
+      await this.storage.remove(previous.avatarKey);
+    }
+
+    return toUserProfile(user, this.storage);
   }
 
   /**
