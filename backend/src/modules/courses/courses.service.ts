@@ -263,14 +263,24 @@ export class CoursesService {
 
     const previousCoverKey = await this.coverKeyOf(courseId);
 
+    // Content can change freely on a course already selling, but the number
+    // buyers are charged cannot - a price edit sends it back to the review
+    // queue, the same as a brand-new submission (PLAN.md ข้อ 1.2).
+    const nextPrice = dto.price !== undefined ? new Prisma.Decimal(dto.price) : undefined;
+    const priceChanged =
+      nextPrice !== undefined &&
+      course.status === CourseStatus.PUBLISHED &&
+      !nextPrice.equals(course.price);
+
     await this.prisma.course.update({
       where: { id: courseId },
       data: {
         ...(dto.title !== undefined ? { title: dto.title.trim() } : {}),
         ...(dto.description !== undefined ? { description: dto.description.trim() } : {}),
         ...(dto.categoryId !== undefined ? { categoryId: dto.categoryId } : {}),
-        ...(dto.price !== undefined ? { price: new Prisma.Decimal(dto.price) } : {}),
+        ...(nextPrice !== undefined ? { price: nextPrice } : {}),
         ...(dto.coverKey !== undefined ? { coverKey: dto.coverKey } : {}),
+        ...(priceChanged ? { status: CourseStatus.PENDING_REVIEW } : {}),
       },
     });
 

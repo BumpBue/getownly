@@ -80,6 +80,8 @@ export const instructorMessages = {
     categoryPlaceholder: "เลือกหมวดหมู่",
     price: "ราคา (บาท)",
     priceHint: "ใส่ 0 เพื่อเปิดเป็นคอร์สฟรี",
+    priceHintPublished:
+      "ใส่ 0 เพื่อเปิดเป็นคอร์สฟรี · คอร์สนี้เผยแพร่อยู่ ถ้าเปลี่ยนราคาต้องรอผู้ดูแลอนุมัติใหม่ก่อนจึงจะซื้อได้",
     cover: "ภาพหน้าปก",
     coverHint: "แนะนำอัตราส่วน 16:9 · JPG PNG หรือ WebP ไม่เกิน 5 MB",
     coverUpload: "เลือกภาพหน้าปก",

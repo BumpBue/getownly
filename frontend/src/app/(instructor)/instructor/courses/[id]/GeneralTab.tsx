@@ -163,7 +163,7 @@ export function GeneralTab({
               <Field
                 id="price"
                 label={general.price}
-                hint={general.priceHint}
+                hint={course.status === "PUBLISHED" ? general.priceHintPublished : general.priceHint}
                 error={errors.price?.message}
               >
                 <Input

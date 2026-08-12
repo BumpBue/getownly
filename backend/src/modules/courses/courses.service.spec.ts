@@ -346,6 +346,62 @@ describe('CoursesService', () => {
 
       expect(storage.removed).toContain(`cover/${owner.id}/old.jpg`);
     });
+
+    it('sends a published course back to review when the price changes', async () => {
+      const courseId = await createCourse(prisma, {
+        instructorId: owner.id,
+        categoryId,
+        price: '100.00',
+        status: CourseStatus.PUBLISHED,
+      });
+
+      const result = await courses.update(courseId, asAuthUser(owner), { price: '150.00' });
+
+      expect(result.status).toBe(CourseStatus.PENDING_REVIEW);
+      expect(result.price).toBe('150.00');
+    });
+
+    it('leaves a published course alone when the price is unchanged', async () => {
+      const courseId = await createCourse(prisma, {
+        instructorId: owner.id,
+        categoryId,
+        price: '100.00',
+        status: CourseStatus.PUBLISHED,
+      });
+
+      const result = await courses.update(courseId, asAuthUser(owner), { price: '100.00' });
+
+      expect(result.status).toBe(CourseStatus.PUBLISHED);
+    });
+
+    it('lets a published course edit its content without triggering re-review', async () => {
+      const courseId = await createCourse(prisma, {
+        instructorId: owner.id,
+        categoryId,
+        price: '100.00',
+        status: CourseStatus.PUBLISHED,
+      });
+
+      const result = await courses.update(courseId, asAuthUser(owner), {
+        title: 'ชื่อคอร์สที่แก้ไขแล้ว',
+      });
+
+      expect(result.status).toBe(CourseStatus.PUBLISHED);
+      expect(result.title).toBe('ชื่อคอร์สที่แก้ไขแล้ว');
+    });
+
+    it('does not send a draft into review just because its price changed', async () => {
+      const courseId = await createCourse(prisma, {
+        instructorId: owner.id,
+        categoryId,
+        price: '100.00',
+        status: CourseStatus.DRAFT,
+      });
+
+      const result = await courses.update(courseId, asAuthUser(owner), { price: '200.00' });
+
+      expect(result.status).toBe(CourseStatus.DRAFT);
+    });
   });
 
   describe('remove', () => {

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CourseStatus, Role } from '@prisma/client';
+import { CourseStatus, Prisma, Role } from '@prisma/client';
 import {
   CourseNotFoundException,
   CourseNotVisibleException,
@@ -27,7 +27,7 @@ export class CourseAccessService {
   async assertCourseOwner(courseId: string, user: AuthenticatedUser): Promise<OwnedCourse> {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
-      select: { id: true, instructorId: true, status: true, title: true },
+      select: { id: true, instructorId: true, status: true, title: true, price: true },
     });
 
     if (!course) {
@@ -185,6 +185,7 @@ export interface OwnedCourse {
   instructorId: string;
   status: CourseStatus;
   title: string;
+  price: Prisma.Decimal;
 }
 
 export interface EnrolledCourse {
