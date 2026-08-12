@@ -82,6 +82,35 @@ export interface TopInstructorDto {
   outstandingAmount: MoneyString;
 }
 
+/**
+ * One row of the trial balance, grouped by account kind rather than by
+ * individual account: there is one USER_WALLET account per user, and a row
+ * per person is not a screen an admin can read, only a screen an admin can
+ * scroll past.
+ */
+export interface TrialBalanceRowDto {
+  kind: string;
+  accountCount: number;
+  totalDebit: MoneyString;
+  totalCredit: MoneyString;
+  /** totalCredit − totalDebit, matching the credit-normal convention every Account.balance already uses. */
+  netBalance: MoneyString;
+}
+
+/**
+ * The proof that the double-entry ledger actually holds: every baht ever
+ * debited anywhere was credited somewhere else. All-time, not windowed by a
+ * date range — a trial balance answers "do the books balance", not
+ * "did they balance last week".
+ */
+export interface TrialBalanceDto {
+  rows: TrialBalanceRowDto[];
+  totalDebit: MoneyString;
+  totalCredit: MoneyString;
+  isBalanced: boolean;
+  asOf: string;
+}
+
 // --- the instructor's own report -------------------------------------------
 
 export interface InstructorMonthPointDto {

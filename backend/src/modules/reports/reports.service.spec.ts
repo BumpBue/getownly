@@ -5,12 +5,14 @@ import { WalletService } from '@/modules/ledger/wallet.service';
 import { ReportsService } from './reports.service';
 import { todayInBangkok, shiftDate } from './report-range';
 import {
+  accountBalance,
   createCategory,
   createCourse,
   createSystemAccounts,
   createUser,
   fundWallet,
   resetDatabase,
+  type SystemAccounts,
   type TestUser,
 } from '../../../test/factories';
 import { assertLedgerInvariants } from '../../../test/invariants';
@@ -35,6 +37,7 @@ describe('ReportsService', () => {
   let wallet: WalletService;
   let reports: ReportsService;
 
+  let system: SystemAccounts;
   let admin: TestUser;
   let instructor: TestUser;
   let otherInstructor: TestUser;
@@ -56,7 +59,7 @@ describe('ReportsService', () => {
     wallet = new WalletService(prisma, ledger);
     reports = new ReportsService(prisma);
 
-    await createSystemAccounts(prisma);
+    system = await createSystemAccounts(prisma);
     admin = await createUser(prisma, { role: 'ADMIN' });
     instructor = await createUser(prisma, {
       role: 'INSTRUCTOR',
@@ -346,5 +349,62 @@ describe('ReportsService', () => {
     );
 
     await assertLedgerInvariants(prisma, ledger);
+  });
+
+  // --- the trial balance ------------------------------------------------------
+
+  describe('trialBalance', () => {
+    it('has nothing to show before any money has moved, but still balances', async () => {
+      const trial = await reports.trialBalance();
+
+      expect(trial.totalDebit).toBe('0.00');
+      expect(trial.totalCredit).toBe('0.00');
+      expect(trial.isBalanced).toBe(true);
+    });
+
+    it('still balances after a mix of top-ups and purchases', async () => {
+      await fundWallet(prisma, wallet, {
+        studentId: student.id,
+        adminId: admin.id,
+        amount: '2000.00',
+      });
+      await sellOne({ instructorId: instructor.id, price: '1000.00' });
+
+      const trial = await reports.trialBalance();
+
+      expect(trial.totalDebit).toBe(trial.totalCredit);
+      expect(trial.isBalanced).toBe(true);
+
+      await assertLedgerInvariants(prisma, ledger);
+    });
+
+    it('groups by account kind rather than listing one row per wallet', async () => {
+      // beforeEach already created four users, each with their own wallet.
+      const trial = await reports.trialBalance();
+
+      // Order is Postgres sorting the enum by its declared ordinal, not
+      // something this report promises - only that each kind appears once.
+      expect([...trial.rows.map((row) => row.kind)].sort()).toEqual(
+        ['EXTERNAL_BANK', 'PLATFORM_REVENUE', 'USER_WALLET'].sort(),
+      );
+      expect(trial.rows.find((row) => row.kind === 'USER_WALLET')?.accountCount).toBe(4);
+      expect(trial.rows.find((row) => row.kind === 'PLATFORM_REVENUE')?.accountCount).toBe(1);
+      expect(trial.rows.find((row) => row.kind === 'EXTERNAL_BANK')?.accountCount).toBe(1);
+    });
+
+    it('shows the external bank account carrying the offsetting negative balance', async () => {
+      await fundWallet(prisma, wallet, {
+        studentId: student.id,
+        adminId: admin.id,
+        amount: '500.00',
+      });
+
+      const trial = await reports.trialBalance();
+      const bank = trial.rows.find((row) => row.kind === 'EXTERNAL_BANK');
+      const bankBalance = await accountBalance(prisma, system.externalBankId);
+
+      expect(bank?.netBalance).toBe(bankBalance.toFixed(2));
+      expect(bank?.netBalance).toBe('-500.00');
+    });
   });
 });

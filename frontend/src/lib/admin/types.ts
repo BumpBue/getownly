@@ -154,6 +154,24 @@ export interface TopInstructor {
   outstandingAmount: string;
 }
 
+/** One row of the trial balance - one account kind, not one account. */
+export interface TrialBalanceRow {
+  kind: string;
+  accountCount: number;
+  totalDebit: string;
+  totalCredit: string;
+  netBalance: string;
+}
+
+/** The proof that the double-entry ledger balances, all-time. */
+export interface TrialBalance {
+  rows: TrialBalanceRow[];
+  totalDebit: string;
+  totalCredit: string;
+  isBalanced: boolean;
+  asOf: string;
+}
+
 export interface InstructorMonthPoint {
   month: string;
   label: string;

@@ -11,6 +11,7 @@ import type {
   PendingCourse,
   TopCourse,
   TopInstructor,
+  TrialBalance,
   UserRole,
   UserStatus,
 } from "./types";
@@ -149,6 +150,11 @@ export function getTopInstructors(range: {
   to?: string;
 }): Promise<TopInstructor[]> {
   return apiRequest<TopInstructor[]>(`/admin/reports/top-instructors${rangeQuery(range)}`);
+}
+
+/** งบทดลอง — all-time, not windowed by the date range the other reports use. */
+export function getTrialBalance(): Promise<TrialBalance> {
+  return apiRequest<TrialBalance>("/admin/reports/ledger");
 }
 
 export function getInstructorOverview(): Promise<InstructorOverview> {

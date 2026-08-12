@@ -9,6 +9,7 @@ import type {
   MetricDto,
   TopCourseDto,
   TopInstructorDto,
+  TrialBalanceDto,
 } from './dto/report-response.dto';
 import {
   REPORT_TIME_ZONE,
@@ -241,6 +242,66 @@ export class ReportsService {
       earnings: money(row.earnings),
       outstandingAmount: money(row.outstanding),
     }));
+  }
+
+  /**
+   * งบทดลอง — the trial balance. Grouped by account kind rather than by
+   * individual account: there is one USER_WALLET per user, and a row per
+   * person would be a screen nobody could read, only one they could scroll
+   * past. All-time, not windowed by a date range — a trial balance answers
+   * "do the books balance", not "did they balance last week".
+   *
+   * `assertEveryTransactionBalances` proves the same fact per transaction in
+   * the test suite; this is that proof surfaced for a human to look at,
+   * summed straight from `LedgerEntry` so it can never disagree with it.
+   */
+  async trialBalance(): Promise<TrialBalanceDto> {
+    const rows = await this.prisma.$queryRaw<
+      {
+        kind: AccountKind;
+        account_count: bigint;
+        total_debit: Prisma.Decimal;
+        total_credit: Prisma.Decimal;
+      }[]
+    >`
+      SELECT
+        a.kind AS kind,
+        COUNT(DISTINCT a.id) AS account_count,
+        COALESCE(SUM(CASE WHEN le.direction = 'DEBIT' THEN le.amount END), 0) AS total_debit,
+        COALESCE(SUM(CASE WHEN le.direction = 'CREDIT' THEN le.amount END), 0) AS total_credit
+      FROM "Account" a
+      LEFT JOIN "LedgerEntry" le ON le."accountId" = a.id
+      GROUP BY a.kind
+      ORDER BY a.kind ASC
+    `;
+
+    let totalDebit = new Prisma.Decimal(0);
+    let totalCredit = new Prisma.Decimal(0);
+
+    const trialRows = rows.map((row) => {
+      totalDebit = totalDebit.plus(row.total_debit);
+      totalCredit = totalCredit.plus(row.total_credit);
+
+      return {
+        kind: row.kind,
+        accountCount: Number(row.account_count),
+        totalDebit: money(row.total_debit),
+        totalCredit: money(row.total_credit),
+        netBalance: row.total_credit.minus(row.total_debit).toFixed(2),
+      };
+    });
+
+    return {
+      rows: trialRows,
+      totalDebit: totalDebit.toFixed(2),
+      totalCredit: totalCredit.toFixed(2),
+      // Comparing formatted strings, not the Decimal objects themselves: two
+      // Decimals can be mathematically equal while disagreeing on internal
+      // scale, and toFixed(2) is the precision every amount in this system
+      // actually leaves as.
+      isBalanced: totalDebit.toFixed(2) === totalCredit.toFixed(2),
+      asOf: new Date().toISOString(),
+    };
   }
 
   // -------------------------------------------------------------------------

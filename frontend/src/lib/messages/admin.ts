@@ -158,6 +158,25 @@ export const adminMessages = {
     columnOutstanding: "ยอดค้างจ่าย",
     payableNote:
       "ยอดค้างจ่ายคือเงินที่บันทึกเข้ากระเป๋าผู้สอนแล้วแต่ยังไม่ได้ถอนออกจากระบบ",
+
+    trialBalanceTitle: "งบทดลอง",
+    trialBalanceSubtitle:
+      "ยอดรวมทั้งหมดตั้งแต่เปิดระบบ อ่านตรงจากบัญชีคู่ ไม่ผูกกับช่วงเวลาด้านบน",
+    trialBalanceEmpty: "ยังไม่มีรายการเงินเข้าระบบ",
+    columnAccountKind: "ประเภทบัญชี",
+    columnAccountCount: "จำนวนบัญชี",
+    columnDebit: "เดบิต",
+    columnCredit: "เครดิต",
+    columnNetBalance: "ยอดสุทธิ",
+    totalRow: "รวมทั้งหมด",
+    balancedNotice: "สมดุล: ผลรวมเดบิตเท่ากับผลรวมเครดิตพอดี",
+    unbalancedNotice: "ไม่สมดุล — ผลรวมเดบิตและเครดิตไม่เท่ากัน กรุณาแจ้งผู้ดูแลระบบ",
+    asOfPrefix: "ข้อมูล ณ เวลา",
+    accountKindLabels: {
+      USER_WALLET: "กระเป๋าเงินผู้ใช้",
+      PLATFORM_REVENUE: "รายได้แพลตฟอร์ม",
+      EXTERNAL_BANK: "เงินจากภายนอกระบบ (ธนาคาร)",
+    } as Record<string, string>,
   },
 
   instructorReports: {

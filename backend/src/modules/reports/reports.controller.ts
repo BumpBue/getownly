@@ -10,6 +10,7 @@ import type {
   InstructorOverviewDto,
   TopCourseDto,
   TopInstructorDto,
+  TrialBalanceDto,
 } from './dto/report-response.dto';
 import { ReportsService } from './reports.service';
 
@@ -40,6 +41,12 @@ export class AdminReportsController {
   @Get('top-instructors')
   topInstructors(@Query() query: ReportRangeQueryDto): Promise<TopInstructorDto[]> {
     return this.reports.topInstructors(query);
+  }
+
+  /** งบทดลอง — proof that the double-entry ledger balances, all-time. */
+  @Get('ledger')
+  trialBalance(): Promise<TrialBalanceDto> {
+    return this.reports.trialBalance();
   }
 }
 
