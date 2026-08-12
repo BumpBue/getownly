@@ -2,13 +2,14 @@ import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { ThrottlerStorage } from '@nestjs/throttler';
 import type { INestApplication } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { Response } from 'supertest';
 import { AppModule } from '@/app.module';
 import { configureApp } from '@/app.setup';
 import { PrismaService } from '@/infra/prisma.service';
 
 export interface Harness {
-  app: INestApplication;
+  app: NestExpressApplication;
   prisma: PrismaService;
   server: ReturnType<INestApplication['getHttpServer']>;
   /** Empties the in-memory rate limit counters between tests. */
@@ -22,7 +23,7 @@ export interface Harness {
 export async function createHarness(): Promise<Harness> {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
 
-  const app = moduleRef.createNestApplication();
+  const app = moduleRef.createNestApplication<NestExpressApplication>();
   configureApp(app, app.get(ConfigService));
   await app.init();
 
