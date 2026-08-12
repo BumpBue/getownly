@@ -1,0 +1,475 @@
+// getownly - database schema
+//
+// Rules that this file must always obey (see CLAUDE.md):
+//   - money is Decimal, never Float
+//   - commission rates are Decimal(5,4), e.g. 0.3000 = platform keeps 30%
+//   - every money movement is written as a LedgerTransaction with balanced
+//     LedgerEntry rows (sum of DEBIT = sum of CREDIT)
+//   - ledger rows are append-only: never UPDATE, never DELETE
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum CourseStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+}
+
+enum TopupStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AccountKind {
+  USER_WALLET
+  PLATFORM_REVENUE
+  EXTERNAL_BANK
+}
+
+enum EntryDirection {
+  DEBIT
+  CREDIT
+}
+
+enum TxType {
+  TOPUP
+  PURCHASE
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  username     String     @unique
+  passwordHash String
+  role         Role
+  status       UserStatus @default(ACTIVE)
+
+  displayName String
+  avatarUrl   String?
+  bio         String?
+  expertise   String?
+
+  /// Platform commission on this user's course sales.
+  /// 0.30 = platform keeps 30%, instructor earns 70%.
+  /// Snapshotted onto Enrollment at purchase time, because it can change later.
+  commissionRate Decimal @default(0.30) @db.Decimal(5, 4)
+
+  /// When the password last changed. Access tokens issued before this moment
+  /// are refused, which is what makes "sign out everywhere" true: revoking
+  /// refresh tokens alone would leave a live access token working for up to
+  /// its remaining 15 minutes.
+  passwordChangedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  courses             Course[]             @relation("CourseInstructor")
+  enrollments         Enrollment[]
+  quizAttempts        QuizAttempt[]
+  qnaThreads          QnaThread[]
+  qnaReplies          QnaReply[]
+  topupRequests       TopupRequest[]       @relation("TopupRequester")
+  reviewedTopups      TopupRequest[]       @relation("TopupReviewer")
+  accounts            Account[]
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+
+  // email and username are already indexed by their unique constraints.
+  @@index([role])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  /// Only the hash is stored. The raw token lives in the httpOnly cookie.
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Catalog
+// ---------------------------------------------------------------------------
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  courses Course[]
+}
+
+model Course {
+  id           String @id @default(cuid())
+  instructorId String
+  categoryId   String
+
+  title       String
+  description String
+  /// MinIO object key of the cover image, e.g. "cover/<userId>/<uuid>.jpg".
+  /// The API turns it into a short-lived signed URL on the way out; a URL is
+  /// never stored, because every signed URL expires.
+  coverKey    String?
+  /// Selling price in baht. 0 means the course is free.
+  price       Decimal @default(0) @db.Decimal(10, 2)
+
+  status       CourseStatus @default(DRAFT)
+  /// Filled in by an admin when status becomes REJECTED.
+  rejectReason String?
+  publishedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  instructor  User         @relation("CourseInstructor", fields: [instructorId], references: [id], onDelete: Restrict)
+  category    Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  lessons     Lesson[]
+  enrollments Enrollment[]
+  qnaThreads  QnaThread[]
+
+  @@index([status, categoryId])
+  @@index([instructorId])
+}
+
+model Lesson {
+  id       String @id @default(cuid())
+  courseId String
+
+  title      String
+  orderIndex Int
+  /// MinIO object key of the video. Streamed through the API, never presigned.
+  videoKey    String?
+  durationSec Int?
+  /// Preview lessons are watchable before buying the course.
+  isPreview   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  course     Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  materials  Material[]
+  quiz       Quiz?
+  progress   LessonProgress[]
+  qnaThreads QnaThread[]
+
+  @@unique([courseId, orderIndex])
+}
+
+model Material {
+  id       String @id @default(cuid())
+  lessonId String
+
+  fileName String
+  /// MinIO object key.
+  fileKey  String
+  /// Size in bytes.
+  fileSize Int
+  mimeType String
+
+  createdAt DateTime @default(now())
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+}
+
+// ---------------------------------------------------------------------------
+// Quizzes
+// ---------------------------------------------------------------------------
+
+model Quiz {
+  id       String @id @default(cuid())
+  /// One quiz per lesson at most.
+  lessonId String @unique
+
+  title String
+  /// Percentage needed to pass, 0-100.
+  passScore Int
+
+  createdAt DateTime @default(now())
+
+  lesson    Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions QuizQuestion[]
+  attempts  QuizAttempt[]
+}
+
+model QuizQuestion {
+  id     String @id @default(cuid())
+  quizId String
+
+  questionText String
+  orderIndex   Int
+
+  quiz    Quiz                @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  choices QuizChoice[]
+  answers QuizAttemptAnswer[]
+
+  @@index([quizId])
+}
+
+model QuizChoice {
+  id         String @id @default(cuid())
+  questionId String
+
+  choiceText String
+  /// Never expose this field while a student is taking the quiz.
+  isCorrect  Boolean
+  orderIndex Int
+
+  question QuizQuestion        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answers  QuizAttemptAnswer[]
+
+  @@index([questionId])
+}
+
+model QuizAttempt {
+  id        String @id @default(cuid())
+  quizId    String
+  studentId String
+
+  /// Percentage scored on this attempt, 0-100.
+  score  Int
+  passed Boolean
+
+  attemptedAt DateTime @default(now())
+
+  quiz    Quiz                @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  student User                @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  answers QuizAttemptAnswer[]
+
+  @@index([quizId, studentId])
+}
+
+model QuizAttemptAnswer {
+  id         String @id @default(cuid())
+  attemptId  String
+  questionId String
+  choiceId   String
+
+  attempt  QuizAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  choice   QuizChoice   @relation(fields: [choiceId], references: [id], onDelete: Restrict)
+
+  @@index([attemptId])
+}
+
+// ---------------------------------------------------------------------------
+// Enrollment and progress
+// ---------------------------------------------------------------------------
+
+model Enrollment {
+  id        String @id @default(cuid())
+  courseId  String
+  studentId String
+
+  /// What the student actually paid. Snapshot: the course price can change later.
+  pricePaid Decimal @db.Decimal(10, 2)
+  /// Commission rate applied to this sale. Snapshot for the same reason.
+  commissionRateSnapshot Decimal @db.Decimal(5, 4)
+
+  enrolledAt DateTime @default(now())
+
+  course   Course           @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  student  User             @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  progress LessonProgress[]
+
+  @@unique([courseId, studentId])
+  @@index([studentId])
+}
+
+model LessonProgress {
+  id           String @id @default(cuid())
+  enrollmentId String
+  lessonId     String
+
+  /// Resume position of the video player, in seconds.
+  lastPositionSec Int       @default(0)
+  completedAt     DateTime?
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, lessonId])
+  @@index([lessonId])
+}
+
+// ---------------------------------------------------------------------------
+// Q&A
+// ---------------------------------------------------------------------------
+
+model QnaThread {
+  id        String  @id @default(cuid())
+  courseId  String
+  /// Optional: a question can be tied to one specific lesson.
+  lessonId  String?
+  studentId String
+
+  title      String
+  body       String
+  isResolved Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course  Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson  Lesson?    @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  student User       @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  replies QnaReply[]
+
+  @@index([courseId, isResolved])
+  @@index([studentId])
+}
+
+model QnaReply {
+  id       String @id @default(cuid())
+  threadId String
+  userId   String
+
+  body String
+
+  createdAt DateTime @default(now())
+
+  thread QnaThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user   User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([threadId])
+}
+
+// ---------------------------------------------------------------------------
+// Wallet top-up (manual slip review by an admin)
+// ---------------------------------------------------------------------------
+
+model TopupRequest {
+  id        String @id @default(cuid())
+  studentId String
+
+  /// Amount the QR code was generated for, in baht.
+  amount Decimal @db.Decimal(10, 2)
+  /// MinIO object key of the uploaded transfer slip.
+  slipKey String
+
+  status       TopupStatus @default(PENDING)
+  reviewedById String?
+  reviewedAt   DateTime?
+  /// Admin note, required when rejecting.
+  note         String?
+
+  createdAt DateTime @default(now())
+
+  student    User  @relation("TopupRequester", fields: [studentId], references: [id], onDelete: Restrict)
+  reviewedBy User? @relation("TopupReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([studentId])
+}
+
+// ---------------------------------------------------------------------------
+// Double-entry ledger
+// ---------------------------------------------------------------------------
+
+/// One account per wallet, plus exactly one PLATFORM_REVENUE account and one
+/// EXTERNAL_BANK account, both with ownerId = null.
+///
+/// balance is a cached projection of the entries below it. The ledger is the
+/// source of truth; balance must only ever be written inside the same
+/// transaction that writes the entries.
+model Account {
+  id      String      @id @default(cuid())
+  ownerId String?
+  kind    AccountKind
+  balance Decimal     @default(0) @db.Decimal(14, 2)
+
+  createdAt DateTime @default(now())
+
+  owner   User?        @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  entries LedgerEntry[]
+
+  @@unique([ownerId, kind])
+  @@index([kind])
+}
+
+/// Append-only. One row per money movement, holding balanced entries.
+model LedgerTransaction {
+  id   String @id @default(cuid())
+  type TxType
+
+  /// Deterministic key derived from what caused the movement, e.g.
+  /// "topup:<topupRequestId>" or "purchase:<enrollmentId>". The unique
+  /// constraint is the last line of defence against posting the same
+  /// money movement twice (double click, retried request).
+  idempotencyKey String @unique
+
+  /// What caused this transaction, e.g. "TopupRequest" / "Enrollment".
+  referenceType String
+  referenceId   String
+  description   String
+
+  createdAt DateTime @default(now())
+
+  entries LedgerEntry[]
+
+  @@index([referenceType, referenceId])
+  @@index([createdAt])
+}
+
+/// Append-only. Sum of DEBIT amounts must equal sum of CREDIT amounts
+/// within a single transaction.
+model LedgerEntry {
+  id            String         @id @default(cuid())
+  transactionId String
+  accountId     String
+  direction     EntryDirection
+  amount        Decimal        @db.Decimal(14, 2)
+
+  transaction LedgerTransaction @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  account     Account           @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@index([accountId])
+  @@index([transactionId])
+}

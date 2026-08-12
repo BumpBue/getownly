@@ -1,0 +1,94 @@
+import { HttpStatus } from '@nestjs/common';
+import { BusinessException } from './business.exception';
+
+// Errors raised by the classroom and the quizzes: everything that happens
+// after a course has been bought.
+//
+// Like catalog.exceptions.ts they live in common/ because more than one module
+// raises them — CourseAccessService answers "are you enrolled?" for the learn
+// module and the quiz module alike.
+
+/**
+ * Owning a course is not the same as being enrolled in it.
+ *
+ * The classroom is deliberately strict: an instructor previewing their own
+ * course has no Enrollment row, so it has nowhere to record progress. They
+ * review their material through the curriculum editor instead.
+ */
+export class NotEnrolledException extends BusinessException {
+  constructor() {
+    super(HttpStatus.FORBIDDEN, 'NOT_ENROLLED', 'ต้องลงทะเบียนคอร์สนี้ก่อนจึงจะเข้าห้องเรียนได้');
+  }
+}
+
+/** The lesson exists but belongs to a different course than the URL says. */
+export class LessonNotInCourseException extends BusinessException {
+  constructor() {
+    super(HttpStatus.NOT_FOUND, 'LESSON_NOT_IN_COURSE', 'ไม่พบบทเรียนนี้ในคอร์สที่ระบุ');
+  }
+}
+
+export class QuizNotFoundException extends BusinessException {
+  constructor() {
+    super(HttpStatus.NOT_FOUND, 'QUIZ_NOT_FOUND', 'ไม่พบแบบทดสอบที่ระบุ');
+  }
+}
+
+/** One lesson holds at most one quiz — the schema's unique constraint, stated in Thai. */
+export class QuizAlreadyExistsException extends BusinessException {
+  constructor() {
+    super(
+      HttpStatus.CONFLICT,
+      'QUIZ_ALREADY_EXISTS',
+      'บทเรียนนี้มีแบบทดสอบอยู่แล้ว หากต้องการเปลี่ยนให้แก้ไขชุดเดิม',
+    );
+  }
+}
+
+/**
+ * Refuses to rewrite a quiz people have already sat.
+ *
+ * Editing the questions would silently change what a past score meant, the
+ * same reasoning that blocks deleting a watched lesson (PLAN.md, R17).
+ */
+export class QuizHasAttemptsException extends BusinessException {
+  constructor(attemptCount: number) {
+    super(
+      HttpStatus.CONFLICT,
+      'QUIZ_HAS_ATTEMPTS',
+      'มีผู้เรียนทำแบบทดสอบชุดนี้ไปแล้ว จึงแก้ไขหรือลบไม่ได้',
+      { attemptCount },
+    );
+  }
+}
+
+/** Every question needs exactly one right answer for the score to mean anything. */
+export class QuizQuestionInvalidException extends BusinessException {
+  constructor(questionIndex: number) {
+    super(
+      HttpStatus.UNPROCESSABLE_ENTITY,
+      'QUIZ_QUESTION_INVALID',
+      'ทุกข้อต้องมีตัวเลือกที่ถูกต้องเพียงหนึ่งตัวเลือกเท่านั้น',
+      { questionIndex },
+    );
+  }
+}
+
+/**
+ * The submitted answers are not one choice per question of this quiz.
+ *
+ * Covers a missing answer, a duplicate answer and a choice copied from another
+ * question — all of which would make the score arithmetic meaningless.
+ */
+export class QuizAnswerMismatchException extends BusinessException {
+  constructor(reason: 'INCOMPLETE' | 'UNKNOWN_QUESTION' | 'UNKNOWN_CHOICE') {
+    super(
+      HttpStatus.UNPROCESSABLE_ENTITY,
+      'QUIZ_ANSWER_MISMATCH',
+      reason === 'INCOMPLETE'
+        ? 'กรุณาตอบให้ครบทุกข้อก่อนส่งคำตอบ'
+        : 'คำตอบที่ส่งมาไม่ตรงกับข้อสอบชุดนี้',
+      { reason },
+    );
+  }
+}

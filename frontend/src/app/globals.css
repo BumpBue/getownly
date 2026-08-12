@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+/*
+ * getownly design tokens - single source of truth.
+ * Never hardcode a hex value in a component; use the utilities generated here
+ * (bg-primary, text-muted, border-border, rounded-card, ...).
+ */
+@theme {
+  /* brand */
+  --color-primary: #1e3a5c;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #c9a063;
+  --color-secondary-foreground: #ffffff;
+
+  /* text */
+  --color-foreground: #111827;
+  --color-muted: #6b7280;
+  --color-subtle: #9ca3af;
+
+  /* surfaces */
+  --color-background: #f8f9fa;
+  --color-card: #ffffff;
+  --color-border: #e5e7eb;
+
+  /* status */
+  --color-success: #2e7d5b;
+  --color-pending: #b8860b;
+  --color-destructive: #b3261e;
+  /* Text laid on top of a status colour. Same white already used on primary. */
+  --color-destructive-foreground: #ffffff;
+
+  /* typography - Thai UI everywhere */
+  --font-sans: var(--font-ibm-plex-sans-thai), system-ui, sans-serif;
+
+  /* radius: 8px for controls, 12px for cards */
+  --radius-control: 0.5rem;
+  --radius-card: 0.75rem;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Money columns must line up digit for digit. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  }
+}

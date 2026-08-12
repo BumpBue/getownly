@@ -1,0 +1,39 @@
+{
+  "name": "getownly",
+  "version": "0.1.0",
+  "private": true,
+  "description": "getownly - online course marketplace with Thai PromptPay wallet top-up",
+  "packageManager": "pnpm@10.29.3",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,magenta \"pnpm dev:be\" \"pnpm dev:fe\"",
+    "dev:be": "pnpm --filter backend dev",
+    "dev:fe": "pnpm --filter frontend dev",
+    "build": "pnpm build:shared && pnpm --filter backend build && pnpm --filter frontend build",
+    "build:shared": "pnpm --filter @getownly/shared build",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:reset": "docker compose down -v && docker compose up -d",
+    "db:migrate": "pnpm --filter backend db:migrate",
+    "db:migrate:name": "pnpm --filter backend db:migrate:name",
+    "db:deploy": "pnpm --filter backend db:deploy",
+    "db:generate": "pnpm --filter backend db:generate",
+    "db:reset": "pnpm --filter backend db:reset",
+    "db:seed": "pnpm --filter backend db:seed",
+    "db:demo": "pnpm --filter backend db:demo",
+    "demo:reset": "pnpm --filter backend demo:reset",
+    "seed": "pnpm --filter backend db:seed",
+    "db:studio": "pnpm --filter backend db:studio",
+    "test": "pnpm --filter backend test",
+    "test:watch": "pnpm --filter backend test:watch",
+    "lint": "pnpm --filter backend lint && pnpm --filter frontend lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,md,yaml,yml,css}\" --ignore-path .gitignore",
+    "typecheck": "pnpm --filter @getownly/shared typecheck && pnpm --filter backend typecheck && pnpm --filter frontend typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "prettier": "^3.4.2"
+  }
+}

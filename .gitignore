@@ -1,0 +1,33 @@
+node_modules/
+.pnpm-store/
+
+# build output
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# environment - never commit real secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# test / coverage
+coverage/
+test-results/
+playwright-report/
+
+# editor / os
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# runtime
+*.log
+npm-debug.log*
+docker-data/

@@ -1,0 +1,17 @@
+packages:
+  - backend
+  - frontend
+  - packages/*
+
+# pnpm 10 blocks dependency build scripts by default.
+# Only these packages are allowed to run their install scripts.
+onlyBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
+  - '@swc/core'
+  - '@tailwindcss/oxide'
+  - bcrypt
+  - esbuild
+  - prisma
+  - sharp
+  - unrs-resolver
