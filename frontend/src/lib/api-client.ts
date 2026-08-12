@@ -114,6 +114,16 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     if (refreshed) {
       response = await rawFetch(path, options);
     }
+
+    // Still unauthenticated after the one rotation attempt: the refresh
+    // token is gone (expired, revoked, or the account's password changed
+    // elsewhere). Every caller that reaches this branch lives behind a
+    // route middleware.ts already gates on being signed in, so a 401 here
+    // is never a normal answer — retrying it or showing an error state
+    // would just strand the user on a dead screen with no way out.
+    if (response.status === 401) {
+      redirectToLogin();
+    }
   }
 
   if (!response.ok) {
@@ -125,6 +135,21 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
 
   return (await response.json()) as T;
+}
+
+/**
+ * The one place a dead session sends the browser to `/login`.
+ *
+ * Guarded against the login page itself: `skipRefresh` already keeps
+ * `/auth/login` and friends out of this path, but a stray future call from
+ * `/login` must not be able to loop the redirect back onto itself.
+ */
+function redirectToLogin(): void {
+  if (typeof window === "undefined" || window.location.pathname === "/login") {
+    return;
+  }
+  const next = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
+  window.location.assign(`/login?next=${next}`);
 }
 
 async function readErrorBody(response: Response, path: string): Promise<ApiErrorBody> {
