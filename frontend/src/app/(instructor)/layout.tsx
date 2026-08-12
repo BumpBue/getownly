@@ -22,7 +22,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
           <span className="text-xs text-secondary">{nav.role}</span>
         </div>
 
-        <nav className="flex flex-row gap-1 lg:flex-1 lg:flex-col">
+        <nav className="flex flex-row flex-wrap gap-1 lg:flex-1 lg:flex-col lg:flex-nowrap">
           <SidebarLink href="/instructor" icon={<LayoutDashboard aria-hidden className="size-4" />}>
             {nav.dashboard}
           </SidebarLink>

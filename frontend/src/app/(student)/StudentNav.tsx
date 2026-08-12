@@ -65,12 +65,12 @@ export function StudentNav() {
 
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-card">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2 sm:px-6 lg:px-8">
         <Link href="/" className="text-xl font-semibold text-primary">
           {nav.brand}
         </Link>
 
-        <nav className="flex items-center gap-1 text-sm">
+        <nav className="flex flex-wrap items-center gap-1 text-sm">
           {LINKS.map((link) => (
             <Link
               key={link.href}
