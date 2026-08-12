@@ -42,12 +42,12 @@ getownly/
 ├─ pnpm-workspace.yaml
 ├─ package.json            สคริปต์รวมของทั้ง workspace
 ├─ docker-compose.yml      postgres + minio + mailhog
-├─ .env.example            ตัวแปรทั้งหมดที่ระบบต้องใช้ (ห้าม commit .env จริง)
 ├─ CLAUDE.md
 ├─ PLAN.md
 ├─ README.md
 │
 ├─ backend/                NestJS
+│  ├─ .env.example         ตัวแปรฝั่ง backend (ห้าม commit .env จริง)
 │  ├─ prisma/
 │  │  ├─ schema.prisma
 │  │  ├─ migrations/
@@ -62,6 +62,7 @@ getownly/
 │  └─ test/
 │
 ├─ frontend/               Next.js
+│  ├─ .env.example         ตัวแปรฝั่ง frontend (ห้าม commit .env.local จริง)
 │  ├─ src/
 │  │  ├─ app/              route groups: (public) (auth) (student) (instructor) (admin)
 │  │  ├─ components/
@@ -236,7 +237,8 @@ dto/                      DTO เข้า (class-validator) และ response 
 ```bash
 # ครั้งแรก
 pnpm install
-cp .env.example .env
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env.local
 pnpm docker:up
 pnpm db:migrate
 pnpm db:seed
