@@ -28,6 +28,10 @@ export function updateProfile(input: {
   return apiRequest<UserProfile>("/users/me", { method: "PATCH", body: input });
 }
 
+export function updateAvatar(avatarKey: string): Promise<UserProfile> {
+  return apiRequest<UserProfile>("/users/me/avatar", { method: "PATCH", body: { avatarKey } });
+}
+
 export function changePassword(input: {
   currentPassword: string;
   newPassword: string;

@@ -220,6 +220,12 @@ export const adminMessages = {
     roleLabel: "บทบาท",
     memberSince: "สมาชิกตั้งแต่",
     fixedNote: "อีเมลและชื่อผู้ใช้เปลี่ยนเองไม่ได้ หากต้องการแก้ไขกรุณาติดต่อผู้ดูแลระบบ",
+    avatarHeading: "รูปโปรไฟล์",
+    avatarHint: "แนะนำภาพสี่เหลี่ยมจัตุรัส · JPG PNG หรือ WebP ไม่เกิน 5 MB",
+    avatarUpload: "อัปโหลดรูปโปรไฟล์",
+    avatarReplace: "เปลี่ยนรูปโปรไฟล์",
+    avatarSaved: "เปลี่ยนรูปโปรไฟล์เรียบร้อยแล้ว",
+    avatarUploadFailed: "อัปโหลดรูปโปรไฟล์ไม่สำเร็จ",
     profileHeading: "ข้อมูลที่แสดงต่อผู้อื่น",
     displayNameLabel: "ชื่อที่แสดง",
     bioLabel: "แนะนำตัว",
@@ -242,6 +248,7 @@ export const adminMessages = {
     passwordMismatch: "รหัสผ่านใหม่ทั้งสองช่องไม่ตรงกัน",
     changePassword: "เปลี่ยนรหัสผ่าน",
     changingPassword: "กำลังเปลี่ยนรหัสผ่าน...",
+    passwordChangedRedirecting: "เปลี่ยนรหัสผ่านเรียบร้อยแล้ว กำลังพาไปหน้าเข้าสู่ระบบ...",
   },
 
   role: {
