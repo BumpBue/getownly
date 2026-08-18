@@ -58,6 +58,7 @@ export const courseMessages = {
     editCourse: "แก้ไขคอร์ส",
     // The buy / top-up / enrol wording lives in messages/wallet.ts, next to the
     // panel that owns those decisions, so there is one place to change it.
+    priceNote: "ซื้อครั้งเดียว เรียนได้ตลอดชีพ",
     includes: "สิ่งที่ได้รับ",
     includesLifetime: "เข้าเรียนได้ตลอดชีพ ไม่มีวันหมดอายุ",
     includesDevices: "เรียนได้ทุกอุปกรณ์ผ่านเว็บเบราว์เซอร์",

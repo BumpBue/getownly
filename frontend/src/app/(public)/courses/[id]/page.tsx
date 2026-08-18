@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { CourseStatusBadge } from "@/components/shared/CourseStatusBadge";
+import { StickyPanel } from "@/components/shared/StickyPanel";
 import { formatBaht, formatClock, formatCount, formatDuration, isFree } from "@/lib/format";
 import { courseMessages } from "@/lib/messages/courses";
 import { walletMessages } from "@/lib/messages/wallet";
@@ -172,9 +173,15 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
             ) : (
               <ul className="divide-y divide-border">
                 {course.lessons.map((lesson) => (
-                  <li key={lesson.id} className="flex items-center gap-3 px-5 py-3.5">
+                  <li
+                    key={lesson.id}
+                    className="group/lesson flex items-center gap-3 px-5 py-3.5 transition-colors duration-150 hover:bg-background"
+                  >
                     {lesson.isPreview ? (
-                      <PlayCircle aria-hidden className="size-4 shrink-0 text-primary" />
+                      <PlayCircle
+                        aria-hidden
+                        className="size-4 shrink-0 text-primary transition-colors duration-150 group-hover/lesson:text-secondary"
+                      />
                     ) : (
                       <Lock aria-hidden className="size-4 shrink-0 text-subtle" />
                     )}
@@ -223,19 +230,24 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
         {/* ---------------------------------------------------------------- */}
         {/* Sticky purchase card                                              */}
         {/* ---------------------------------------------------------------- */}
-        <aside className="lg:sticky lg:top-24 lg:self-start">
-          <Card>
+        <StickyPanel as="aside" top={96}>
+          {/*
+            The design tops the purchase panel with a gold rule - the same
+            accent the headings carry, turned into the panel's own edge so the
+            one card that takes money is marked as different from the cards
+            that only describe.
+          */}
+          <Card className="border-t-4 border-t-secondary">
             <CardBody className="flex flex-col gap-5">
-              <div>
+              <div className="text-center">
                 {free ? (
-                  <p className="tabular text-3xl font-bold text-success">
-                    {courseMessages.card.free}
-                  </p>
+                  <p className="text-4xl font-bold text-success">{courseMessages.card.free}</p>
                 ) : (
-                  <p className="tabular text-3xl font-bold text-secondary">
+                  <p className="tabular text-4xl font-bold text-secondary">
                     {formatBaht(course.price)}
                   </p>
                 )}
+                <p className="mt-2 text-xs tracking-wide text-subtle">{detail.priceNote}</p>
               </div>
 
               {course.isOwner ? (
@@ -281,7 +293,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
               </div>
             </CardBody>
           </Card>
-        </aside>
+        </StickyPanel>
       </div>
     </div>
   );

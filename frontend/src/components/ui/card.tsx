@@ -23,11 +23,30 @@ const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 );
 CardHeader.displayName = "CardHeader";
 
-const CardTitle = React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(
-  ({ className, ...props }, ref) => (
-    <h2 ref={ref} className={cn("text-base font-semibold text-foreground", className)} {...props} />
-  ),
-);
+/**
+ * A card heading, carrying the design's gold accent rule at card scale -
+ * shorter and thinner than the one SectionHeading puts beside a page section,
+ * so the two read as the same mark at two levels rather than competing.
+ *
+ * The rule is on by default rather than opt-in because the design puts it on
+ * every card heading it draws: an accent that has to be remembered at each
+ * call site is one that will be missing from a third of them. `accent={false}`
+ * is there for a heading that is not a section start - a title inside a modal,
+ * where the surrounding chrome already does the separating.
+ */
+const CardTitle = React.forwardRef<
+  HTMLHeadingElement,
+  React.HTMLAttributes<HTMLHeadingElement> & { accent?: boolean }
+>(({ className, accent = true, children, ...props }, ref) => (
+  <h2
+    ref={ref}
+    className={cn("flex items-center gap-2.5 text-base font-semibold text-foreground", className)}
+    {...props}
+  >
+    {accent && <span aria-hidden className="h-5 w-1 shrink-0 rounded-full bg-secondary" />}
+    {children}
+  </h2>
+));
 CardTitle.displayName = "CardTitle";
 
 const CardBody = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
