@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { courseMessages } from "@/lib/messages/courses";
-import { COURSE_SORTS, type Category, type CourseFilterState } from "@/lib/catalog/types";
+import { type Category, type CourseFilterState } from "@/lib/catalog/types";
 
 /**
  * The filter sidebar.
@@ -74,16 +74,13 @@ export function CourseFilters({
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="filter-search">{filters.search}</Label>
-        <div className="relative">
-          <Search aria-hidden className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-subtle" />
-          <Input
-            id="filter-search"
-            value={draft.search}
-            onChange={(event) => setDraft({ ...draft, search: event.target.value })}
-            placeholder={filters.searchPlaceholder}
-            className="pl-9"
-          />
-        </div>
+        <Input
+          id="filter-search"
+          icon={Search}
+          value={draft.search}
+          onChange={(event) => setDraft({ ...draft, search: event.target.value })}
+          placeholder={filters.searchPlaceholder}
+        />
       </div>
 
       <div className="flex flex-col gap-2">
@@ -135,23 +132,6 @@ export function CourseFilters({
           />
           {filters.freeOnly}
         </label>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="filter-sort">{filters.sort}</Label>
-        <Select
-          id="filter-sort"
-          value={draft.sort}
-          onChange={(event) =>
-            setDraft({ ...draft, sort: event.target.value as CourseFilterState["sort"] })
-          }
-        >
-          {COURSE_SORTS.map((sort) => (
-            <option key={sort} value={sort}>
-              {filters.sortLabels[sort]}
-            </option>
-          ))}
-        </Select>
       </div>
 
       <div className="flex flex-col gap-2">

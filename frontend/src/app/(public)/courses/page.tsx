@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { SearchX, ServerCrash } from "lucide-react";
 import { CourseCard } from "@/components/shared/CourseCard";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { SectionHeading } from "@/components/shared/SectionHeading";
 import { formatCount } from "@/lib/format";
 import { courseMessages } from "@/lib/messages/courses";
 import { serverFetch } from "@/lib/server-api";
@@ -14,6 +15,7 @@ import {
 } from "@/lib/catalog/types";
 import { CourseFilters } from "./CourseFilters";
 import { CoursePagination } from "./CoursePagination";
+import { CourseSortSelect } from "./CourseSortSelect";
 
 export const metadata: Metadata = {
   title: courseMessages.catalog.title,
@@ -46,10 +48,7 @@ export default async function CoursesPage({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <header className="mb-8">
-        <h1 className="text-2xl font-semibold text-primary lg:text-3xl">{catalog.title}</h1>
-        <p className="mt-2 text-sm text-muted">{catalog.subtitle}</p>
-      </header>
+      <SectionHeading as="h1" title={catalog.title} subtitle={catalog.subtitle} className="mb-8" />
 
       <div className="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
         <aside className="lg:sticky lg:top-24 lg:self-start">
@@ -68,13 +67,17 @@ export default async function CoursesPage({
             <EmptyState icon={SearchX} title={catalog.emptyTitle} body={catalog.emptyBody} />
           ) : (
             <>
-              <p className="mb-4 text-sm text-muted">
-                {catalog.resultsPrefix}{" "}
-                <span className="tabular font-medium text-foreground">
-                  {formatCount(courses.total)}
-                </span>{" "}
-                {catalog.resultsSuffix}
-              </p>
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+                <p className="text-sm text-muted">
+                  {catalog.resultsPrefix}{" "}
+                  <span className="tabular font-medium text-foreground">
+                    {formatCount(courses.total)}
+                  </span>{" "}
+                  {catalog.resultsSuffix}
+                </p>
+
+                <CourseSortSelect current={filters} />
+              </div>
 
               <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {courses.items.map((course) => (
