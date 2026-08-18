@@ -4,11 +4,18 @@ import { cn } from "@/lib/utils";
 export function Progress({
   value,
   label,
+  tone = "primary",
   className,
 }: {
   /** 0-100. */
   value: number;
   label?: string;
+  /**
+   * `secondary` is the design's gold learning-progress bar. Upload progress
+   * stays `primary`: gold reads as an achievement, and a file moving across
+   * the wire is not one.
+   */
+  tone?: "primary" | "secondary";
   className?: string;
 }) {
   const clamped = Math.min(100, Math.max(0, value));
@@ -30,7 +37,10 @@ export function Progress({
         className="h-1.5 w-full overflow-hidden rounded-full border border-border bg-background"
       >
         <div
-          className="h-full bg-primary transition-[width] duration-150"
+          className={cn(
+            "h-full transition-[width] duration-150",
+            tone === "secondary" ? "bg-secondary" : "bg-primary",
+          )}
           style={{ width: `${clamped}%` }}
         />
       </div>

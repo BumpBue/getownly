@@ -31,4 +31,14 @@ export const navMessages = {
     openMenu: "เปิดเมนู",
     closeMenu: "ปิดเมนู",
   },
+
+  /** Phone-only bar for signed-in students (BottomNav). */
+  bottomNav: {
+    label: "เมนูหลัก",
+    home: "หน้าแรก",
+    search: "ค้นหา",
+    myCourses: "คอร์สของฉัน",
+    wallet: "กระเป๋าเงิน",
+    profile: "โปรไฟล์",
+  },
 } as const;
