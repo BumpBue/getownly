@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { BookOpen, GraduationCap, Layers, Plus, ServerCrash } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CourseStatusBadge } from "@/components/shared/CourseStatusBadge";
@@ -46,19 +47,19 @@ export default function InstructorDashboardPage() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-primary">{dashboard.title}</h1>
-          <p className="mt-1 text-sm text-muted">{dashboard.subtitle}</p>
-        </div>
-
-        <Button asChild>
-          <Link href="/instructor/courses/new">
-            <Plus aria-hidden />
-            {instructorMessages.nav.newCourse}
-          </Link>
-        </Button>
-      </header>
+      <SectionHeading
+        as="h1"
+        title={dashboard.title}
+        subtitle={dashboard.subtitle}
+        action={
+          <Button asChild>
+            <Link href="/instructor/courses/new">
+              <Plus aria-hidden />
+              {instructorMessages.nav.newCourse}
+            </Link>
+          </Button>
+        }
+      />
 
       {loading ? (
         <DashboardSkeleton />
@@ -124,14 +125,21 @@ function StatCards({ stats }: { stats: InstructorStats }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
       {tiles.map(({ label, value, icon: Icon, tone }) => (
-        <div key={label} className="rounded-card border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-xs text-muted">
-            <Icon aria-hidden className={`size-3.5 ${tone}`} />
-            {label}
+        <div
+          key={label}
+          className="flex items-center gap-3 rounded-card border border-border bg-card p-4"
+        >
+          <span
+            className={`flex size-10 shrink-0 items-center justify-center rounded-control bg-background ${tone}`}
+          >
+            <Icon aria-hidden className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-xs text-muted">{label}</p>
+            <p className="tabular mt-0.5 text-2xl font-semibold text-foreground">
+              {formatCount(value)}
+            </p>
           </div>
-          <p className="tabular mt-2 text-2xl font-semibold text-foreground">
-            {formatCount(value)}
-          </p>
         </div>
       ))}
     </div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, BarChart3, Inbox, LayoutDashboard, Plus, UserRound } from "lucide-react";
+import { SidebarLink } from "@/components/shared/SidebarLink";
 import { instructorMessages } from "@/lib/messages/instructor";
 
 /**
@@ -23,7 +24,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
         </div>
 
         <nav className="flex flex-row flex-wrap gap-1 lg:flex-1 lg:flex-col lg:flex-nowrap">
-          <SidebarLink href="/instructor" icon={<LayoutDashboard aria-hidden className="size-4" />}>
+          <SidebarLink exact href="/instructor" icon={<LayoutDashboard aria-hidden className="size-4" />}>
             {nav.dashboard}
           </SidebarLink>
           <SidebarLink href="/instructor/courses/new" icon={<Plus aria-hidden className="size-4" />}>
@@ -62,22 +63,3 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
   );
 }
 
-function SidebarLink({
-  href,
-  icon,
-  children,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center gap-2.5 rounded-control px-3 py-2 text-sm font-medium text-primary-foreground/85 transition-colors duration-150 hover:bg-primary-foreground/10 hover:text-primary-foreground"
-    >
-      {icon}
-      {children}
-    </Link>
-  );
-}
