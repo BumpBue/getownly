@@ -80,6 +80,7 @@ export const authMessages = {
     submitting: "กำลังส่ง...",
     backToLogin: "กลับไปหน้าเข้าสู่ระบบ",
     checkInbox: "ตรวจสอบกล่องจดหมายของคุณ",
+    spamHint: "หากไม่พบอีเมลในกล่องจดหมายเข้า กรุณาตรวจสอบในโฟลเดอร์จดหมายขยะ (Spam)",
   },
 
   resetPassword: {

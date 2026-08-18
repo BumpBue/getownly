@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MailCheck } from "lucide-react";
+import { ArrowLeft, KeyRound, Mail, MailCheck } from "lucide-react";
 import { AuthFormHeader } from "@/components/shared/AuthFormHeader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -47,13 +47,17 @@ export function ForgotPasswordForm() {
   if (sentMessage) {
     return (
       <>
-        <AuthFormHeader title={t.checkInbox} subtitle={sentMessage} />
+        <AuthFormHeader
+          icon={MailCheck}
+          tone="success"
+          align="center"
+          title={t.checkInbox}
+          subtitle={sentMessage}
+        />
 
-        <div className="flex justify-center py-4 text-success">
-          <MailCheck aria-hidden className="size-12" strokeWidth={1.5} />
-        </div>
+        <p className="mb-8 text-center text-xs leading-relaxed text-subtle">{t.spamHint}</p>
 
-        <Button asChild block variant="outline" className="mt-4">
+        <Button asChild block variant="outline">
           <Link href="/login">{t.backToLogin}</Link>
         </Button>
       </>
@@ -62,7 +66,7 @@ export function ForgotPasswordForm() {
 
   return (
     <>
-      <AuthFormHeader title={t.title} subtitle={t.subtitle} />
+      <AuthFormHeader icon={KeyRound} title={t.title} subtitle={t.subtitle} />
 
       {formError ? (
         <Alert tone="error" className="mb-6">
@@ -75,6 +79,7 @@ export function ForgotPasswordForm() {
           <Input
             id="email"
             type="email"
+            icon={Mail}
             autoComplete="email"
             placeholder={t.emailPlaceholder}
             invalid={Boolean(errors.email)}
@@ -88,7 +93,14 @@ export function ForgotPasswordForm() {
       </form>
 
       <p className="mt-8 border-t border-border pt-6 text-center text-sm">
-        <Link href="/login" className="font-medium text-primary underline-offset-4 hover:underline">
+        <Link
+          href="/login"
+          className="group inline-flex items-center gap-1.5 font-medium text-muted transition-colors duration-150 hover:text-primary"
+        >
+          <ArrowLeft
+            aria-hidden
+            className="size-4 transition-transform duration-150 group-hover:-translate-x-1"
+          />
           {t.backToLogin}
         </Link>
       </p>

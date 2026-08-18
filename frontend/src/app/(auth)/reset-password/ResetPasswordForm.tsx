@@ -5,12 +5,12 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, KeyRound } from "lucide-react";
 import { AuthFormHeader } from "@/components/shared/AuthFormHeader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { resetPassword } from "@/lib/auth/api";
 import { applyApiError } from "@/lib/auth/form-errors";
 import { resetPasswordSchema, type ResetPasswordValues } from "@/lib/auth/schemas";
@@ -47,7 +47,7 @@ export function ResetPasswordForm() {
   if (!token) {
     return (
       <>
-        <AuthFormHeader title={t.title} subtitle={t.missingToken} />
+        <AuthFormHeader icon={AlertTriangle} title={t.title} subtitle={t.missingToken} />
         <div className="grid gap-3">
           <Button asChild block>
             <Link href="/forgot-password">{t.requestNewLink}</Link>
@@ -63,13 +63,15 @@ export function ResetPasswordForm() {
   if (doneMessage) {
     return (
       <>
-        <AuthFormHeader title={t.title} subtitle={doneMessage} />
+        <AuthFormHeader
+          icon={CheckCircle2}
+          tone="success"
+          align="center"
+          title={t.title}
+          subtitle={doneMessage}
+        />
 
-        <div className="flex justify-center py-4 text-success">
-          <CheckCircle2 aria-hidden className="size-12" strokeWidth={1.5} />
-        </div>
-
-        <Button asChild block className="mt-4">
+        <Button asChild block>
           <Link href="/login">{t.goToLogin}</Link>
         </Button>
       </>
@@ -78,7 +80,7 @@ export function ResetPasswordForm() {
 
   return (
     <>
-      <AuthFormHeader title={t.title} subtitle={t.subtitle} />
+      <AuthFormHeader icon={KeyRound} title={t.title} subtitle={t.subtitle} />
 
       {formError ? (
         <Alert tone="error" className="mb-6">
@@ -88,9 +90,8 @@ export function ResetPasswordForm() {
 
       <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <Field id="password" label={t.password} error={errors.password?.message}>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             autoComplete="new-password"
             placeholder={t.passwordPlaceholder}
             invalid={Boolean(errors.password)}
@@ -99,9 +100,8 @@ export function ResetPasswordForm() {
         </Field>
 
         <Field id="confirmPassword" label={t.confirmPassword} error={errors.confirmPassword?.message}>
-          <Input
+          <PasswordInput
             id="confirmPassword"
-            type="password"
             autoComplete="new-password"
             placeholder={t.confirmPasswordPlaceholder}
             invalid={Boolean(errors.confirmPassword)}
