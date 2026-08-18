@@ -16,6 +16,12 @@ export const authMessages = {
     ],
   },
 
+  /** Labels for the show/hide control on every password field. */
+  passwordToggle: {
+    show: "แสดงรหัสผ่าน",
+    hide: "ซ่อนรหัสผ่าน",
+  },
+
   login: {
     title: "เข้าสู่ระบบ",
     subtitle: "ยินดีต้อนรับกลับ กรุณากรอกข้อมูลเพื่อเข้าใช้งาน",

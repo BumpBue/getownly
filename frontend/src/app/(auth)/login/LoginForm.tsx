@@ -10,6 +10,7 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { login } from "@/lib/auth/api";
 import { applyApiError } from "@/lib/auth/form-errors";
 import { loginSchema, type LoginValues } from "@/lib/auth/schemas";
@@ -76,25 +77,32 @@ export function LoginForm() {
           />
         </Field>
 
-        <Field id="password" label={t.password} error={errors.password?.message}>
-          <Input
+        {/*
+          The design pairs "ลืมรหัสผ่าน" with the password label on one row
+          rather than leaving it adrift under the field, so the escape hatch
+          sits where the trouble is.
+        */}
+        <Field
+          id="password"
+          label={t.password}
+          error={errors.password?.message}
+          labelAction={
+            <Link
+              href="/forgot-password"
+              className="text-xs text-secondary underline-offset-4 hover:underline"
+            >
+              {t.forgot}
+            </Link>
+          }
+        >
+          <PasswordInput
             id="password"
-            type="password"
             autoComplete="current-password"
             placeholder={t.passwordPlaceholder}
             invalid={Boolean(errors.password)}
             {...register("password")}
           />
         </Field>
-
-        <div className="flex justify-end">
-          <Link
-            href="/forgot-password"
-            className="text-sm text-primary underline-offset-4 hover:underline"
-          >
-            {t.forgot}
-          </Link>
-        </div>
 
         <Button type="submit" block disabled={isSubmitting}>
           {isSubmitting ? t.submitting : t.submit}

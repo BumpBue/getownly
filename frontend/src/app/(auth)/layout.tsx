@@ -12,9 +12,15 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <aside className="flex flex-col justify-between bg-primary px-6 py-8 text-primary-foreground lg:px-12 lg:py-14">
-        <Link href="/" className="inline-flex flex-col gap-1">
+        {/*
+          The design underscores the wordmark with a gold rule here rather
+          than standing one beside it the way SectionHeading does - same
+          accent, turned to sit under a brand name instead of a heading.
+        */}
+        <Link href="/" className="inline-flex flex-col items-start gap-1">
           <span className="text-2xl font-semibold tracking-wide">{brand.name}</span>
-          <span className="text-sm text-secondary">{brand.tagline}</span>
+          <span aria-hidden className="h-1 w-16 rounded-full bg-secondary" />
+          <span className="mt-1 text-sm text-primary-foreground/70">{brand.tagline}</span>
         </Link>
 
         <div className="hidden max-w-md lg:block">
