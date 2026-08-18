@@ -39,6 +39,7 @@ export const authMessages = {
   register: {
     title: "สมัครสมาชิก",
     subtitle: "เริ่มต้นใช้งาน getownly ได้ฟรี ไม่มีค่าใช้จ่ายแรกเข้า",
+    progressLabel: "ขั้นตอนการสมัครสมาชิก",
     roleStepTitle: "คุณต้องการใช้งานในบทบาทใด",
     roleStepSubtitle: "เลือกบทบาทที่ตรงกับคุณ เปลี่ยนภายหลังไม่ได้",
     roles: {
