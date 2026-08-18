@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ArrowRight, Check, QrCode, Send, ServerCrash } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -144,8 +145,7 @@ export function TopupForm({ initialAmount }: { initialAmount: string | null }) {
           {topup.backToWallet}
         </Link>
 
-        <h1 className="mt-4 text-2xl font-semibold text-primary">{topup.title}</h1>
-        <p className="mt-1 text-sm text-muted">{topup.subtitle}</p>
+        <SectionHeading as="h1" title={topup.title} subtitle={topup.subtitle} className="mt-4" />
       </div>
 
       {submitted && (
@@ -167,13 +167,12 @@ export function TopupForm({ initialAmount }: { initialAmount: string | null }) {
         <CardBody className="flex flex-col gap-4">
           <div>
             <p className="mb-2 text-xs font-medium text-muted">{topup.quickAmountsLabel}</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-3 gap-3">
               {QUICK_TOPUP_AMOUNTS.map((quick) => (
                 <Button
                   key={quick}
                   type="button"
                   variant={amount === quick ? "primary" : "outline"}
-                  size="sm"
                   onClick={() => {
                     setAmount(quick);
                     setQuote(null);
@@ -187,17 +186,25 @@ export function TopupForm({ initialAmount }: { initialAmount: string | null }) {
           </div>
 
           <Field id="topup-amount" label={topup.customAmountLabel}>
-            <Input
-              id="topup-amount"
-              inputMode="decimal"
-              placeholder={topup.customAmountPlaceholder}
-              value={amount}
-              onChange={(event) => {
-                setAmount(event.target.value);
-                setQuote(null);
-              }}
-              className="tabular"
-            />
+            <div className="relative">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 left-0 flex w-10 items-center justify-center text-sm text-subtle"
+              >
+                ฿
+              </span>
+              <Input
+                id="topup-amount"
+                inputMode="decimal"
+                placeholder={topup.customAmountPlaceholder}
+                value={amount}
+                onChange={(event) => {
+                  setAmount(event.target.value);
+                  setQuote(null);
+                }}
+                className="tabular pl-10"
+              />
+            </div>
           </Field>
 
           <Button
@@ -224,8 +231,17 @@ export function TopupForm({ initialAmount }: { initialAmount: string | null }) {
             </CardHeader>
             <CardBody className="flex flex-col gap-3">
               <QrPanel quote={quote} />
-              <p className="text-center text-xs text-subtle">
-                {topup.expiresPrefix} {formatTime(quote.expiresAt)}
+              {/*
+                A gold pill, as the design has, but showing the expiry time
+                rather than the design's counting-down clock. The quote
+                reserves nothing and an "expired" QR still accepts a transfer
+                (CLAUDE.md, หัวข้อ 8) - a timer running to zero would promise
+                a cutoff that does not exist.
+              */}
+              <p className="flex justify-center">
+                <span className="tabular rounded-full bg-secondary/15 px-4 py-1.5 text-xs font-medium text-secondary">
+                  {topup.expiresPrefix} {formatTime(quote.expiresAt)}
+                </span>
               </p>
             </CardBody>
           </Card>
