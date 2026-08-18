@@ -11,7 +11,7 @@ export function InstructorSection() {
     <section className="bg-background">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <RevealOnScroll>
-          <SectionHeading title={instructor.heading} subtitle={instructor.subheading} />
+          <SectionHeading size="lg" title={instructor.heading} subtitle={instructor.subheading} />
         </RevealOnScroll>
 
         <div className="mt-10 grid gap-8 sm:grid-cols-3">

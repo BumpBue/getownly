@@ -16,19 +16,38 @@ import { cn } from "@/lib/utils";
  * next to คอร์สแนะนำ - which wrap under the title on narrow screens rather
  * than squeezing it.
  */
+/**
+ * Type and bar scale together, so a page title and the section titles beneath
+ * it stay distinguishable. Without this an h1 and the h2s that follow render
+ * identically and the page reads as a flat list of equals.
+ */
+const SIZES = {
+  lg: { text: "text-2xl lg:text-3xl", bar: "h-8 w-1 mt-1" },
+  md: { text: "text-lg lg:text-xl", bar: "h-6 w-1 mt-0.5" },
+  sm: { text: "text-base", bar: "h-5 w-1" },
+} as const;
+
 export function SectionHeading({
   title,
   subtitle,
   action,
   as: Heading = "h2",
+  // Size follows the heading level by default, but is settable on its own:
+  // the landing page's sections are h2 for document structure while still
+  // being the largest thing on their screen, and forcing them to h1 to look
+  // right would put several h1s on one page.
+  size = Heading === "h1" ? "lg" : "md",
   className,
 }: {
   title: string;
   subtitle?: string;
   action?: ReactNode;
   as?: "h1" | "h2" | "h3";
+  size?: keyof typeof SIZES;
   className?: string;
 }) {
+  const sizeClasses = SIZES[size];
+
   return (
     <div className={cn("flex flex-wrap items-end justify-between gap-4", className)}>
       <div className="flex items-start gap-3">
@@ -36,9 +55,9 @@ export function SectionHeading({
           Fixed height rather than self-stretch: the bar should measure the
           title's first line, not grow with a subtitle underneath it.
         */}
-        <span aria-hidden className="mt-1 h-8 w-1 shrink-0 rounded-full bg-secondary" />
+        <span aria-hidden className={cn("shrink-0 rounded-full bg-secondary", sizeClasses.bar)} />
         <div>
-          <Heading className="text-2xl font-semibold text-primary lg:text-3xl">{title}</Heading>
+          <Heading className={cn("font-semibold text-primary", sizeClasses.text)}>{title}</Heading>
           {subtitle && <p className="mt-2 text-sm text-muted">{subtitle}</p>}
         </div>
       </div>

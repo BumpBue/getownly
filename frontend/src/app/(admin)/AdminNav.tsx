@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import {
   ArrowRight,
@@ -14,10 +14,10 @@ import {
   UserRound,
   Users,
 } from "lucide-react";
+import { SidebarLink } from "@/components/shared/SidebarLink";
 import { logout } from "@/lib/auth/api";
 import { adminMessages } from "@/lib/messages/admin";
 import { walletMessages } from "@/lib/messages/wallet";
-import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/admin", icon: LayoutDashboard, label: adminMessages.nav.dashboard },
@@ -32,13 +32,13 @@ const LINKS = [
  * Sidebar for the admin area: `primary` ground, white type, and a `secondary`
  * bar down the left of whichever item is open.
  *
- * `/admin` is matched exactly rather than by prefix — every other link starts
- * with it, so a prefix test would light the dashboard up on every page.
+ * The rows are the shared SidebarLink, so this sidebar and the instructor one
+ * mark "you are here" with the same rule at the same weight - they used to
+ * differ by two pixels of border for no reason anyone chose.
  */
 export function AdminNav() {
   const { nav } = walletMessages.admin;
   const router = useRouter();
-  const pathname = usePathname();
   const [signingOut, setSigningOut] = useState(false);
 
   const signOut = useCallback(async () => {
@@ -61,26 +61,16 @@ export function AdminNav() {
       </div>
 
       <nav className="flex flex-row flex-wrap gap-1 lg:flex-1 lg:flex-col lg:flex-nowrap">
-        {LINKS.map(({ href, icon: Icon, label }) => {
-          const active = href === "/admin" ? pathname === href : pathname.startsWith(href);
-
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "flex items-center gap-2.5 rounded-control border-l-2 px-3 py-2 text-sm font-medium transition-colors duration-150",
-                active
-                  ? "border-secondary bg-primary-foreground/15 text-primary-foreground"
-                  : "border-transparent text-primary-foreground/85 hover:bg-primary-foreground/10 hover:text-primary-foreground",
-              )}
-            >
-              <Icon aria-hidden className="size-4" />
-              {label}
-            </Link>
-          );
-        })}
+        {LINKS.map(({ href, icon: Icon, label }) => (
+          <SidebarLink
+            key={href}
+            href={href}
+            exact={href === "/admin"}
+            icon={<Icon aria-hidden className="size-4" />}
+          >
+            {label}
+          </SidebarLink>
+        ))}
       </nav>
 
       <div className="hidden flex-col gap-1 lg:flex">

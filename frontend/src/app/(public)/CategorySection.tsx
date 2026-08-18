@@ -29,7 +29,7 @@ export function CategorySection({ categories }: { categories: Category[] }) {
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
       <RevealOnScroll className="mb-8">
-        <SectionHeading title={messages.heading} subtitle={messages.subheading} />
+        <SectionHeading size="lg" title={messages.heading} subtitle={messages.subheading} />
       </RevealOnScroll>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

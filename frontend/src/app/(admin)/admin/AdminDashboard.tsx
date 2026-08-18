@@ -13,6 +13,7 @@ import {
   UserX,
   Wallet,
 } from "lucide-react";
+import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -80,23 +81,22 @@ export function AdminDashboard() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8">
-      <header>
-        <h1 className="text-2xl font-semibold text-primary">{dashboard.title}</h1>
-        <p className="mt-1 text-sm text-muted">{dashboard.subtitle}</p>
-      </header>
+      <SectionHeading as="h1" title={dashboard.title} subtitle={dashboard.subtitle} />
 
       {error && <Alert tone="error">{error}</Alert>}
 
       <section className="flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-foreground">{dashboard.queueHeading}</h2>
-          {allClear && (
-            <span className="flex items-center gap-1.5 text-sm text-success">
-              <CheckCircle2 aria-hidden className="size-4" />
-              {dashboard.allClear}
-            </span>
-          )}
-        </div>
+        <SectionHeading
+          title={dashboard.queueHeading}
+          action={
+            allClear && (
+              <span className="flex items-center gap-1.5 text-sm text-success">
+                <CheckCircle2 aria-hidden className="size-4" />
+                {dashboard.allClear}
+              </span>
+            )
+          }
+        />
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <QueueTile
@@ -124,42 +124,47 @@ export function AdminDashboard() {
       </section>
 
       <section className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-foreground">{dashboard.statsHeading}</h2>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/admin/reports">
-              <BarChart3 aria-hidden />
-              {dashboard.viewReports}
-            </Link>
-          </Button>
-        </div>
+        <SectionHeading
+          title={dashboard.statsHeading}
+          action={
+            <Button asChild variant="outline" size="sm">
+              <Link href="/admin/reports">
+                <BarChart3 aria-hidden />
+                {dashboard.viewReports}
+              </Link>
+            </Button>
+          }
+        />
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatTile
             icon={Wallet}
             label={reports.grossSales}
-            value={formatBaht(overview?.grossSales.value ?? "0")}
+            value={Number(overview?.grossSales.value ?? 0)}
+            format={(n) => formatBaht(n.toFixed(2))}
             changePercent={overview?.grossSales.changePercent}
             loading={loading}
           />
           <StatTile
             icon={Coins}
             label={reports.platformRevenue}
-            value={formatBaht(overview?.platformRevenue.value ?? "0")}
+            value={Number(overview?.platformRevenue.value ?? 0)}
+            format={(n) => formatBaht(n.toFixed(2))}
             changePercent={overview?.platformRevenue.changePercent}
             loading={loading}
           />
           <StatTile
             icon={Coins}
             label={reports.instructorPayable}
-            value={formatBaht(overview?.instructorPayable.value ?? "0")}
+            value={Number(overview?.instructorPayable.value ?? 0)}
+            format={(n) => formatBaht(n.toFixed(2))}
             changePercent={overview?.instructorPayable.changePercent}
             loading={loading}
           />
           <StatTile
             icon={UserPlus}
             label={reports.newUsers}
-            value={formatCount(Number(overview?.newUsers.value ?? 0))}
+            value={Number(overview?.newUsers.value ?? 0)}
             suffix={reports.peopleSuffix}
             changePercent={overview?.newUsers.changePercent}
             loading={loading}
