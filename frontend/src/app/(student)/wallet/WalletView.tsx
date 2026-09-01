@@ -9,6 +9,7 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Pager } from "@/components/shared/Pager";
+import { SectionHeading } from "@/components/shared/SectionHeading";
 import { ApiError } from "@/lib/api-client";
 import { formatBaht, formatDate } from "@/lib/format";
 import { authMessages } from "@/lib/messages/auth";
@@ -47,10 +48,7 @@ export function WalletView() {
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
-      <header>
-        <h1 className="text-2xl font-semibold text-primary">{labels.title}</h1>
-        <p className="mt-1 text-sm text-muted">{labels.subtitle}</p>
-      </header>
+      <SectionHeading as="h1" title={labels.title} subtitle={labels.subtitle} />
 
       {/* -------------------------------------------------------------- */}
       {/* Balance                                                         */}

@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Pager } from "@/components/shared/Pager";
+import { SectionHeading } from "@/components/shared/SectionHeading";
 import { useToast } from "@/hooks/use-toast";
 import { ApiError } from "@/lib/api-client";
 import {
@@ -96,33 +97,33 @@ export function ContentReportQueue() {
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-primary">{messages.title}</h1>
-          <p className="mt-1 text-sm text-muted">{messages.subtitle}</p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {total > 0 && (
-            <Badge tone="pending">
-              {formatCount(total)} {messages.pendingCount}
-            </Badge>
-          )}
-          <Select
-            aria-label={messages.filterAll}
-            value={status}
-            onChange={(event) => {
-              setStatus(event.target.value as ContentReportStatus | "");
-              setPage(1);
-            }}
-          >
-            <option value="">{messages.filterAll}</option>
-            <option value="PENDING">{messages.statusLabel.PENDING}</option>
-            <option value="REVIEWED">{messages.statusLabel.REVIEWED}</option>
-            <option value="DISMISSED">{messages.statusLabel.DISMISSED}</option>
-          </Select>
-        </div>
-      </header>
+      <SectionHeading
+        as="h1"
+        title={messages.title}
+        subtitle={messages.subtitle}
+        action={
+          <div className="flex items-center gap-3">
+            {total > 0 && (
+              <Badge tone="pending">
+                {formatCount(total)} {messages.pendingCount}
+              </Badge>
+            )}
+            <Select
+              aria-label={messages.filterAll}
+              value={status}
+              onChange={(event) => {
+                setStatus(event.target.value as ContentReportStatus | "");
+                setPage(1);
+              }}
+            >
+              <option value="">{messages.filterAll}</option>
+              <option value="PENDING">{messages.statusLabel.PENDING}</option>
+              <option value="REVIEWED">{messages.statusLabel.REVIEWED}</option>
+              <option value="DISMISSED">{messages.statusLabel.DISMISSED}</option>
+            </Select>
+          </div>
+        }
+      />
 
       {error && <Alert tone="error">{error}</Alert>}
 

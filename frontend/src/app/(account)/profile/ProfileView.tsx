@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { SectionHeading } from "@/components/shared/SectionHeading";
 import { useToast } from "@/hooks/use-toast";
 import { ApiError } from "@/lib/api-client";
 import { changePassword, updateAvatar, updateProfile } from "@/lib/admin/api";
@@ -89,10 +90,7 @@ export function ProfileView() {
 
   return (
     <Shell>
-      <header>
-        <h1 className="text-2xl font-semibold text-primary">{messages.title}</h1>
-        <p className="mt-1 text-sm text-muted">{messages.subtitle}</p>
-      </header>
+      <SectionHeading as="h1" title={messages.title} subtitle={messages.subtitle} />
 
       <section className="rounded-card border border-border bg-card p-5">
         <h2 className="text-base font-semibold text-foreground">{messages.accountHeading}</h2>

@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Pager } from "@/components/shared/Pager";
 import { QnaStatusBadge } from "@/components/shared/QnaStatusBadge";
+import { SectionHeading } from "@/components/shared/SectionHeading";
 import { ApiError } from "@/lib/api-client";
 import { formatCount, formatDateTime } from "@/lib/format";
 import { authMessages } from "@/lib/messages/auth";
@@ -99,19 +100,20 @@ export function QnaBoard({
           {data?.canAsk === false ? board.backToCourseDetail : board.backToCourse}
         </Link>
 
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold text-primary">{board.title}</h1>
-            <p className="mt-1 text-sm text-muted">{board.subtitle}</p>
-          </div>
-
-          {data?.canAsk && !asking && (
-            <Button type="button" onClick={() => setAsking(true)}>
-              <MessageCirclePlus aria-hidden />
-              {board.ask}
-            </Button>
-          )}
-        </div>
+        <SectionHeading
+          as="h1"
+          title={board.title}
+          subtitle={board.subtitle}
+          action={
+            data?.canAsk &&
+            !asking && (
+              <Button type="button" onClick={() => setAsking(true)}>
+                <MessageCirclePlus aria-hidden />
+                {board.ask}
+              </Button>
+            )
+          }
+        />
       </header>
 
       {/* Three audiences, three different notices: a student sees none, the

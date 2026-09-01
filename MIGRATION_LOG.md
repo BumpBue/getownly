@@ -504,8 +504,53 @@ loading state, error `Alert`, การออกจากระบบใน side
   ถ้าจะให้ demo ดูสมบูรณ์ ต้องอัปโหลดรูปตัวอย่างใน seed หรือให้ `signCover` ตรวจ `statObject` ก่อน
 
 ### ยังไม่ได้ตรวจ
-- **หน้าที่อยู่นอก 10 หน้านี้ยังไม่ได้ตรวจด้วยตา** (จัดการคอร์ส · ห้องเรียน · แบบทดสอบ ·
-  ถาม-ตอบ · คิวสลิป · จัดการผู้ใช้ · หมวดหมู่ · รายงาน · โปรไฟล์)
-  ทุกหน้าได้แถบทองจาก `CardTitle` และ sidebar active state ไปโดยอัตโนมัติ
-  typecheck/lint/build ผ่าน แต่ยังไม่มีใครเปิดดูจริงหลังการเปลี่ยนแปลง
-- responsive 375px ตรวจแล้วเฉพาะ `/home` และ `/courses`
+- responsive 375px ตรวจแล้วเฉพาะ `/home`, `/courses`, `/wallet`, `/admin/users`, `/admin/content-reports`
+  (อีก 7 หน้าในหัวข้อ "ปิดช่องว่าง" ด้านล่างตรวจแล้วเฉพาะ desktop 1440px)
+
+---
+
+## ปิดช่องว่าง "ยังไม่ได้ตรวจด้วยตา" — หัวข้อหน้านอก 10 หน้าหลัก
+
+**บริบท:** รายการ "ยังไม่ได้ตรวจ" เดิมของเอกสารนี้ระบุว่าหน้านอก 10 หน้าหลัก (จัดการคอร์ส ·
+ห้องเรียน · แบบทดสอบ · ถาม-ตอบ · คิวสลิป · จัดการผู้ใช้ · หมวดหมู่ · รายงาน · โปรไฟล์) ยังไม่มีใคร
+เปิดดูจริงหลังการเปลี่ยนแปลง ทำให้ `UI_CONSISTENCY_AUDIT.md` (ตรวจแยกอีกรอบทีหลัง) เจอว่า
+**หัวข้อหน้า (page title) ของ 12 ไฟล์ยังใช้ raw `<h1>` แทนที่จะเป็น `SectionHeading`** — ไม่ใช่บั๊ก
+แต่เป็นเพราะไฟล์เหล่านี้ถูกสร้างในเฟส 2-8 เดิม**ก่อน**ที่ `SectionHeading` จะเกิดขึ้นตอนงานแปลงดีไซน์
+(รวมถึง `ContentReportQueue.tsx` ที่สร้างทีหลังสุด เพราะคัดลอกแบบจาก `CourseReviewQueue.tsx`
+ซึ่งมีปัญหาเดียวกันอยู่ก่อนแล้ว)
+
+**แก้แล้วครบทั้ง 12 ไฟล์** แทนที่ `<header>...<h1 className="text-2xl font-semibold text-primary">
+{title}</h1><p>...</p>...</header>` ด้วย `<SectionHeading as="h1" title={...} subtitle={...}
+action={...} />` ตามแบบที่ `AdminDashboard.tsx`/`instructor/page.tsx`/`courses/page.tsx` ทำไว้ถูกต้อง
+อยู่แล้ว — ปุ่ม/badge/filter ที่เคยอยู่ท้ายแถวหัวข้อทุกจุดย้ายเข้า prop `action` โดยตำแหน่งไม่เปลี่ยน:
+
+| ไฟล์ | มี `action` |
+|---|---|
+| `(student)/my-courses/MyCoursesView.tsx` | ปุ่ม "ไปหน้ารวมคอร์ส" |
+| `(student)/wallet/WalletView.tsx` | — |
+| `(account)/profile/ProfileView.tsx` | — |
+| `(student)/learn/[courseId]/qna/QnaBoard.tsx` | ปุ่ม "ตั้งคำถาม" (เฉพาะคนถามได้) |
+| `(instructor)/instructor/reports/InstructorReportsView.tsx` | — |
+| `(admin)/admin/courses/CourseReviewQueue.tsx` | badge จำนวนรออนุมัติ |
+| `(admin)/admin/users/UsersTable.tsx` | — |
+| `(admin)/admin/categories/CategoriesManager.tsx` | ปุ่ม "เพิ่มหมวดหมู่" |
+| `(admin)/admin/reports/ReportsView.tsx` | แท็บช่วงเวลา 7/30/90 วัน |
+| `(instructor)/instructor/qna/InstructorQnaInbox.tsx` | ฟอร์มค้นหา |
+| `(admin)/admin/topups/TopupQueue.tsx` | badge จำนวนรอตรวจ |
+| `(admin)/admin/content-reports/ContentReportQueue.tsx` | badge + ตัวกรองสถานะ |
+
+**ไม่แตะ** `(instructor)/instructor/courses/[id]/page.tsx:153` เพราะเป็นชื่อคอร์สของผู้ใช้ ไม่ใช่
+หัวข้อ section — คนละความหมายกับอีก 12 จุด
+
+**ตรวจด้วย screenshot จริงจากเบราว์เซอร์ครบทั้ง 12 หน้า** (desktop 1440px ทุกหน้า + 375px มือถือ
+3 หน้าตัวแทน: `/wallet`, `/admin/users`, `/admin/content-reports`) ยืนยันว่าแถบทองมาแล้วทุกจุด,
+`action` ที่มีเนื้อหา (ปุ่ม/badge/แท็บ/ฟอร์ม) จัดวางถูกตำแหน่งเดิมและไม่ล้นบนจอเล็ก (ห่อบรรทัดใหม่ใต้
+หัวข้อด้วย `flex-wrap` ของ `SectionHeading` เอง) · `QnaBoard.tsx` ตรวจด้วยโค้ด+typecheck+build เท่านั้น
+เพราะต้องมีคอร์สที่ลงทะเบียนแล้วจริงถึงจะเข้าหน้านี้ได้ ไม่มีข้อมูล enrollment ใน seed ให้ทดสอบสด
+แต่โครงสร้างเหมือนกับอีก 2 จุดที่ตรวจด้วย screenshot แล้ว (ปุ่มเดียวใน `action` แบบมีเงื่อนไข)
+
+**เหตุการณ์ระหว่างทาง:** รัน `next build` (production) ในโฟลเดอร์เดียวกับ `next dev --turbopack`
+ที่กำลังรันอยู่ ทำให้ `.next` เพี้ยนและทุกหน้าขึ้น "Internal Server Error" ชั่วคราว — ลบ `.next` แล้ว
+ไม่พอ ต้อง restart ตัว process ของ dev server เอง (ได้รับความยินยอมจากผู้ใช้ก่อนทำ) — **บทเรียน:
+ห้ามรัน `next build` ในโฟลเดอร์ frontend ขณะที่ dev server ตัวจริงกำลังรันอยู่คู่กัน** ใช้ typecheck/lint
+และ screenshot จากเบราว์เซอร์จริงแทนเพื่อยืนยันความถูกต้องโดยไม่ต้องแตะ `.next` ของ dev server

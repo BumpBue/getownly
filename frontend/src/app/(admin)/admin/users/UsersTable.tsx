@@ -10,7 +10,9 @@ import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Pager } from "@/components/shared/Pager";
+import { SectionHeading } from "@/components/shared/SectionHeading";
 import { StatTile } from "@/components/shared/StatTile";
+import { useToast } from "@/hooks/use-toast";
 import { ApiError } from "@/lib/api-client";
 import { listUsers, setUserStatus } from "@/lib/admin/api";
 import {
@@ -29,6 +31,7 @@ import { CommissionDialog } from "./CommissionDialog";
 /** The user directory, with the two actions an admin can take on a row. */
 export function UsersTable({ initialStatus }: { initialStatus?: UserStatus }) {
   const { users: messages, role: roleLabels, status: statusLabels } = adminMessages;
+  const toast = useToast();
 
   const [data, setData] = useState<PaginatedAdminUsers | null>(null);
   const [role, setRole] = useState<UserRole | "">("");
@@ -88,6 +91,7 @@ export function UsersTable({ initialStatus }: { initialStatus?: UserStatus }) {
 
     try {
       replaceRow(await setUserStatus(user.id, next));
+      toast.success(next === "SUSPENDED" ? messages.suspendSuccess : messages.restoreSuccess);
       // The counts above the table are platform-wide, so they moved too.
       void load();
     } catch (caught) {
@@ -101,34 +105,31 @@ export function UsersTable({ initialStatus }: { initialStatus?: UserStatus }) {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-primary">{messages.title}</h1>
-        <p className="mt-1 text-sm text-muted">{messages.subtitle}</p>
-      </header>
+      <SectionHeading as="h1" title={messages.title} subtitle={messages.subtitle} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
           icon={Users}
           label={messages.countTotal}
-          value={formatCount(data?.counts.total ?? 0)}
+          value={data?.counts.total ?? 0}
           loading={loading && data === null}
         />
         <StatTile
           icon={Users}
           label={messages.countStudents}
-          value={formatCount(data?.counts.students ?? 0)}
+          value={data?.counts.students ?? 0}
           loading={loading && data === null}
         />
         <StatTile
           icon={Users}
           label={messages.countInstructors}
-          value={formatCount(data?.counts.instructors ?? 0)}
+          value={data?.counts.instructors ?? 0}
           loading={loading && data === null}
         />
         <StatTile
           icon={UserX}
           label={messages.countSuspended}
-          value={formatCount(data?.counts.suspended ?? 0)}
+          value={data?.counts.suspended ?? 0}
           loading={loading && data === null}
         />
       </div>
@@ -242,7 +243,7 @@ export function UsersTable({ initialStatus }: { initialStatus?: UserStatus }) {
 
               <tbody className="divide-y divide-border">
                 {data.items.map((user) => (
-                  <tr key={user.id}>
+                  <tr key={user.id} className="transition-colors duration-150 hover:bg-background">
                     <td className="px-5 py-3">
                       <p className="font-medium text-foreground">{user.displayName}</p>
                       <p className="text-xs text-subtle">{user.email}</p>
@@ -336,6 +337,7 @@ export function UsersTable({ initialStatus }: { initialStatus?: UserStatus }) {
           onSaved={(updated) => {
             replaceRow(updated);
             setEditing(null);
+            toast.success(messages.commissionSaved);
           }}
         />
       )}

@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { SectionHeading } from "@/components/shared/SectionHeading";
+import { useToast } from "@/hooks/use-toast";
 import { ApiError } from "@/lib/api-client";
 import {
   createCategory,
@@ -23,6 +25,7 @@ import { authMessages } from "@/lib/messages/auth";
 /** Add, rename and remove the categories courses are filed under. */
 export function CategoriesManager() {
   const { categories: messages } = adminMessages;
+  const toast = useToast();
 
   const [items, setItems] = useState<AdminCategory[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,6 +61,7 @@ export function CategoriesManager() {
 
     try {
       await deleteCategory(category.id);
+      toast.success(messages.removeSuccess);
       await load();
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : authMessages.errors.unexpected);
@@ -68,19 +72,19 @@ export function CategoriesManager() {
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-primary">{messages.title}</h1>
-          <p className="mt-1 text-sm text-muted">{messages.subtitle}</p>
-        </div>
-
-        {editing === null && (
-          <Button type="button" onClick={() => setEditing("new")}>
-            <Plus aria-hidden />
-            {messages.add}
-          </Button>
-        )}
-      </header>
+      <SectionHeading
+        as="h1"
+        title={messages.title}
+        subtitle={messages.subtitle}
+        action={
+          editing === null && (
+            <Button type="button" onClick={() => setEditing("new")}>
+              <Plus aria-hidden />
+              {messages.add}
+            </Button>
+          )
+        }
+      />
 
       {error && <Alert tone="error">{error}</Alert>}
 
@@ -89,6 +93,7 @@ export function CategoriesManager() {
           category={editing === "new" ? null : editing}
           onCancel={() => setEditing(null)}
           onSaved={() => {
+            toast.success(editing === "new" ? messages.savedNew : messages.savedEdit);
             setEditing(null);
             void load();
           }}
@@ -129,7 +134,7 @@ export function CategoriesManager() {
 
               <tbody className="divide-y divide-border">
                 {items.map((category) => (
-                  <tr key={category.id}>
+                  <tr key={category.id} className="transition-colors duration-150 hover:bg-background">
                     <td className="px-5 py-3 font-medium text-foreground">{category.name}</td>
                     <td className="px-5 py-3 text-muted">{category.slug}</td>
                     <td className="tabular px-5 py-3 text-xs text-muted">

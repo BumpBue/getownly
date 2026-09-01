@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { SalesLineChart } from "@/components/shared/SalesLineChart";
+import { SectionHeading } from "@/components/shared/SectionHeading";
 import { StatTile } from "@/components/shared/StatTile";
 import { ApiError } from "@/lib/api-client";
 import {
@@ -127,32 +128,32 @@ export function ReportsView() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-primary">{messages.title}</h1>
-          <p className="mt-1 text-sm text-muted">{messages.subtitle}</p>
-        </div>
-
-        <div role="tablist" aria-label={messages.rangeLabel} className="flex gap-1">
-          {REPORT_RANGES.map((value) => (
-            <button
-              key={value}
-              type="button"
-              role="tab"
-              aria-selected={days === value}
-              onClick={() => setDays(value)}
-              className={cn(
-                "rounded-control border px-3 py-2 text-sm font-medium transition-colors duration-150",
-                days === value
-                  ? "border-primary bg-primary/5 text-primary"
-                  : "border-border bg-card text-muted hover:bg-background",
-              )}
-            >
-              {RANGE_LABELS[value]}
-            </button>
-          ))}
-        </div>
-      </header>
+      <SectionHeading
+        as="h1"
+        title={messages.title}
+        subtitle={messages.subtitle}
+        action={
+          <div role="tablist" aria-label={messages.rangeLabel} className="flex gap-1">
+            {REPORT_RANGES.map((value) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={days === value}
+                onClick={() => setDays(value)}
+                className={cn(
+                  "rounded-control border px-3 py-2 text-sm font-medium transition-colors duration-150",
+                  days === value
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-border bg-card text-muted hover:bg-background",
+                )}
+              >
+                {RANGE_LABELS[value]}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
       {data && (
         <p className="tabular text-xs text-subtle">
@@ -182,21 +183,24 @@ export function ReportsView() {
             <StatTile
               icon={Wallet}
               label={messages.grossSales}
-              value={formatBaht(data?.overview.grossSales.value ?? "0")}
+              value={Number(data?.overview.grossSales.value ?? 0)}
+              format={(n) => formatBaht(n.toFixed(2))}
               changePercent={data?.overview.grossSales.changePercent}
               loading={loading}
             />
             <StatTile
               icon={Coins}
               label={messages.platformRevenue}
-              value={formatBaht(data?.overview.platformRevenue.value ?? "0")}
+              value={Number(data?.overview.platformRevenue.value ?? 0)}
+              format={(n) => formatBaht(n.toFixed(2))}
               changePercent={data?.overview.platformRevenue.changePercent}
               loading={loading}
             />
             <StatTile
               icon={Coins}
               label={messages.instructorPayable}
-              value={formatBaht(data?.overview.instructorPayable.value ?? "0")}
+              value={Number(data?.overview.instructorPayable.value ?? 0)}
+              format={(n) => formatBaht(n.toFixed(2))}
               changePercent={data?.overview.instructorPayable.changePercent}
               loading={loading}
               footnote={messages.payableNote}
@@ -204,7 +208,7 @@ export function ReportsView() {
             <StatTile
               icon={UserPlus}
               label={messages.newUsers}
-              value={formatCount(Number(data?.overview.newUsers.value ?? 0))}
+              value={Number(data?.overview.newUsers.value ?? 0)}
               suffix={messages.peopleSuffix}
               changePercent={data?.overview.newUsers.changePercent}
               loading={loading}
@@ -246,7 +250,7 @@ export function ReportsView() {
                   </thead>
                   <tbody className="divide-y divide-border">
                     {data.courses.map((course) => (
-                      <tr key={course.courseId}>
+                      <tr key={course.courseId} className="transition-colors duration-150 hover:bg-background">
                         <td className="px-5 py-3">
                           <p className="line-clamp-1 font-medium text-foreground">
                             {course.title}
@@ -284,7 +288,10 @@ export function ReportsView() {
                   </thead>
                   <tbody className="divide-y divide-border">
                     {data.instructors.map((instructor) => (
-                      <tr key={instructor.instructorId}>
+                      <tr
+                        key={instructor.instructorId}
+                        className="transition-colors duration-150 hover:bg-background"
+                      >
                         <td className="px-5 py-3">
                           <p className="line-clamp-1 font-medium text-foreground">
                             {instructor.displayName}

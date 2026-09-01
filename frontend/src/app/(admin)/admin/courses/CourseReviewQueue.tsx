@@ -19,6 +19,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Pager } from "@/components/shared/Pager";
+import { SectionHeading } from "@/components/shared/SectionHeading";
+import { useToast } from "@/hooks/use-toast";
 import { ApiError } from "@/lib/api-client";
 import { approveCourse, listPendingCourses, rejectCourse } from "@/lib/admin/api";
 import type { PaginatedPendingCourses, PendingCourse } from "@/lib/admin/types";
@@ -36,12 +38,12 @@ import { courseMessages } from "@/lib/messages/courses";
  */
 export function CourseReviewQueue() {
   const { courses: messages } = adminMessages;
+  const toast = useToast();
 
   const [data, setData] = useState<PaginatedPendingCourses | null>(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState<"approve" | "reject" | null>(null);
@@ -66,15 +68,14 @@ export function CourseReviewQueue() {
   const decide = async (action: "approve" | "reject", course: PendingCourse) => {
     setBusy(action);
     setError(null);
-    setNotice(null);
 
     try {
       if (action === "approve") {
         await approveCourse(course.id);
-        setNotice(messages.approvedNotice);
+        toast.success(messages.approvedNotice);
       } else {
         await rejectCourse(course.id, reason.trim());
-        setNotice(messages.rejectedNotice);
+        toast.success(messages.rejectedNotice);
       }
       setRejecting(null);
       setReason("");
@@ -89,20 +90,20 @@ export function CourseReviewQueue() {
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-primary">{messages.title}</h1>
-          <p className="mt-1 text-sm text-muted">{messages.subtitle}</p>
-        </div>
+      <SectionHeading
+        as="h1"
+        title={messages.title}
+        subtitle={messages.subtitle}
+        action={
+          data &&
+          data.total > 0 && (
+            <Badge tone="pending">
+              {formatCount(data.total)} {messages.pendingCount}
+            </Badge>
+          )
+        }
+      />
 
-        {data && data.total > 0 && (
-          <Badge tone="pending">
-            {formatCount(data.total)} {messages.pendingCount}
-          </Badge>
-        )}
-      </header>
-
-      {notice && <Alert tone="success">{notice}</Alert>}
       {error && <Alert tone="error">{error}</Alert>}
 
       {loading && data === null ? (

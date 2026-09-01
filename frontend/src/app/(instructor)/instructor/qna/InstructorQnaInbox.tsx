@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Pager } from "@/components/shared/Pager";
+import { SectionHeading } from "@/components/shared/SectionHeading";
 import { ApiError } from "@/lib/api-client";
 import { formatCount, formatDateTime } from "@/lib/format";
 import { authMessages } from "@/lib/messages/auth";
@@ -51,47 +52,47 @@ export function InstructorQnaInbox() {
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-primary">{inbox.title}</h1>
-          <p className="mt-1 text-sm text-muted">{inbox.subtitle}</p>
-        </div>
-
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            setSearch(searchDraft.trim());
-            setPage(1);
-          }}
-          className="flex items-center gap-2"
-        >
-          <Input
-            value={searchDraft}
-            onChange={(event) => setSearchDraft(event.target.value)}
-            placeholder={qnaMessages.board.searchPlaceholder}
-            aria-label={qnaMessages.board.search}
-            className="h-10 w-56"
-          />
-          <Button type="submit" variant="outline" size="sm" aria-label={qnaMessages.board.search}>
-            <Search aria-hidden />
-          </Button>
-          {search !== "" && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-label={qnaMessages.board.clearSearch}
-              onClick={() => {
-                setSearchDraft("");
-                setSearch("");
-                setPage(1);
-              }}
-            >
-              <X aria-hidden />
+      <SectionHeading
+        as="h1"
+        title={inbox.title}
+        subtitle={inbox.subtitle}
+        action={
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              setSearch(searchDraft.trim());
+              setPage(1);
+            }}
+            className="flex items-center gap-2"
+          >
+            <Input
+              value={searchDraft}
+              onChange={(event) => setSearchDraft(event.target.value)}
+              placeholder={qnaMessages.board.searchPlaceholder}
+              aria-label={qnaMessages.board.search}
+              className="h-10 w-56"
+            />
+            <Button type="submit" variant="outline" size="sm" aria-label={qnaMessages.board.search}>
+              <Search aria-hidden />
             </Button>
-          )}
-        </form>
-      </header>
+            {search !== "" && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                aria-label={qnaMessages.board.clearSearch}
+                onClick={() => {
+                  setSearchDraft("");
+                  setSearch("");
+                  setPage(1);
+                }}
+              >
+                <X aria-hidden />
+              </Button>
+            )}
+          </form>
+        }
+      />
 
       {loading ? (
         <div className="flex flex-col gap-3">

@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CourseStatusBadge } from "@/components/shared/CourseStatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { MonthlyEarningsChart } from "@/components/shared/MonthlyEarningsChart";
+import { SectionHeading } from "@/components/shared/SectionHeading";
 import { StatTile } from "@/components/shared/StatTile";
 import { ApiError } from "@/lib/api-client";
 import { getInstructorOverview } from "@/lib/admin/api";
@@ -72,35 +73,35 @@ export function InstructorReportsView() {
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-primary">{messages.title}</h1>
-        <p className="mt-1 text-sm text-muted">{messages.subtitle}</p>
-      </header>
+      <SectionHeading as="h1" title={messages.title} subtitle={messages.subtitle} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
           icon={Coins}
           label={messages.totalEarnings}
-          value={formatBaht(data?.totalEarnings ?? "0")}
+          value={Number(data?.totalEarnings ?? 0)}
+          format={(n) => formatBaht(n.toFixed(2))}
           loading={loading}
         />
         <StatTile
           icon={Coins}
           label={messages.last30Days}
-          value={formatBaht(data?.last30DaysEarnings ?? "0")}
+          value={Number(data?.last30DaysEarnings ?? 0)}
+          format={(n) => formatBaht(n.toFixed(2))}
           loading={loading}
         />
         <StatTile
           icon={ShoppingCart}
           label={messages.totalSales}
-          value={formatCount(data?.totalSalesCount ?? 0)}
+          value={data?.totalSalesCount ?? 0}
           suffix={messages.salesSuffix}
           loading={loading}
         />
         <StatTile
           icon={Wallet}
           label={messages.walletBalance}
-          value={formatBaht(data?.walletBalance ?? "0")}
+          value={Number(data?.walletBalance ?? 0)}
+          format={(n) => formatBaht(n.toFixed(2))}
           loading={loading}
         />
       </div>
@@ -109,21 +110,21 @@ export function InstructorReportsView() {
         <StatTile
           icon={Users}
           label={messages.studentCount}
-          value={formatCount(data?.studentCount ?? 0)}
+          value={data?.studentCount ?? 0}
           suffix={messages.peopleSuffix}
           loading={loading}
         />
         <StatTile
           icon={BookOpen}
           label={messages.publishedCourses}
-          value={formatCount(data?.publishedCourses ?? 0)}
+          value={data?.publishedCourses ?? 0}
           suffix={messages.coursesSuffix}
           loading={loading}
         />
         <StatTile
           icon={MessageCircleQuestion}
           label={messages.pendingQuestions}
-          value={formatCount(data?.pendingQuestions ?? 0)}
+          value={data?.pendingQuestions ?? 0}
           suffix={messages.questionsSuffix}
           loading={loading}
         />
@@ -168,7 +169,7 @@ export function InstructorReportsView() {
 
               <tbody className="divide-y divide-border">
                 {data.courses.map((course) => (
-                  <tr key={course.courseId}>
+                  <tr key={course.courseId} className="transition-colors duration-150 hover:bg-background">
                     <td className="px-5 py-3">
                       <Link
                         href={`/instructor/courses/${course.courseId}`}
