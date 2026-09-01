@@ -15,9 +15,13 @@ import { EnrollmentsService } from './enrollments.service';
  * `/enrollments/mine`) because that is where each one reads best from the
  * client's side, so the paths are spelled out rather than sharing a prefix.
  *
- * ADMIN is excluded: an admin approves the top-ups that fund these purchases.
+ * All three roles are listed on purpose. ADMIN used to be excluded here on
+ * the theory that an admin only approves top-ups, but nothing about the
+ * service ever enforced that — the wallet and the purchase flow work the same
+ * way for every role, so an admin who tops up and buys a course like anyone
+ * else should be able to see it in "คอร์สของฉัน" like anyone else.
  */
-@Roles(Role.STUDENT, Role.INSTRUCTOR)
+@Roles(Role.STUDENT, Role.INSTRUCTOR, Role.ADMIN)
 @Controller()
 export class EnrollmentsController {
   constructor(

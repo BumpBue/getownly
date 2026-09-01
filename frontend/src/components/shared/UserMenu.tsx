@@ -96,14 +96,19 @@ export function UserMenu({ user }: { user: UserProfile }) {
           </DropdownMenuItem>
         )}
 
-        {user.role === "STUDENT" && (
-          <DropdownMenuItem asChild>
-            <Link href="/my-courses">
-              <LayoutDashboard aria-hidden className="size-4" />
-              {nav.myCourses}
-            </Link>
-          </DropdownMenuItem>
-        )}
+        {/*
+          Every role can buy a course and every role's purchase shows up here
+          - an instructor or an admin who bought someone else's course is not
+          a hypothetical, the wallet and purchase flow never distinguished
+          roles either. This sits alongside the role's own dashboard link
+          below, not instead of it.
+        */}
+        <DropdownMenuItem asChild>
+          <Link href="/my-courses">
+            <LayoutDashboard aria-hidden className="size-4" />
+            {nav.myCourses}
+          </Link>
+        </DropdownMenuItem>
 
         {user.role === "INSTRUCTOR" && (
           <DropdownMenuItem asChild>

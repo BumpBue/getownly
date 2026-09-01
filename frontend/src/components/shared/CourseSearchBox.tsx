@@ -107,7 +107,10 @@ export function CourseSearchBox({ className }: { className?: string }) {
       </form>
 
       {showPreview && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-card border border-border bg-card shadow-sm">
+        <div
+          style={{ animation: "dropdown-in 150ms ease-out" }}
+          className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-card border border-border bg-card shadow-sm"
+        >
           {loading ? (
             <p className="px-4 py-4 text-center text-sm text-subtle">{messages.loading}</p>
           ) : results && results.length > 0 ? (

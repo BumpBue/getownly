@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +12,7 @@ import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { applyApiError } from "@/lib/auth/form-errors";
 import { createCourse, listCategories } from "@/lib/catalog/api";
 import { courseFormSchema, type CourseFormValues } from "@/lib/catalog/schemas";
@@ -65,13 +65,7 @@ export default function NewCoursePage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
-      <Link
-        href="/instructor"
-        className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors duration-150 hover:text-primary"
-      >
-        <ArrowRight aria-hidden className="size-4 rotate-180" />
-        {nav.dashboard}
-      </Link>
+      <Breadcrumb items={[{ label: nav.dashboard, href: "/instructor" }, { label: create.title }]} />
 
       <Card>
         <CardHeader>

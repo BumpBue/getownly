@@ -1,42 +1,46 @@
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import type { Metadata } from "next";
+import { CategorySection } from "./CategorySection";
+import { FeaturedSection } from "./FeaturedSection";
+import { HeroSection } from "./HeroSection";
+import { InstructorSection } from "./InstructorSection";
+import { WhySection } from "./WhySection";
 import { authMessages } from "@/lib/messages/auth";
-import { courseMessages } from "@/lib/messages/courses";
+import { serverFetch } from "@/lib/server-api";
+import type { Category, PaginatedCourses } from "@/lib/catalog/types";
+import type { PublicStats } from "@/lib/stats/types";
+
+export const metadata: Metadata = {
+  title: authMessages.brand.name,
+  description: authMessages.brand.pitchBody,
+};
+
+const FEATURED_LIMIT = 6;
+const TOP_CATEGORY_COUNT = 4;
 
 /**
- * Landing page. The curated sections (featured courses, categories,
- * best sellers) belong to a later phase; for now it points at the catalog,
- * which is the real screen.
+ * The guest landing page. A signed-in visitor never reaches this - middleware
+ * sends them to /courses before this component ever runs - so everything
+ * here is written for someone who has not signed up yet.
  */
-export default function HomePage() {
-  const { brand } = authMessages;
+export default async function LandingPage() {
+  const [statsResult, categoriesResult, featuredResult] = await Promise.all([
+    serverFetch<PublicStats>("/stats/public"),
+    serverFetch<Category[]>("/categories"),
+    serverFetch<PaginatedCourses>(`/courses?sort=popular&limit=${FEATURED_LIMIT}`),
+  ]);
+
+  const topCategories = [...(categoriesResult.data ?? [])]
+    .sort((a, b) => b.courseCount - a.courseCount)
+    .slice(0, TOP_CATEGORY_COUNT);
+  const featuredCourses = featuredResult.data?.items ?? [];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-      <div className="max-w-2xl">
-        <h1 className="text-4xl font-semibold leading-tight text-primary lg:text-5xl">
-          {brand.pitchTitle}
-        </h1>
-        <p className="mt-5 text-base leading-relaxed text-muted">{brand.pitchBody}</p>
-
-        <div className="mt-8">
-          <Button asChild size="lg">
-            <Link href="/courses">
-              {courseMessages.catalog.title}
-              <ArrowLeft aria-hidden className="rotate-180" />
-            </Link>
-          </Button>
-        </div>
-      </div>
-
-      <ul className="mt-16 grid gap-4 sm:grid-cols-3">
-        {brand.points.map((point) => (
-          <li key={point} className="rounded-card border border-border bg-card p-5 text-sm text-muted">
-            {point}
-          </li>
-        ))}
-      </ul>
+    <div>
+      <HeroSection stats={statsResult.data} />
+      {topCategories.length > 0 && <CategorySection categories={topCategories} />}
+      <FeaturedSection courses={featuredCourses} />
+      <WhySection />
+      <InstructorSection />
     </div>
   );
 }

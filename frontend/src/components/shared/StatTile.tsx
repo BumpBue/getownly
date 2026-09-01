@@ -1,7 +1,9 @@
 import type { LucideIcon } from "lucide-react";
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCountUp } from "@/hooks/use-count-up";
 import { adminMessages } from "@/lib/messages/admin";
+import { formatCount } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /**
@@ -10,10 +12,18 @@ import { cn } from "@/lib/utils";
  * The comparison is deliberately not colour-coded as good or bad: fewer
  * suspended accounts is an improvement and fewer sales is not, and the tile
  * has no way to know which it is holding. Up is up.
+ *
+ * `value` is a plain number, not a pre-formatted string: it is what counts up
+ * from 0 when the tile first has a real number to show. `format` turns the
+ * animated number into the string actually shown, so a money tile still goes
+ * through the same formatter (`formatBaht`) it always did - this component
+ * never does money arithmetic, only chooses which already-computed number to
+ * display mid-count.
  */
 export function StatTile({
   label,
   value,
+  format = formatCount,
   suffix,
   icon: Icon,
   changePercent,
@@ -21,7 +31,8 @@ export function StatTile({
   footnote,
 }: {
   label: string;
-  value: string;
+  value: number;
+  format?: (value: number) => string;
   suffix?: string;
   icon?: LucideIcon;
   /** Undefined when this tile has no comparison; null when there is nothing to compare against. */
@@ -30,6 +41,7 @@ export function StatTile({
   footnote?: string;
 }) {
   const { reports } = adminMessages;
+  const animated = useCountUp(loading ? 0 : value);
 
   return (
     <div className="flex flex-col gap-3 rounded-card border border-border bg-card px-5 py-4">
@@ -42,7 +54,7 @@ export function StatTile({
         <Skeleton className="h-9 w-28" />
       ) : (
         <p className="tabular text-2xl font-semibold text-foreground">
-          {value}
+          {format(animated)}
           {suffix && <span className="ml-1 text-sm font-normal text-muted">{suffix}</span>}
         </p>
       )}

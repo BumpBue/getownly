@@ -23,6 +23,7 @@ const ROLE_PREFIXES: { prefix: string; role: Role }[] = [
 
 /** Prefixes any signed-in user may enter. */
 const AUTHENTICATED_PREFIXES = [
+  "/home",
   "/my-courses",
   "/wallet",
   "/cart",
@@ -44,6 +45,13 @@ interface SessionHint {
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const session = readSessionHint(request);
+
+  // The marketing landing page is for visitors only; a signed-in user of any
+  // role goes straight to the catalog, not their role's dashboard - this one
+  // path intentionally does not use HOME_PATH_BY_ROLE.
+  if (pathname === "/" && session.hasSession) {
+    return NextResponse.redirect(new URL("/courses", request.url));
+  }
 
   if (GUEST_ONLY_PATHS.some((path) => pathname === path)) {
     // Someone already signed in has no use for the login form.

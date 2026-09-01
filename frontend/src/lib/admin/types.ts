@@ -193,6 +193,8 @@ export interface InstructorOverview {
   totalGrossSales: string;
   totalSalesCount: number;
   last30DaysEarnings: string;
+  todayEarnings: string;
+  todaySalesCount: number;
   studentCount: number;
   publishedCourses: number;
   totalCourses: number;

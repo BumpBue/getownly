@@ -25,8 +25,16 @@ const badgeVariants = cva(
 
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLSpanElement>,
-    VariantProps<typeof badgeVariants> {}
+    VariantProps<typeof badgeVariants> {
+  /** A small leading dot instead of leaning on the fill alone to read as a status. */
+  dot?: boolean;
+}
 
-export function Badge({ className, tone, ...props }: BadgeProps) {
-  return <span className={cn(badgeVariants({ tone }), className)} {...props} />;
+export function Badge({ className, tone, dot, children, ...props }: BadgeProps) {
+  return (
+    <span className={cn(badgeVariants({ tone }), className)} {...props}>
+      {dot && <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-current" />}
+      {children}
+    </span>
+  );
 }

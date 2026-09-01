@@ -276,6 +276,20 @@ describe('ReportsService', () => {
     expect(overview.studentCount).toBe(2);
     // Their wallet holds exactly what they earned, nothing having been spent.
     expect(overview.walletBalance).toBe('2100.00');
+    // Both sales just happened, so they are also "today" - the /home card.
+    expect(overview.todayEarnings).toBe('2100.00');
+    expect(overview.todaySalesCount).toBe(2);
+  });
+
+  it("does not count yesterday's sale as today's", async () => {
+    const sale = await sellOne({ instructorId: instructor.id, price: '1000.00' });
+    await backdate(prisma, sale.enrollmentId, 1);
+
+    const overview = await reports.instructorOverview(instructor.id);
+
+    expect(overview.totalEarnings).toBe('700.00');
+    expect(overview.todayEarnings).toBe('0.00');
+    expect(overview.todaySalesCount).toBe(0);
   });
 
   it("never mixes one instructor's sales into another's report", async () => {

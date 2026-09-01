@@ -140,6 +140,9 @@ export interface InstructorOverviewDto {
   totalSalesCount: number;
   /** Earned in the last 30 days, for the "recently" tile. */
   last30DaysEarnings: MoneyString;
+  /** Bangkok "today", for the /home quick-action card. */
+  todayEarnings: MoneyString;
+  todaySalesCount: number;
   studentCount: number;
   publishedCourses: number;
   totalCourses: number;

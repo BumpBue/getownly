@@ -28,9 +28,14 @@ export interface AuthResponse {
   user: UserProfile;
 }
 
-/** Where each role lands after signing in. */
+/**
+ * Where every role lands after signing in: a shared landing page, not
+ * straight into a role's own dashboard, so a fresh session gets a moment to
+ * choose what to do next instead of being dropped straight into a sales page
+ * or a queue. /home itself decides what to show for each role.
+ */
 export const HOME_PATH_BY_ROLE: Record<Role, string> = {
-  STUDENT: "/my-courses",
-  INSTRUCTOR: "/instructor",
-  ADMIN: "/admin",
+  STUDENT: "/home",
+  INSTRUCTOR: "/home",
+  ADMIN: "/home",
 };

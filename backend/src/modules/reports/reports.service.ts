@@ -20,6 +20,7 @@ import {
   resolveRange,
   startOfBangkokDayUtc,
   toRangeDto,
+  todayInBangkok,
   toThaiMonthLabel,
   type ResolvedRange,
 } from './report-range';
@@ -312,10 +313,12 @@ export class ReportsService {
     const months = lastMonths(INSTRUCTOR_CHART_MONTHS);
     const chartFrom = startOfBangkokDayUtc(`${months[0]}-01`);
     const recentFrom = new Date(Date.now() - RECENT_DAYS * 24 * 60 * 60 * 1000);
+    const todayFrom = startOfBangkokDayUtc(todayInBangkok());
 
-    const [totals, recent, monthlyRows, courseRows, counts, wallet] = await Promise.all([
+    const [totals, recent, today, monthlyRows, courseRows, counts, wallet] = await Promise.all([
       this.sumInstructorEarnings(instructorId, null),
       this.sumInstructorEarnings(instructorId, recentFrom),
+      this.sumInstructorEarnings(instructorId, todayFrom),
       this.instructorMonthly(instructorId, chartFrom),
       this.instructorCourseSales(instructorId),
       this.instructorCounts(instructorId),
@@ -332,6 +335,10 @@ export class ReportsService {
       totalGrossSales: money(totals.gross),
       totalSalesCount: Number(totals.sales_count),
       last30DaysEarnings: money(recent.earnings),
+      // "Today" as Bangkok sees it - the /home quick-action card, not the
+      // 6-month chart, which is what actually needs this granularity.
+      todayEarnings: money(today.earnings),
+      todaySalesCount: Number(today.sales_count),
       studentCount: counts.students,
       publishedCourses: counts.published,
       totalCourses: counts.total,

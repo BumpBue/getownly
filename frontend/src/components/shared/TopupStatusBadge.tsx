@@ -11,5 +11,9 @@ const TONE_BY_STATUS = {
 } as const;
 
 export function TopupStatusBadge({ status }: { status: TopupStatus }) {
-  return <Badge tone={TONE_BY_STATUS[status]}>{walletMessages.status[status]}</Badge>;
+  return (
+    <Badge dot tone={TONE_BY_STATUS[status]}>
+      {walletMessages.status[status]}
+    </Badge>
+  );
 }

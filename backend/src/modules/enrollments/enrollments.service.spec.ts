@@ -1,7 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { Role } from '@prisma/client';
+import { ROLES_KEY } from '@/common/decorators/roles.decorator';
 import { PrismaService } from '@/infra/prisma.service';
 import { LedgerService } from '@/modules/ledger/ledger.service';
 import { WalletService } from '@/modules/ledger/wallet.service';
+import { EnrollmentsController } from './enrollments.controller';
 import { EnrollmentsService } from './enrollments.service';
 import {
   createCategory,
@@ -145,5 +148,52 @@ describe('EnrollmentsService', () => {
 
     expect(await enrollments.listMine(student.id)).toHaveLength(0);
     expect(await enrollments.listMine(other.id)).toHaveLength(1);
+  });
+
+  // "คอร์สของฉัน" used to be blocked for INSTRUCTOR and ADMIN even though the
+  // wallet and purchase flow never distinguished roles. Every role buys and
+  // reads back its own purchases the same way - there is nothing
+  // STUDENT-specific about listMine() itself.
+  it('lets an INSTRUCTOR see a course they bought from another instructor', async () => {
+    const sellingInstructor = await createUser(prisma, {
+      role: 'INSTRUCTOR',
+      displayName: 'ผู้สอนที่ขาย',
+    });
+    const buyingInstructor = await createUser(prisma, {
+      role: 'INSTRUCTOR',
+      displayName: 'ผู้สอนที่ซื้อ',
+    });
+    const courseId = await createCourse(prisma, {
+      instructorId: sellingInstructor.id,
+      categoryId,
+      price: '0.00',
+      title: 'คอร์สที่ผู้สอนอีกคนซื้อ',
+    });
+
+    await wallet.purchaseCourse(buyingInstructor.id, courseId);
+
+    const [item] = await enrollments.listMine(buyingInstructor.id);
+    expect(item?.courseId).toBe(courseId);
+    expect(await enrollments.listMine(sellingInstructor.id)).toHaveLength(0);
+  });
+
+  it('lets an ADMIN see a course they bought', async () => {
+    const courseId = await createCourse(prisma, {
+      instructorId: instructor.id,
+      categoryId,
+      price: '0.00',
+      title: 'คอร์สที่แอดมินซื้อ',
+    });
+
+    await wallet.purchaseCourse(admin.id, courseId);
+
+    const [item] = await enrollments.listMine(admin.id);
+    expect(item?.courseId).toBe(courseId);
+  });
+
+  it('declares the purchase and "mine" routes open to every role, not just STUDENT', () => {
+    const roles = Reflect.getMetadata(ROLES_KEY, EnrollmentsController) as Role[] | undefined;
+
+    expect(roles).toEqual(expect.arrayContaining([Role.STUDENT, Role.INSTRUCTOR, Role.ADMIN]));
   });
 });

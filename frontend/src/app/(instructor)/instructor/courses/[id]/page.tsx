@@ -3,20 +3,14 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import {
-  ArrowRight,
-  ClipboardList,
-  ExternalLink,
-  EyeOff,
-  ServerCrash,
-  Send,
-  Trash2,
-} from "lucide-react";
+import { ClipboardList, ExternalLink, EyeOff, ServerCrash, Send, Trash2 } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { CourseStatusBadge } from "@/components/shared/CourseStatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { useToast } from "@/hooks/use-toast";
 import { ApiError } from "@/lib/api-client";
 import { deleteCourse, getCourse, submitCourse, unpublishCourse } from "@/lib/catalog/api";
 import type { CourseDetail } from "@/lib/catalog/types";
@@ -43,11 +37,11 @@ export default function CourseEditorPage() {
   const courseId = params.id;
 
   const { editor } = instructorMessages;
+  const toast = useToast();
 
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabId>("general");
-  const [notice, setNotice] = useState<string | null>(null);
   const [missing, setMissing] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [unpublishing, setUnpublishing] = useState(false);
@@ -67,13 +61,12 @@ export default function CourseEditorPage() {
 
   async function onSubmitForReview(): Promise<void> {
     setSubmitting(true);
-    setNotice(null);
     setError(null);
     setMissing([]);
 
     try {
       setCourse(await submitCourse(courseId));
-      setNotice(editor.submitSuccess);
+      toast.success(editor.submitSuccess);
     } catch (caught) {
       if (caught instanceof ApiError) {
         setError(caught.message);
@@ -94,12 +87,11 @@ export default function CourseEditorPage() {
     }
 
     setUnpublishing(true);
-    setNotice(null);
     setError(null);
 
     try {
       setCourse(await unpublishCourse(courseId));
-      setNotice(editor.unpublishSuccess);
+      toast.success(editor.unpublishSuccess);
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : authMessages.errors.unexpected);
     } finally {
@@ -145,13 +137,12 @@ export default function CourseEditorPage() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
-      <Link
-        href="/instructor"
-        className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors duration-150 hover:text-primary"
-      >
-        <ArrowRight aria-hidden className="size-4 rotate-180" />
-        {editor.backToDashboard}
-      </Link>
+      <Breadcrumb
+        items={[
+          { label: instructorMessages.dashboard.title, href: "/instructor" },
+          { label: course.title },
+        ]}
+      />
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
@@ -200,7 +191,6 @@ export default function CourseEditorPage() {
         </div>
       </header>
 
-      {notice && <Alert tone="success">{notice}</Alert>}
       {error && (
         <Alert tone="error">
           <span>
