@@ -58,4 +58,14 @@ export class ContentReportsController {
   ): Promise<ContentReportDto> {
     return this.reports.review(id, admin, dto);
   }
+
+  /** Undoes a suspension: the course goes back to PUBLISHED. */
+  @Roles(Role.ADMIN)
+  @Patch('admin/content-reports/:id/restore-course')
+  restoreCourse(
+    @Param('id') id: string,
+    @CurrentUser() admin: AuthenticatedUser,
+  ): Promise<ContentReportDto> {
+    return this.reports.restoreCourse(id, admin);
+  }
 }

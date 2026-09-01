@@ -1,4 +1,4 @@
-import type { ContentReportStatus, ContentReportTargetType } from './enums';
+import type { ContentReportStatus, ContentReportTargetType, CourseStatus } from './enums';
 
 /**
  * Mirrors backend/src/modules/content-reports/dto/content-report-response.dto.ts.
@@ -20,6 +20,8 @@ export interface ContentReport {
   reviewedBy: ContentReportPerson | null;
   reviewedAt: string | null;
   createdAt: string;
+  /** The course's current status when targetType is COURSE; null for QNA_THREAD. */
+  courseStatus: CourseStatus | null;
 }
 
 export interface PaginatedContentReports {

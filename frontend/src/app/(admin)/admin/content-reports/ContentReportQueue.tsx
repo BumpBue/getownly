@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Check, ServerCrash, ShieldAlert, ShieldOff, X } from "lucide-react";
+import { Check, RotateCcw, ServerCrash, ShieldAlert, ShieldOff, X } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,11 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { Pager } from "@/components/shared/Pager";
 import { useToast } from "@/hooks/use-toast";
 import { ApiError } from "@/lib/api-client";
-import { listContentReports, reviewContentReport } from "@/lib/content-reports/api";
+import {
+  listContentReports,
+  restoreCourseFromReport,
+  reviewContentReport,
+} from "@/lib/content-reports/api";
 import type { ContentReport, ContentReportStatus } from "@/lib/content-reports/types";
 import { formatCount, formatDateTime } from "@/lib/format";
 import { adminMessages } from "@/lib/messages/admin";
@@ -68,6 +72,20 @@ export function ContentReportQueue() {
     try {
       await reviewContentReport(report.id, input);
       toast.success(messages.reviewedNotice);
+      await load();
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : authMessages.errors.unexpected);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function restore(report: ContentReport): Promise<void> {
+    setBusyId(report.id);
+    setError(null);
+    try {
+      await restoreCourseFromReport(report.id);
+      toast.success(messages.restoredNotice);
       await load();
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : authMessages.errors.unexpected);
@@ -137,6 +155,9 @@ export function ContentReportQueue() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone="neutral">{messages.targetType[report.targetType]}</Badge>
+                  {report.courseStatus === "SUSPENDED" && (
+                    <Badge tone="destructive">{messages.suspendedNotice}</Badge>
+                  )}
                   <span className="tabular text-xs text-subtle">
                     {messages.reportedAt} {formatDateTime(report.createdAt)}
                   </span>
@@ -235,6 +256,20 @@ export function ContentReportQueue() {
 
               {report.targetType === "COURSE" && report.status === "PENDING" && (
                 <p className="text-xs text-subtle">{messages.suspendHint}</p>
+              )}
+
+              {report.courseStatus === "SUSPENDED" && (
+                <div className="flex border-t border-border pt-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={busyId !== null}
+                    onClick={() => void restore(report)}
+                  >
+                    <RotateCcw aria-hidden />
+                    {busyId === report.id ? messages.restoring : messages.restoreCourse}
+                  </Button>
+                </div>
               )}
             </article>
           ))}

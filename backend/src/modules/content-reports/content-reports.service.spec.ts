@@ -4,6 +4,7 @@ import { CourseNotFoundException } from '@/common/exceptions/catalog.exceptions'
 import {
   ContentReportAlreadyReviewedException,
   ContentReportNotFoundException,
+  CourseNotSuspendedException,
 } from '@/common/exceptions/content-report.exceptions';
 import {
   QnaAccessDeniedException,
@@ -255,6 +256,90 @@ describe('ContentReportsService', () => {
     it('refuses a report id that does not exist', async () => {
       await expect(
         reports.review('no-such-report', asAuthUser(admin), { status: 'DISMISSED' }),
+      ).rejects.toBeInstanceOf(ContentReportNotFoundException);
+    });
+  });
+
+  describe('restoreCourse', () => {
+    async function createSuspendedCourseReport(): Promise<string> {
+      const reportId = await createPendingReport();
+      await reports.review(reportId, asAuthUser(admin), {
+        status: 'REVIEWED',
+        suspendCourse: true,
+      });
+      return reportId;
+    }
+
+    async function createPendingReport(): Promise<string> {
+      const report = await prisma.contentReport.create({
+        data: {
+          reporterId: student.id,
+          targetType: ContentReportTargetType.COURSE,
+          targetId: courseId,
+          reason: 'คอร์สนี้มีเนื้อหาที่ต้องตรวจสอบ',
+        },
+        select: { id: true },
+      });
+      return report.id;
+    }
+
+    it('publishes the course again and dismisses the report', async () => {
+      const reportId = await createSuspendedCourseReport();
+
+      const result = await reports.restoreCourse(reportId, asAuthUser(admin));
+
+      expect(result.status).toBe('DISMISSED');
+      expect(result.courseStatus).toBe('PUBLISHED');
+      expect(result.reviewedBy?.id).toBe(admin.id);
+      const course = await prisma.course.findUniqueOrThrow({
+        where: { id: courseId },
+        select: { status: true },
+      });
+      expect(course.status).toBe(CourseStatus.PUBLISHED);
+    });
+
+    it('refuses a course that was never suspended', async () => {
+      const reportId = await createPendingReport();
+
+      await expect(reports.restoreCourse(reportId, asAuthUser(admin))).rejects.toBeInstanceOf(
+        CourseNotSuspendedException,
+      );
+
+      const course = await prisma.course.findUniqueOrThrow({
+        where: { id: courseId },
+        select: { status: true },
+      });
+      expect(course.status).toBe(CourseStatus.PUBLISHED);
+    });
+
+    it('refuses a course that has since been restored already', async () => {
+      const reportId = await createSuspendedCourseReport();
+      await reports.restoreCourse(reportId, asAuthUser(admin));
+
+      await expect(reports.restoreCourse(reportId, asAuthUser(admin))).rejects.toBeInstanceOf(
+        CourseNotSuspendedException,
+      );
+    });
+
+    it('refuses a Q&A thread report, which never suspends a course at all', async () => {
+      const report = await prisma.contentReport.create({
+        data: {
+          reporterId: student.id,
+          targetType: ContentReportTargetType.QNA_THREAD,
+          targetId: threadId,
+          reason: 'กระทู้นี้มีคำพูดไม่เหมาะสมปะปนอยู่',
+        },
+        select: { id: true },
+      });
+
+      await expect(reports.restoreCourse(report.id, asAuthUser(admin))).rejects.toBeInstanceOf(
+        CourseNotSuspendedException,
+      );
+    });
+
+    it('refuses a report id that does not exist', async () => {
+      await expect(
+        reports.restoreCourse('no-such-report', asAuthUser(admin)),
       ).rejects.toBeInstanceOf(ContentReportNotFoundException);
     });
   });

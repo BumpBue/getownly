@@ -40,3 +40,10 @@ export function reviewContentReport(
     body: input,
   });
 }
+
+/** Undoes a suspension: the course goes back to PUBLISHED. */
+export function restoreCourseFromReport(reportId: string): Promise<ContentReport> {
+  return apiRequest<ContentReport>(`/admin/content-reports/${reportId}/restore-course`, {
+    method: 'PATCH',
+  });
+}

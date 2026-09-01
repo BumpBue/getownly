@@ -130,6 +130,10 @@ export const adminMessages = {
     filterAll: 'ทุกสถานะ',
     reviewedNotice: 'บันทึกผลการตรวจสอบเรียบร้อยแล้ว',
     retry: 'ลองใหม่อีกครั้ง',
+    restoreCourse: 'คืนสถานะเผยแพร่',
+    restoring: 'กำลังคืนสถานะ...',
+    restoredNotice: 'คืนสถานะเผยแพร่คอร์สเรียบร้อยแล้ว',
+    suspendedNotice: 'คอร์สนี้ถูกระงับการมองเห็นอยู่',
   },
 
   categories: {

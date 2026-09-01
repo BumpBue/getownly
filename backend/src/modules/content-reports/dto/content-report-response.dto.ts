@@ -1,4 +1,4 @@
-import type { ContentReportStatus, ContentReportTargetType } from '@prisma/client';
+import type { ContentReportStatus, ContentReportTargetType, CourseStatus } from '@prisma/client';
 
 /**
  * Every one of these is built by an explicit mapper, never a raw Prisma row
@@ -21,6 +21,12 @@ export interface ContentReportDto {
   reviewedBy: ContentReportPersonDto | null;
   reviewedAt: string | null;
   createdAt: string;
+  /**
+   * The course's current status, only when targetType is COURSE — null for a
+   * QNA_THREAD report. Lets the admin queue show "restore" only where the
+   * course is actually SUSPENDED right now, without a second round trip.
+   */
+  courseStatus: CourseStatus | null;
 }
 
 export interface PaginatedContentReportsDto {

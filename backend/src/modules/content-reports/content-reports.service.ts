@@ -4,6 +4,7 @@ import { CourseNotFoundException } from '@/common/exceptions/catalog.exceptions'
 import {
   ContentReportAlreadyReviewedException,
   ContentReportNotFoundException,
+  CourseNotSuspendedException,
 } from '@/common/exceptions/content-report.exceptions';
 import { QnaThreadNotFoundException } from '@/common/exceptions/qna.exceptions';
 import type { AuthenticatedUser } from '@/common/types/authenticated-user';
@@ -104,7 +105,7 @@ export class ContentReportsService {
     ]);
 
     return {
-      items: rows.map(toDto),
+      items: await this.toDtos(rows),
       page,
       limit,
       total,
@@ -165,20 +166,101 @@ export class ContentReportsService {
       where: { id: reportId },
       select: reportSelect,
     });
-    return toDto(updated);
+    const [result] = await this.toDtos([updated]);
+    return result;
   }
-}
 
-function toDto(row: ReportRow): ContentReportDto {
-  return {
-    id: row.id,
-    targetType: row.targetType,
-    targetId: row.targetId,
-    reason: row.reason,
-    status: row.status,
-    reporter: row.reporter,
-    reviewedBy: row.reviewedBy,
-    reviewedAt: row.reviewedAt?.toISOString() ?? null,
-    createdAt: row.createdAt.toISOString(),
-  };
+  /**
+   * Undoes a suspension: PUBLISHED again, and the report that led to it is
+   * settled as DISMISSED if it was not already.
+   *
+   * Deliberately keyed off the course's actual status rather than the
+   * report's — `CourseNotSuspendedException` covers both "this report never
+   * targeted a course" and "this course is not suspended anymore", because
+   * either way there is nothing here to restore.
+   */
+  async restoreCourse(reportId: string, admin: AuthenticatedUser): Promise<ContentReportDto> {
+    const report = await this.prisma.contentReport.findUnique({
+      where: { id: reportId },
+      select: { id: true, status: true, targetType: true, targetId: true },
+    });
+    if (!report) {
+      throw new ContentReportNotFoundException();
+    }
+
+    const course =
+      report.targetType === ContentReportTargetType.COURSE
+        ? await this.prisma.course.findUnique({
+            where: { id: report.targetId },
+            select: { id: true, status: true },
+          })
+        : null;
+    if (!course || course.status !== CourseStatus.SUSPENDED) {
+      throw new CourseNotSuspendedException();
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.course.update({
+        where: { id: course.id },
+        data: { status: CourseStatus.PUBLISHED },
+      });
+
+      if (report.status !== ContentReportStatus.DISMISSED) {
+        await tx.contentReport.update({
+          where: { id: reportId },
+          data: {
+            status: ContentReportStatus.DISMISSED,
+            reviewedById: admin.id,
+            reviewedAt: new Date(),
+          },
+        });
+      }
+    });
+
+    const updated = await this.prisma.contentReport.findUniqueOrThrow({
+      where: { id: reportId },
+      select: reportSelect,
+    });
+    const [dto] = await this.toDtos([updated]);
+    return dto;
+  }
+
+  /**
+   * Attaches each COURSE report's current course status in one extra query,
+   * batched, rather than one lookup per row — the queue page renders up to
+   * DEFAULT_PAGE_SIZE rows at once.
+   */
+  private async toDtos(rows: ReportRow[]): Promise<ContentReportDto[]> {
+    const courseIds = [
+      ...new Set(
+        rows
+          .filter((row) => row.targetType === ContentReportTargetType.COURSE)
+          .map((row) => row.targetId),
+      ),
+    ];
+
+    const courses = courseIds.length
+      ? await this.prisma.course.findMany({
+          where: { id: { in: courseIds } },
+          select: { id: true, status: true },
+        })
+      : [];
+    const statusByCourseId = new Map(courses.map((course) => [course.id, course.status]));
+
+    return rows.map((row) => ({
+      id: row.id,
+      targetType: row.targetType,
+      targetId: row.targetId,
+      reason: row.reason,
+      status: row.status,
+      reporter: row.reporter,
+      reviewedBy: row.reviewedBy,
+      reviewedAt: row.reviewedAt?.toISOString() ?? null,
+      createdAt: row.createdAt.toISOString(),
+      courseStatus:
+        row.targetType === ContentReportTargetType.COURSE
+          ? (statusByCourseId.get(row.targetId) ?? null)
+          : null,
+    }));
+  }
 }

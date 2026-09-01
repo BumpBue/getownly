@@ -309,6 +309,7 @@ Base path: `/api` · สิทธิ์ `—` = สาธารณะ · ทุ�
 | PATCH | `/admin/reviews/:id/status` | ซ่อนรีวิวไม่เหมาะสม |
 | GET | `/admin/content-reports?status=` | คิวเนื้อหาที่ถูกแจ้ง (scope 2.3.4) — ตั้งชื่อแยกจาก `/admin/reports` เพราะ root นั้นถูกใช้แล้ว |
 | PATCH | `/admin/content-reports/:id/review` | รับ `{ status, suspendCourse? }` · `suspendCourse` มีผลเฉพาะ COURSE + REVIEWED |
+| PATCH | `/admin/content-reports/:id/restore-course` | คืนคอร์สจาก SUSPENDED กลับ PUBLISHED + ปิด report เป็น DISMISSED |
 | GET | `/admin/reports/overview` | ผู้ใช้ · คอร์ส · ยอดขาย · รายได้แพลตฟอร์ม |
 | GET | `/admin/reports/sales` | ยอดขายตามช่วงเวลา/หมวด/ผู้สอน |
 | GET | `/admin/reports/ledger` | งบทดลอง — **ต้องพิสูจน์ว่า Σdebit = Σcredit** |

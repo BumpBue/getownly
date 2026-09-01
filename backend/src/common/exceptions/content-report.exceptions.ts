@@ -23,3 +23,18 @@ export class ContentReportAlreadyReviewedException extends BusinessException {
     );
   }
 }
+
+/**
+ * "Restore" only makes sense for a report whose course is actually SUSPENDED
+ * right now — not a QNA_THREAD report, not a course already PUBLISHED,
+ * UNPUBLISHED by its own instructor, or in any other status.
+ */
+export class CourseNotSuspendedException extends BusinessException {
+  constructor() {
+    super(
+      HttpStatus.CONFLICT,
+      'COURSE_NOT_SUSPENDED',
+      'คืนสถานะเผยแพร่ได้เฉพาะคอร์สที่ถูกระงับอยู่เท่านั้น',
+    );
+  }
+}
