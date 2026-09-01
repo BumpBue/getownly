@@ -20,16 +20,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { QnaStatusBadge } from "@/components/shared/QnaStatusBadge";
+import { ReportContentButton } from "@/components/shared/ReportContentButton";
 import { ApiError } from "@/lib/api-client";
 import { formatDateTime } from "@/lib/format";
 import { authMessages } from "@/lib/messages/auth";
 import { qnaMessages } from "@/lib/messages/qna";
-import {
-  deleteQnaThread,
-  getQnaThread,
-  replyToThread,
-  setThreadResolved,
-} from "@/lib/qna/api";
+import { deleteQnaThread, getQnaThread, replyToThread, setThreadResolved } from "@/lib/qna/api";
 import type { QnaReply, QnaThread } from "@/lib/qna/types";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +39,8 @@ export function QnaThreadView({ courseId, threadId }: { courseId: string; thread
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<"reply" | "resolve" | "delete" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** The reply that just landed, briefly highlighted so it reads as new. */
+  const [justAddedReplyId, setJustAddedReplyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -67,9 +65,16 @@ export function QnaThreadView({ courseId, threadId }: { courseId: string; thread
     setError(null);
 
     try {
-      setThread(await task());
+      const previousReplyIds = new Set((thread?.replies ?? []).map((reply) => reply.id));
+      const updated = await task();
+      setThread(updated);
+
       if (action === "reply") {
         setDraft("");
+        const added = updated.replies.find((reply) => !previousReplyIds.has(reply.id));
+        if (added) {
+          setJustAddedReplyId(added.id);
+        }
       }
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : authMessages.errors.unexpected);
@@ -167,6 +172,10 @@ export function QnaThreadView({ courseId, threadId }: { courseId: string; thread
           {thread.body}
         </p>
 
+        <div className="mt-4">
+          <ReportContentButton targetType="QNA_THREAD" targetId={threadId} />
+        </div>
+
         {(thread.canResolve || thread.canDelete) && (
           <div className="mt-5 flex flex-wrap gap-2 border-t border-border pt-4">
             {thread.canResolve && (
@@ -179,11 +188,7 @@ export function QnaThreadView({ courseId, threadId }: { courseId: string; thread
                   void run("resolve", () => setThreadResolved(threadId, !thread.isResolved))
                 }
               >
-                {thread.isResolved ? (
-                  <RotateCcw aria-hidden />
-                ) : (
-                  <CircleCheck aria-hidden />
-                )}
+                {thread.isResolved ? <RotateCcw aria-hidden /> : <CircleCheck aria-hidden />}
                 {busy === "resolve"
                   ? messages.resolving
                   : thread.isResolved
@@ -229,7 +234,12 @@ export function QnaThreadView({ courseId, threadId }: { courseId: string; thread
           />
         ) : (
           thread.replies.map((reply) => (
-            <ReplyCard key={reply.id} reply={reply} isAsker={reply.author.id === thread.author.id} />
+            <ReplyCard
+              key={reply.id}
+              reply={reply}
+              isAsker={reply.author.id === thread.author.id}
+              justAdded={reply.id === justAddedReplyId}
+            />
           ))
         )}
       </section>
@@ -265,11 +275,20 @@ export function QnaThreadView({ courseId, threadId }: { courseId: string; thread
   );
 }
 
-function ReplyCard({ reply, isAsker }: { reply: QnaReply; isAsker: boolean }) {
+function ReplyCard({
+  reply,
+  isAsker,
+  justAdded,
+}: {
+  reply: QnaReply;
+  isAsker: boolean;
+  justAdded?: boolean;
+}) {
   const { badge } = qnaMessages;
 
   return (
     <article
+      style={justAdded ? { animation: "fade-highlight 2s ease-out" } : undefined}
       className={cn(
         "rounded-card border p-5",
         // The instructor's answer is the one people came for, so it is tinted
@@ -308,7 +327,5 @@ function ReplyCard({ reply, isAsker }: { reply: QnaReply; isAsker: boolean }) {
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-5 px-4 py-8 sm:px-6">{children}</div>
-  );
+  return <div className="mx-auto flex max-w-3xl flex-col gap-5 px-4 py-8 sm:px-6">{children}</div>;
 }

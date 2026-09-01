@@ -27,8 +27,15 @@ export const COURSE_STATUSES = [
   'PUBLISHED',
   'REJECTED',
   'UNPUBLISHED',
+  'SUSPENDED',
 ] as const;
 export type CourseStatus = (typeof COURSE_STATUSES)[number];
+
+export const CONTENT_REPORT_TARGET_TYPES = ['COURSE', 'QNA_THREAD'] as const;
+export type ContentReportTargetType = (typeof CONTENT_REPORT_TARGET_TYPES)[number];
+
+export const CONTENT_REPORT_STATUSES = ['PENDING', 'REVIEWED', 'DISMISSED'] as const;
+export type ContentReportStatus = (typeof CONTENT_REPORT_STATUSES)[number];
 
 export const TOPUP_STATUSES = ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'] as const;
 export type TopupStatus = (typeof TOPUP_STATUSES)[number];

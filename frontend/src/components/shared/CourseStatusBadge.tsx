@@ -9,8 +9,13 @@ const TONE_BY_STATUS = {
   PUBLISHED: "success",
   REJECTED: "destructive",
   UNPUBLISHED: "neutral",
+  SUSPENDED: "destructive",
 } as const;
 
 export function CourseStatusBadge({ status }: { status: CourseStatus }) {
-  return <Badge tone={TONE_BY_STATUS[status]}>{courseMessages.status[status]}</Badge>;
+  return (
+    <Badge dot tone={TONE_BY_STATUS[status]}>
+      {courseMessages.status[status]}
+    </Badge>
+  );
 }

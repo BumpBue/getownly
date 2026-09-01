@@ -39,6 +39,22 @@ enum CourseStatus {
   /// Taken off the market by its instructor. Existing buyers keep access
   /// through their Enrollment; nobody new can find or purchase it.
   UNPUBLISHED
+  /// Hidden by an admin while a ContentReport against it is investigated.
+  /// Existing buyers keep access exactly like UNPUBLISHED, but the trigger
+  /// and the actor differ: this one is not the instructor's own choice, and
+  /// only ContentReportsService.review() may set or clear it.
+  SUSPENDED
+}
+
+enum ContentReportTargetType {
+  COURSE
+  QNA_THREAD
+}
+
+enum ContentReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
 }
 
 enum TopupStatus {
@@ -109,6 +125,8 @@ model User {
   accounts            Account[]
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
+  contentReports         ContentReport[] @relation("ContentReportReporter")
+  reviewedContentReports ContentReport[] @relation("ContentReportReviewer")
 
   // email and username are already indexed by their unique constraints.
   @@index([role])
@@ -398,6 +416,35 @@ model QnaReply {
   user   User      @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   @@index([threadId])
+}
+
+// ---------------------------------------------------------------------------
+// Content moderation (scope 2.3.4)
+// ---------------------------------------------------------------------------
+
+/// A student or instructor flagging a course or a Q&A thread as
+/// inappropriate. targetId is deliberately not a foreign key: it points at a
+/// Course row when targetType is COURSE and a QnaThread row when it is
+/// QNA_THREAD, the same polymorphic-by-string-pair shape LedgerTransaction
+/// already uses for referenceType/referenceId.
+model ContentReport {
+  id         String                   @id @default(cuid())
+  reporterId String
+  targetType ContentReportTargetType
+  targetId   String
+  reason     String
+
+  status       ContentReportStatus @default(PENDING)
+  reviewedById String?
+  reviewedAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  reporter   User  @relation("ContentReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reviewedBy User? @relation("ContentReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
 }
 
 // ---------------------------------------------------------------------------

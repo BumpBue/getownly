@@ -15,6 +15,7 @@ import { MailModule } from './infra/mail/mail.module';
 import { StorageModule } from './infra/storage/storage.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { ContentReportsModule } from './modules/content-reports/content-reports.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { LearnModule } from './modules/learn/learn.module';
@@ -24,6 +25,7 @@ import { MaterialsModule } from './modules/materials/materials.module';
 import { QnaModule } from './modules/qna/qna.module';
 import { QuizzesModule } from './modules/quizzes/quizzes.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { StatsModule } from './modules/stats/stats.module';
 import { TopupsModule } from './modules/topups/topups.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { UsersModule } from './modules/users/users.module';
@@ -55,6 +57,8 @@ import { UsersModule } from './modules/users/users.module';
     QnaModule,
     UsersModule,
     ReportsModule,
+    StatsModule,
+    ContentReportsModule,
   ],
   controllers: [AppController],
   providers: [

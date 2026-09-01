@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   LogOut,
   Receipt,
+  ShieldAlert,
   UserRound,
   Users,
 } from "lucide-react";
@@ -25,6 +26,7 @@ const LINKS = [
   { href: "/admin/courses", icon: BookCheck, label: adminMessages.nav.courses },
   { href: "/admin/users", icon: Users, label: adminMessages.nav.users },
   { href: "/admin/categories", icon: FolderTree, label: adminMessages.nav.categories },
+  { href: "/admin/content-reports", icon: ShieldAlert, label: adminMessages.nav.contentReports },
   { href: "/admin/reports", icon: BarChart3, label: adminMessages.nav.reports },
 ];
 

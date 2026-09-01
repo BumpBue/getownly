@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { CourseStatusBadge } from "@/components/shared/CourseStatusBadge";
+import { ReportContentButton } from "@/components/shared/ReportContentButton";
 import { StickyPanel } from "@/components/shared/StickyPanel";
 import { formatBaht, formatClock, formatCount, formatDuration, isFree } from "@/lib/format";
 import { courseMessages } from "@/lib/messages/courses";
@@ -217,14 +218,18 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
               <CardTitle>{detail.instructorHeading}</CardTitle>
             </CardHeader>
             <CardBody className="flex flex-col gap-1">
-              <p className="text-sm font-medium text-foreground">
-                {course.instructor.displayName}
-              </p>
+              <p className="text-sm font-medium text-foreground">{course.instructor.displayName}</p>
               {course.instructor.expertise && (
                 <p className="text-sm text-muted">{course.instructor.expertise}</p>
               )}
             </CardBody>
           </Card>
+
+          {balance !== null && !course.isOwner && (
+            <div>
+              <ReportContentButton targetType="COURSE" targetId={course.id} />
+            </div>
+          )}
         </div>
 
         {/* ---------------------------------------------------------------- */}

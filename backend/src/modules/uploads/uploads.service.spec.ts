@@ -2,7 +2,10 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { ConfigService } from '@nestjs/config';
 import { CourseStatus } from '@prisma/client';
 import { PrismaService } from '@/infra/prisma.service';
-import { CourseStorageLimitExceededException, NotCourseOwnerException } from '@/common/exceptions/catalog.exceptions';
+import {
+  CourseStorageLimitExceededException,
+  NotCourseOwnerException,
+} from '@/common/exceptions/catalog.exceptions';
 import { CourseAccessService } from '@/modules/courses/course-access.service';
 import { UploadsService } from './uploads.service';
 import {

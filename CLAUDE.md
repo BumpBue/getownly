@@ -320,6 +320,65 @@ URL ที่ใช้ตอน dev
 เฟส 8 ยังไม่มี Playwright e2e การส่งออก CSV และ AuditLog
 **ถัดไปที่คุ้มที่สุด: ตะกร้า/checkout · การถอนเงินของผู้สอน · รีวิว · ใบประกาศนียบัตร**
 
+### สิ่งที่ตัดสินใจเพิ่มตอนทำขอบเขตอัปเดต 2.3.1–2.3.4 (ราคาคอร์ส พื้นที่จัดเก็บ เกณฑ์ผ่าน Soft Lock และการแจ้งเนื้อหา)
+
+รอบนี้เริ่มจากตรวจสอบสถานะปัจจุบันก่อนลงมือ (`SCOPE_UPDATE_AUDIT.md` ที่ root ของ repo) แล้วค่อยแก้ตามที่ตรวจพบ
+ไม่ใช่งานเฟสถัดไปตามผัง 8 เฟสเดิม แต่เป็นการอัปเดตขอบเขตที่ทับซ้อนกับเฟส 3 เฟส 6 และเฟส 7 ที่ทำไปแล้ว
+
+- **ราคาคอร์สห้ามเกิน 10,000 บาท** — ก่อนหน้านี้ไม่มีเพดานเลย มีแค่ตรวจรูปแบบตัวเลข (regex ไม่เกิน 8 หลัก)
+  เพิ่ม custom validator `MaxPriceBaht` ใน `course-request.dto.ts` เพราะราคายังเป็น string ทั้งเส้นทางตามกติกาเรื่องเงิน
+  (แปลงเป็น `Number` แค่ชั่วขณะเพื่อเทียบค่าเท่านั้น ไม่เคยไหลลงไปคำนวณหรือบันทึก) และ zod schema ฝั่ง frontend ต้องคัดลอกเพดานตามเดิม
+- **พื้นที่จัดเก็บต่อคอร์สห้ามเกิน 3GB (วิดีโอ+เอกสารรวมกัน)** — ก่อนหน้านี้ไม่มีอะไรเลยแม้แต่แบบ SUM สดๆ
+  ที่น่าแปลกใจกว่านั้นคือ **ขนาดไฟล์วิดีโอไม่เคยถูกบันทึกไว้ที่ไหนเลย** (`Lesson.videoKey` มีแต่ไม่มี field ขนาดไฟล์คู่กัน)
+  ต้องเพิ่ม `Lesson.videoSize Int?` ก่อน ถึงจะรวมยอดได้จริง
+  **`Course.storageUsedBytes` เป็น `BigInt` ไม่ใช่ `Int`** เพราะเพดาน 3GB (3,221,225,472 ไบต์) เกิน `Int32` (`~2.1` พันล้าน)
+  แปลงเป็น `Number` ตอนออก DTO เท่านั้น ปลอดภัยเพราะ 3GB ยังต่ำกว่า `Number.MAX_SAFE_INTEGER` มาก — กติกา "ห้ามเป็น number" ในหัวข้อ 5
+  คุ้มครองเฉพาะเงิน ไม่ใช่ไบต์
+  **`CourseAccessService.assertStorageAvailable()`/`adjustStorageUsage()`** เป็นที่เดียวที่ตัดสินและปรับยอดสะสม
+  ตรวจสองจุดเสมอ (เหมือนกติกาไฟล์เดี่ยวที่มีอยู่แล้ว): ครั้งแรกที่ `POST /uploads/presign` เทียบกับขนาดที่ client อ้าง
+  ครั้งที่สองที่ `MaterialsService.create()`/`LessonsService.create()`/`update()` เทียบกับขนาดจริงจาก `storage.stat()`
+  **ไม่ได้ล็อกแถวแบบ `FOR UPDATE`** เหมือนบัญชีคู่ เพราะนี่ไม่ใช่เงิน ยอมรับ race window เล็กๆ ตามระดับความเสี่ยงที่ยอมรับได้ของโปรเจกต์เดี่ยวนี้
+  **`POST /uploads/presign` ต้องมี `courseId` เมื่อ `kind` เป็น `video`/`material`** (ไม่ต้องมีสำหรับ `cover`/`avatar`/`slip`)
+  ฝั่ง frontend `uploadFile()` ส่ง `lesson.courseId` ไปด้วยตอนอัปโหลดวิดีโอ/เอกสาร
+- **เกณฑ์ผ่านแบบทดสอบ (`Quiz.passScore`) ต้องอยู่ 50–100** — เดิมมี validation อยู่แล้วแต่พื้นล่างเป็น 1 ไม่ใช่ 50
+  แก้แค่ backend (`@Min(50)` ใน `CreateQuizDto`/`UpdateQuizDto`) เพราะ **หน้าจอให้ผู้สอนสร้าง/แก้ไขแบบทดสอบยังไม่มีอยู่จริง**
+  (ยังเป็น empty state "coming soon" ตามที่บันทึกไว้ในเฟส 6) เพดานนี้ต้องใช้ทันทีเมื่อมีคนสร้างหน้าจอนั้นในอนาคต
+- **Soft Lock ตรวจแล้วว่าเป็นจริงอยู่แล้วทั้งระบบ ไม่มีอะไรต้องแก้** ไม่เคยมี hard lock logic ทั้ง backend และ frontend
+  (`LessonsService`/`LearnService` เช็คแค่ enrollment ไม่เช็คลำดับหรือคะแนนสอบ, sidebar ไม่มีไอคอนล็อก) — บันทึกไว้กันเผลอเพิ่มในอนาคต
+- **ระบบแจ้งเนื้อหาไม่เหมาะสม (`ContentReport`) เป็นของใหม่ทั้งหมด** โมดูล `src/modules/content-reports/`
+  - **route คือ `/content-reports` และ `/admin/content-reports` ไม่ใช่ `/reports`** เพราะ `/admin/reports` ถูกใช้แล้วโดย
+    `AdminReportsController` (รายงานยอดขาย/งบทดลอง) คนละเรื่องกันโดยสิ้นเชิงแต่ชื่อชนกัน
+  - **`POST /content-reports` ไม่มี `@Roles` เฉพาะ** ทุกบทบาทที่ login แล้วแจ้งได้ เหมือนแบบที่ endpoint ถาม-ตอบทำไว้
+    ถ้าเป็นการแจ้งกระทู้ (`targetType: QNA_THREAD`) ต้องผ่าน `CourseAccessService.resolveQnaAccess()` ก่อนเสมอ
+    เพื่อกันคนที่เข้าถึงกระทู้นั้นไม่ได้มาแจ้ง — ใช้ตัวตัดสินสิทธิ์ตัวเดียวกับที่กระดานถาม-ตอบใช้อยู่แล้ว ไม่สร้างกติกาใหม่ซ้อน
+  - **`targetId` ไม่ใช่ foreign key** เพราะชี้ได้ทั้งไปที่ `Course` หรือ `QnaThread` แล้วแต่ `targetType`
+    เลียนแบบรูปแบบ `LedgerTransaction.referenceType`/`referenceId` ที่มีอยู่แล้วในระบบ
+  - **เพิ่ม `CourseStatus.SUSPENDED`** แยกจาก `UNPUBLISHED` ที่มีอยู่แล้ว เพราะความหมายและผู้กระทำต่างกัน:
+    `UNPUBLISHED` คือผู้สอนถอดคอร์สเอง ส่วน `SUSPENDED` คือ ADMIN ระงับจากการถูกแจ้ง — ปนกันจะทำให้ตอบไม่ได้ว่าใครเป็นคนสั่ง
+    **ไม่ต้องแก้โค้ดชั้นการมองเห็น/การเข้าเรียนเลย** เพราะของเดิมออกแบบไว้ดีอยู่แล้ว: `assertCourseVisible()` ปฏิเสธทุกสถานะ
+    ที่ไม่ใช่ `PUBLISHED` เหมือนกันหมด (เจ้าของ/ADMIN ผ่าน คนอื่น 404) และ `assertEnrolled()` เช็คจากแถว `Enrollment` เท่านั้น
+    ไม่เคยดู `Course.status` เลย — คนที่ซื้อไปแล้วจึงเข้าเรียนได้ปกติโดยอัตโนมัติทั้งสองกรณี (`UNPUBLISHED` และ `SUSPENDED`)
+  - **`PATCH /admin/content-reports/:id/review` รับ `{ status, suspendCourse? }`** — `suspendCourse` มีผลก็ต่อเมื่อ
+    `status: REVIEWED` และ `targetType: COURSE` เท่านั้น ค่าอื่นถูกเพิกเฉยเงียบๆ ไม่ throw เพราะ "ขอระงับพร้อมกับยกฟ้อง"
+    ไม่ใช่คำขอที่มีอยู่จริง ไม่ใช่ error
+  - **รายงานหนึ่งใบตัดสินได้ครั้งเดียว** (`ContentReportAlreadyReviewedException` 409) กัน ADMIN สองคนเปิดคิวพร้อมกันแล้วตัดสินซ้ำ
+    เหมือนกติกาเดียวกับคิวอนุมัติคอร์ส
+  - **ข้อจำกัดที่รู้แล้ว: ยังไม่มี endpoint คืนคอร์สจาก `SUSPENDED` กลับ `PUBLISHED`** เพราะสเปกรอบนี้ไม่ได้ขอไว้
+    ถ้าต้องการต้องถามก่อนแล้วค่อยเพิ่ม (แนวทางที่เป็นไปได้: ADMIN แก้ status ตรงๆ ผ่าน endpoint ใหม่ หรือรีวิวคำขอเป็นกรณีพิเศษ)
+  - Frontend: ปุ่ม "แจ้งเนื้อหาไม่เหมาะสม" (`ReportContentButton.tsx`) ใช้ `<dialog>` เหมือน modal ตรวจสลิปในเฟส 4-5
+    วางไว้ที่หน้าคอร์ส (ซ่อนถ้าเป็นเจ้าของคอร์สเองหรือยังไม่ login) และหน้ากระทู้ถาม-ตอบ · หน้าคิว ADMIN ใหม่ที่ `/admin/content-reports`
+- **ตรวจสอบหัวข้อรีเซ็ตรหัสผ่านผ่านอีเมลตามที่ผู้ใช้ขอ พบว่ามีอยู่แล้วครบสมบูรณ์** ไม่ใช่ของใหม่ ไม่ต้องสร้างอะไรเพิ่ม
+  `PasswordResetToken` มีใน schema ตั้งแต่เฟส 2, `POST /auth/forgot-password`/`POST /auth/reset-password` ทำงานครบ
+  (ตอบข้อความเดียวกันไม่ว่าอีเมลมีจริงไหม, เก็บ token แบบ hash, ใช้ครั้งเดียว atomic ผ่าน `updateMany` ที่เดียวกับที่กันกดซ้ำ,
+  revoke refresh token ทั้งหมดหลังรีเซ็ต) และมีเทสต์ e2e ครอบทุก edge case ที่ขอ (`backend/test/auth.e2e.spec.ts`
+  describe "password reset") อยู่แล้วตั้งแต่ก่อนรอบนี้ — บันทึกไว้กันเผลอสร้างซ้ำในอนาคต
+- **migration ของรอบนี้มี 2 ใบ**: `20260901154812_add_course_storage_tracking` (Course.storageUsedBytes, Lesson.videoSize)
+  และ `20260901160706_add_content_reports` (enum `ContentReportTargetType`/`ContentReportStatus`, ค่า `SUSPENDED`
+  เพิ่มเข้า `CourseStatus`, ตาราง `ContentReport`)
+- **เทสต์ของรอบนี้**: DTO ราคาคอร์ส (3) · DTO เกณฑ์ผ่าน (4) · การอัปโหลดกับเพดานพื้นที่จัดเก็บ (`uploads.service.spec.ts` เพิ่ม 4,
+  `lessons.service.spec.ts` เพิ่ม 5, `materials.service.spec.ts` ใหม่ทั้งไฟล์ 4 — โมดูล materials ไม่เคยมีเทสต์ของตัวเองมาก่อนเลย)
+  · `content-reports.service.spec.ts` ใหม่ 14 + DTO 5 · รวมทั้งชุด **320 ข้อ** ผ่านหมด
+
 ### สิ่งที่ตัดสินใจเพิ่มตอนทำหลังบ้าน ADMIN รายงาน และงานเก็บกวาด (เฟส 8)
 
 - **migration เดียวของเฟสนี้คือ `passwordChangedAt` บน `User`** (`20260812110601_add_password_changed_at`)

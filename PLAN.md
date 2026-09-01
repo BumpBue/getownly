@@ -23,6 +23,10 @@
 | ขอบเขตการเงิน | เติมเงิน → ซื้อ → **ผู้สอนขอถอนเงิน** (admin อนุมัติแล้วโอนจริงนอกระบบ) |
 | ฟีเจอร์ผู้เรียน | ✅ รีวิว+ให้ดาว · ✅ ใบประกาศนียบัตร · ✅ แบบทดสอบมีเกณฑ์ผ่าน+สอบซ้ำ · ✅ ตะกร้าสินค้า |
 | โครงสร้าง repo | pnpm workspace: `backend/` `frontend/` `packages/shared/` |
+| ราคาคอร์ส | สูงสุด **10,000 บาทต่อคอร์ส** (scope 2.3.1) |
+| พื้นที่จัดเก็บ | สูงสุด **3GB ต่อคอร์ส** (วิดีโอ+เอกสารรวมกัน, scope 2.3.2) ตรวจจากยอดสะสม cached ไม่ SUM สดทุกครั้ง |
+| การเรียน | **Soft Lock** — เข้าบทเรียนถัดไปได้อิสระ ไม่บังคับผ่านแบบทดสอบก่อน (scope 2.3.3) |
+| การแจ้งเนื้อหา | ผู้ใช้แจ้งคอร์ส/กระทู้ถาม-ตอบที่ไม่เหมาะสมได้ ADMIN ตรวจแล้วระงับการมองเห็นคอร์สชั่วคราวได้ (scope 2.3.4) |
 
 ### นอกขอบเขต (ห้ามทำโดยไม่ถามก่อน)
 
@@ -64,6 +68,8 @@
 
 `Course.status`: `DRAFT` → `PENDING_REVIEW` → `PUBLISHED` / `REJECTED` และ `PUBLISHED` → `UNPUBLISHED`
 กติกา: แก้เนื้อหาคอร์สที่ `PUBLISHED` ได้ทันที (ไม่ต้องอนุมัติซ้ำ) แต่ **แก้ราคาต้องส่งอนุมัติใหม่** · คอร์สที่มีคนซื้อแล้วห้ามลบ ทำได้แค่ `UNPUBLISHED`
+**เพิ่ม `SUSPENDED`** (scope 2.3.4): ADMIN ระงับชั่วคราวจากการถูกแจ้งเนื้อหา แยกจาก `UNPUBLISHED` เพราะคนละผู้กระทำ/เหตุผล —
+ทั้งสองสถานะทำให้หายจากหน้าค้นหาเหมือนกัน แต่ผู้ที่ลงทะเบียนเรียนไปแล้วยังเข้าเรียนได้ปกติทั้งคู่
 
 ### 1.3 แบบทดสอบ
 
@@ -125,8 +131,9 @@
 | **Notification** | userId, type, title, body, linkUrl, readAt, createdAt | n–1 User |
 | **PlatformSetting** | key (unique), value `Json`, updatedById, updatedAt | — (เก็บ default revenue share, PromptPay ID, ชื่อผู้รับ, ยอดถอนขั้นต่ำ) |
 | **AuditLog** | actorId, action, entityType, entityId, metadata `Json`, ip, createdAt | n–1 User (บันทึกทุกการกระทำของ ADMIN ที่มีผลกับเงินหรือสถานะบัญชี) |
+| **ContentReport** | reporterId, targetType (`COURSE`\|`QNA_THREAD`), targetId, reason, status (`PENDING`\|`REVIEWED`\|`DISMISSED`), reviewedById, reviewedAt, createdAt | n–1 User(reporter) · n–1 User(reviewer) · targetId ไม่ใช่ FK จริง (ชี้ Course หรือ QnaThread ตาม targetType เหมือน LedgerTransaction.referenceId) |
 
-**รวม 27 entity**
+**รวม 28 entity**
 
 ### 1.7 ภาพรวมความสัมพันธ์
 
@@ -271,6 +278,11 @@ Base path: `/api` · สิทธิ์ `—` = สาธารณะ · ทุ�
 | PATCH | `/qna/:threadId/status` | เจ้าของคอร์ส |
 | GET | `/instructor/qna` | INSTRUCTOR — กล่องคำถามรวมทุกคอร์ส |
 
+### แจ้งเนื้อหาไม่เหมาะสม (scope 2.3.4)
+| Method | Path | สิทธิ์ | หมายเหตุ |
+|---|---|---|---|
+| POST | `/content-reports` | ทุกบทบาทที่ login แล้ว | `{ targetType: COURSE\|QNA_THREAD, targetId, reason }` · แจ้งกระทู้ต้องผ่าน `resolveQnaAccess()` ก่อน |
+
 ### รายได้และการถอนเงินของผู้สอน
 | Method | Path | สิทธิ์ | หมายเหตุ |
 |---|---|---|---|
@@ -295,6 +307,8 @@ Base path: `/api` · สิทธิ์ `—` = สาธารณะ · ทุ�
 | POST | `/admin/payouts/:id/approve` 💰 | แนบสลิปโอน + ledger |
 | POST | `/admin/payouts/:id/reject` | |
 | PATCH | `/admin/reviews/:id/status` | ซ่อนรีวิวไม่เหมาะสม |
+| GET | `/admin/content-reports?status=` | คิวเนื้อหาที่ถูกแจ้ง (scope 2.3.4) — ตั้งชื่อแยกจาก `/admin/reports` เพราะ root นั้นถูกใช้แล้ว |
+| PATCH | `/admin/content-reports/:id/review` | รับ `{ status, suspendCourse? }` · `suspendCourse` มีผลเฉพาะ COURSE + REVIEWED |
 | GET | `/admin/reports/overview` | ผู้ใช้ · คอร์ส · ยอดขาย · รายได้แพลตฟอร์ม |
 | GET | `/admin/reports/sales` | ยอดขายตามช่วงเวลา/หมวด/ผู้สอน |
 | GET | `/admin/reports/ledger` | งบทดลอง — **ต้องพิสูจน์ว่า Σdebit = Σcredit** |
@@ -324,11 +338,17 @@ Base path: `/api` · สิทธิ์ `—` = สาธารณะ · ทุ�
 ### (auth)
 `/login` · `/register` · `/verify-email` · `/forgot-password` · `/reset-password`
 
+### (account)
+
+| Route | หน้าจอ |
+|---|---|
+| `/home` | **มีแล้ว** — หน้าพักหลัง login ของทุกบทบาท (แทนที่ `/dashboard` ที่วางแผนไว้เดิม) ทักทายตามช่วงเวลา + การ์ดทางลัดปรับตามบทบาท (คอร์สของฉัน, เรียกดูคอร์ส, โปรไฟล์ · เพิ่มแดชบอร์ดผู้สอน/แผงควบคุมตามบทบาท) + section "เรียนต่อ" สำหรับ STUDENT ที่มีคอร์สค้างเรียน · อยู่ใน route group `(account)` เพราะใช้ร่วมกันทั้งสามบทบาทเหมือน `/profile` · `HOME_PATH_BY_ROLE` ทุกบทบาทชี้มาที่นี่แล้วหลัง login/register |
+| `/profile` | มีแล้ว (ดู CLAUDE.md หัวข้อ 8) |
+
 ### (student)
 | Route | หน้าจอ |
 |---|---|
-| `/dashboard` | ภาพรวม — เรียนต่อ ความคืบหน้า ยอดกระเป๋า |
-| `/my-courses` | คอร์สที่ซื้อแล้ว + แถบความคืบหน้า |
+| `/my-courses` | คอร์สที่ซื้อแล้ว + แถบความคืบหน้า — ทุกบทบาทเข้าถึงได้แล้ว ไม่ใช่ STUDENT เท่านั้น (ดู CLAUDE.md หัวข้อ 8) |
 | `/learn/[courseId]` | เปลี่ยนทางไปบทเรียนล่าสุด |
 | `/learn/[courseId]/lessons/[lessonId]` | **หน้าเล่นบทเรียน** — วิดีโอ + สารบัญข้าง + เอกสารแนบ + แท็บถาม-ตอบ |
 | `/learn/[courseId]/quizzes/[quizId]` | ทำแบบทดสอบ |
@@ -369,6 +389,7 @@ Base path: `/api` · สิทธิ์ `—` = สาธารณะ · ทุ�
 | `/admin/payouts` · `/admin/payouts/[id]` | คิวคำขอถอนเงิน + แนบสลิปโอน |
 | `/admin/categories` | จัดการหมวดหมู่ |
 | `/admin/reviews` | ตรวจรีวิวที่ถูกรายงาน |
+| `/admin/content-reports` | คิวเนื้อหา (คอร์ส/กระทู้ถาม-ตอบ) ที่ถูกแจ้งไม่เหมาะสม (scope 2.3.4) |
 | `/admin/reports` | รายงานภาพรวม ยอดขาย และงบทดลอง |
 | `/admin/settings` | ตั้งค่าแพลตฟอร์ม |
 | `/admin/audit-logs` | บันทึกการกระทำของผู้ดูแล |
