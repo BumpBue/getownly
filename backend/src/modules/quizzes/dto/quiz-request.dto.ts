@@ -55,11 +55,11 @@ export class CreateQuizDto {
   @MaxLength(150, { message: 'ชื่อแบบทดสอบต้องยาวไม่เกิน 150 ตัวอักษร' })
   title!: string;
 
-  /** Percentage needed to pass. */
+  /** Percentage needed to pass. Scope 2.3.3: 50-100 inclusive. */
   @Type(() => Number)
   @IsInt({ message: 'เกณฑ์ผ่านต้องเป็นจำนวนเต็ม' })
-  @Min(1, { message: 'เกณฑ์ผ่านต้องมากกว่า 0' })
-  @Max(100, { message: 'เกณฑ์ผ่านต้องไม่เกิน 100' })
+  @Min(50, { message: 'เกณฑ์ผ่านต้องอยู่ระหว่าง 50-100' })
+  @Max(100, { message: 'เกณฑ์ผ่านต้องอยู่ระหว่าง 50-100' })
   passScore!: number;
 
   @IsArray({ message: 'ข้อสอบต้องเป็นรายการ' })
@@ -77,11 +77,12 @@ export class UpdateQuizDto {
   @MaxLength(150, { message: 'ชื่อแบบทดสอบต้องยาวไม่เกิน 150 ตัวอักษร' })
   title?: string;
 
+  /** Scope 2.3.3: 50-100 inclusive. */
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'เกณฑ์ผ่านต้องเป็นจำนวนเต็ม' })
-  @Min(1, { message: 'เกณฑ์ผ่านต้องมากกว่า 0' })
-  @Max(100, { message: 'เกณฑ์ผ่านต้องไม่เกิน 100' })
+  @Min(50, { message: 'เกณฑ์ผ่านต้องอยู่ระหว่าง 50-100' })
+  @Max(100, { message: 'เกณฑ์ผ่านต้องอยู่ระหว่าง 50-100' })
   passScore?: number;
 
   /** When present, replaces every question. Omit it to edit only the header. */

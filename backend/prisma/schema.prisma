@@ -237,7 +237,7 @@ model Quiz {
   lessonId String @unique
 
   title String
-  /// Percentage needed to pass, 0-100.
+  /// Percentage needed to pass. Scope 2.3.3: instructor-set, 50-100 inclusive.
   passScore Int
 
   createdAt DateTime @default(now())
