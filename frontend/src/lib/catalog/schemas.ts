@@ -13,6 +13,9 @@ const { validation } = instructorMessages;
 /** Digits with at most two decimals — the same shape the API accepts. */
 const pricePattern = /^\d{1,8}(\.\d{1,2})?$/;
 
+/** Scope 2.3.1: mirrors COURSE_MAX_PRICE_BAHT in course-request.dto.ts. */
+const COURSE_MAX_PRICE_BAHT = 10000;
+
 export const courseFormSchema = z.object({
   title: z
     .string()
@@ -25,7 +28,10 @@ export const courseFormSchema = z.object({
     .min(20, validation.descriptionTooShort)
     .max(5000, validation.descriptionTooLong),
   categoryId: z.string().min(1, validation.categoryRequired),
-  price: z.string().regex(pricePattern, validation.priceInvalid),
+  price: z
+    .string()
+    .regex(pricePattern, validation.priceInvalid)
+    .refine((value) => Number(value) <= COURSE_MAX_PRICE_BAHT, validation.priceTooHigh),
 });
 
 export type CourseFormValues = z.infer<typeof courseFormSchema>;

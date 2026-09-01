@@ -10,15 +10,46 @@ import {
   MaxLength,
   Min,
   MinLength,
+  registerDecorator,
+  type ValidationArguments,
+  type ValidationOptions,
 } from 'class-validator';
 
 /**
  * Money arrives as a fixed-point string and stays one until Prisma turns it
  * into a Decimal. It is never parsed into a JS number on the way
- * (CLAUDE.md, "เรื่องเงิน").
+ * (CLAUDE.md, "เรื่องเงิน") — except inside this one comparison, which only
+ * ever decides pass/fail and never reaches the database.
  */
 const PRICE_PATTERN = /^\d{1,8}(\.\d{1,2})?$/;
 const PRICE_MESSAGE = 'ราคาต้องเป็นตัวเลขไม่ติดลบ ทศนิยมไม่เกิน 2 ตำแหน่ง';
+
+/** Scope 2.3.1: no course may be priced above this. */
+export const COURSE_MAX_PRICE_BAHT = 10000;
+const COURSE_MAX_PRICE_MESSAGE = `ราคาคอร์สต้องไม่เกิน ${COURSE_MAX_PRICE_BAHT.toLocaleString('th-TH')} บาท`;
+
+/** Validates the numeric value of a price string already shaped by PRICE_PATTERN. */
+function MaxPriceBaht(max: number, validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: 'maxPriceBaht',
+      target: object.constructor,
+      propertyName,
+      options: validationOptions,
+      constraints: [max],
+      validator: {
+        validate(value: unknown, args: ValidationArguments): boolean {
+          if (typeof value !== 'string') {
+            // Not this validator's job: @Matches / @IsString already refuse it.
+            return true;
+          }
+          const numeric = Number(value);
+          return Number.isFinite(numeric) && numeric <= (args.constraints[0] as number);
+        },
+      },
+    });
+  };
+}
 
 export const COURSE_SORTS = ['latest', 'popular', 'price_asc', 'price_desc'] as const;
 export type CourseSort = (typeof COURSE_SORTS)[number];
@@ -41,6 +72,7 @@ export class CreateCourseDto {
   @IsOptional()
   @IsString()
   @Matches(PRICE_PATTERN, { message: PRICE_MESSAGE })
+  @MaxPriceBaht(COURSE_MAX_PRICE_BAHT, { message: COURSE_MAX_PRICE_MESSAGE })
   price?: string;
 
   /** Object key from POST /uploads/presign, not a URL. */
@@ -70,6 +102,7 @@ export class UpdateCourseDto {
   @IsOptional()
   @IsString()
   @Matches(PRICE_PATTERN, { message: PRICE_MESSAGE })
+  @MaxPriceBaht(COURSE_MAX_PRICE_BAHT, { message: COURSE_MAX_PRICE_MESSAGE })
   price?: string;
 
   @IsOptional()
