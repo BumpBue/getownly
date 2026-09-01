@@ -29,11 +29,13 @@ import { getWallet } from "@/lib/wallet/api";
  */
 export function MainNav() {
   const pathname = usePathname();
+  const isLandingPage = pathname === "/";
 
   const [user, setUser] = useState<UserProfile | null>(null);
   const [checkedAuth, setCheckedAuth] = useState(false);
   const [balance, setBalance] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   const loadUser = useCallback(async () => {
     try {
@@ -79,12 +81,37 @@ export function MainNav() {
     setMobileOpen(false);
   }, [pathname]);
 
+  // Only the landing page has a hero dark enough to sit a transparent bar on
+  // top of - everywhere else this just stays permanently "scrolled".
+  useEffect(() => {
+    if (!isLandingPage) {
+      setScrolled(true);
+      return;
+    }
+    function onScroll() {
+      setScrolled(window.scrollY > 8);
+    }
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [isLandingPage]);
+
   const isGuest = checkedAuth && user === null;
+  const transparent = isLandingPage && !scrolled && !mobileOpen;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-card">
+    <header
+      className={`fixed inset-x-0 top-0 z-40 transition-colors duration-150 ${
+        transparent ? "border-transparent bg-transparent" : "border-b border-border bg-card"
+      }`}
+    >
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="shrink-0 text-xl font-semibold text-primary">
+        <Link
+          href={user ? "/home" : "/"}
+          className={`shrink-0 text-xl font-semibold transition-colors duration-150 ${
+            transparent ? "text-white" : "text-primary"
+          }`}
+        >
           {authMessages.brand.name}
         </Link>
 
@@ -96,7 +123,11 @@ export function MainNav() {
           {/* Desktop: the full right-hand cluster. */}
           {isGuest && (
             <div className="hidden items-center gap-2 md:flex">
-              <Button asChild variant="ghost">
+              <Button
+                asChild
+                variant="ghost"
+                className={transparent ? "text-white hover:bg-white/10 hover:text-white" : undefined}
+              >
                 <Link href="/login">{authMessages.login.title}</Link>
               </Button>
               <Button asChild>
@@ -127,7 +158,11 @@ export function MainNav() {
               aria-label={mobileOpen ? navMessages.mobile.closeMenu : navMessages.mobile.openMenu}
               aria-expanded={mobileOpen}
               onClick={() => setMobileOpen((current) => !current)}
-              className="flex size-10 shrink-0 items-center justify-center rounded-control text-muted transition-colors duration-150 hover:bg-background hover:text-foreground"
+              className={`flex size-10 shrink-0 items-center justify-center rounded-control transition-colors duration-150 ${
+                transparent
+                  ? "text-white hover:bg-white/10"
+                  : "text-muted hover:bg-background hover:text-foreground"
+              }`}
             >
               {mobileOpen ? <X aria-hidden className="size-5" /> : <Menu aria-hidden className="size-5" />}
             </button>

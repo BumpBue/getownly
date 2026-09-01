@@ -56,7 +56,7 @@ export function AdminNav() {
   return (
     <aside className="flex shrink-0 flex-col gap-6 border-b border-border bg-primary px-4 py-5 text-primary-foreground lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:border-b-0 lg:border-r lg:px-5 lg:py-7">
       <div className="flex flex-col gap-0.5">
-        <Link href="/" className="text-xl font-semibold">
+        <Link href="/home" className="text-xl font-semibold">
           {walletMessages.nav.brand}
         </Link>
         <span className="text-xs text-secondary">{nav.role}</span>
