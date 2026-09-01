@@ -13,11 +13,14 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { StickySaveBar } from "@/components/shared/StickySaveBar";
+import { useToast } from "@/hooks/use-toast";
 import { applyApiError } from "@/lib/auth/form-errors";
 import { listCategories, updateCourse } from "@/lib/catalog/api";
 import { courseFormSchema, type CourseFormValues } from "@/lib/catalog/schemas";
 import { UPLOAD_ACCEPT, type Category, type CourseDetail } from "@/lib/catalog/types";
 import { UploadError, uploadFile } from "@/lib/catalog/upload";
+import { formatFileSize } from "@/lib/format";
 import { instructorMessages } from "@/lib/messages/instructor";
 
 const FIELDS = ["title", "description", "categoryId", "price"] as const;
@@ -38,10 +41,10 @@ export function GeneralTab({
   onSaved: (course: CourseDetail) => void;
 }) {
   const { general } = instructorMessages;
+  const toast = useToast();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [banner, setBanner] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
 
   const [coverUrl, setCoverUrl] = useState(course.coverUrl);
   const [coverProgress, setCoverProgress] = useState<number | null>(null);
@@ -51,7 +54,8 @@ export function GeneralTab({
     register,
     handleSubmit,
     setError,
-    formState: { errors, isSubmitting },
+    reset,
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<CourseFormValues>({
     resolver: zodResolver(courseFormSchema),
     defaultValues: {
@@ -70,11 +74,12 @@ export function GeneralTab({
 
   async function onSubmit(values: CourseFormValues): Promise<void> {
     setBanner(null);
-    setSaved(false);
 
     try {
       onSaved(await updateCourse(course.id, values));
-      setSaved(true);
+      toast.success(general.saved);
+      // Clears isDirty against the values just saved, not the original ones.
+      reset(values);
     } catch (caught) {
       const message = applyApiError<CourseFormValues>(caught, setError, FIELDS);
       if (message) {
@@ -85,7 +90,6 @@ export function GeneralTab({
 
   async function onCoverPicked(file: File): Promise<void> {
     setBanner(null);
-    setSaved(false);
     setCoverProgress(0);
 
     try {
@@ -93,7 +97,7 @@ export function GeneralTab({
       const updated = await updateCourse(course.id, { coverKey: uploaded.fileKey });
       setCoverUrl(updated.coverUrl);
       onSaved(updated);
-      setSaved(true);
+      toast.success(general.saved);
     } catch (caught) {
       setBanner(
         caught instanceof UploadError
@@ -120,7 +124,6 @@ export function GeneralTab({
         <CardBody>
           <form className="flex flex-col gap-5" onSubmit={handleSubmit(onSubmit)} noValidate>
             {banner && <Alert tone="error">{banner}</Alert>}
-            {saved && !banner && <Alert tone="success">{general.saved}</Alert>}
 
             <Field id="title" label={general.title} error={errors.title?.message}>
               <Input
@@ -163,7 +166,9 @@ export function GeneralTab({
               <Field
                 id="price"
                 label={general.price}
-                hint={course.status === "PUBLISHED" ? general.priceHintPublished : general.priceHint}
+                hint={
+                  course.status === "PUBLISHED" ? general.priceHintPublished : general.priceHint
+                }
                 error={errors.price?.message}
               >
                 <Input
@@ -182,65 +187,100 @@ export function GeneralTab({
                 {isSubmitting ? general.saving : general.save}
               </Button>
             </div>
+
+            <StickySaveBar
+              visible={isDirty && !readOnly}
+              message={general.unsavedNotice}
+              saveLabel={general.save}
+              savingLabel={general.saving}
+              saving={isSubmitting}
+            />
           </form>
         </CardBody>
       </Card>
 
-      <Card className="lg:sticky lg:top-6 lg:self-start">
-        <CardHeader>
-          <CardTitle>{general.cover}</CardTitle>
-        </CardHeader>
-
-        <CardBody className="flex flex-col gap-3">
-          <div className="relative aspect-video w-full overflow-hidden rounded-control border border-border bg-background">
-            {coverUrl ? (
-              <Image
-                src={coverUrl}
-                alt={course.title}
-                fill
-                sizes="20rem"
-                className="object-cover"
-              />
+      <div className="flex flex-col gap-6 lg:sticky lg:top-6 lg:self-start">
+        <Card>
+          <CardHeader>
+            <CardTitle>{general.storageHeading}</CardTitle>
+          </CardHeader>
+          <CardBody className="flex flex-col gap-2">
+            <Progress
+              value={(course.storageUsedBytes / course.storageLimitBytes) * 100}
+              tone={
+                course.storageUsedBytes / course.storageLimitBytes >= 0.9 ? "secondary" : "primary"
+              }
+            />
+            <p className="tabular text-xs text-muted">
+              {general.storageUsedOf} {formatFileSize(course.storageUsedBytes)} /{" "}
+              {formatFileSize(course.storageLimitBytes)}
+            </p>
+            {course.storageUsedBytes >= course.storageLimitBytes ? (
+              <p className="text-xs text-destructive">{general.storageFull}</p>
             ) : (
-              <div className="flex h-full flex-col items-center justify-center gap-2 text-subtle">
-                <ImageOff aria-hidden className="size-6" />
-                <span className="text-xs">{instructorMessages.curriculum.noVideo}</span>
-              </div>
+              course.storageUsedBytes / course.storageLimitBytes >= 0.9 && (
+                <p className="text-xs text-pending">{general.storageNearLimit}</p>
+              )
             )}
-          </div>
+          </CardBody>
+        </Card>
 
-          <p className="text-xs text-subtle">{general.coverHint}</p>
+        <Card>
+          <CardHeader>
+            <CardTitle>{general.cover}</CardTitle>
+          </CardHeader>
 
-          {coverProgress !== null ? (
-            <Progress value={coverProgress} label={general.coverUpload} />
-          ) : (
-            <>
-              <input
-                ref={coverInput}
-                type="file"
-                accept={UPLOAD_ACCEPT.cover.join(",")}
-                className="hidden"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) {
-                    void onCoverPicked(file);
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                block
-                disabled={readOnly}
-                onClick={() => coverInput.current?.click()}
-              >
-                <Upload aria-hidden />
-                {coverUrl ? general.coverReplace : general.coverUpload}
-              </Button>
-            </>
-          )}
-        </CardBody>
-      </Card>
+          <CardBody className="flex flex-col gap-3">
+            <div className="relative aspect-video w-full overflow-hidden rounded-control border border-border bg-background">
+              {coverUrl ? (
+                <Image
+                  src={coverUrl}
+                  alt={course.title}
+                  fill
+                  sizes="20rem"
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center gap-2 text-subtle">
+                  <ImageOff aria-hidden className="size-6" />
+                  <span className="text-xs">{instructorMessages.curriculum.noVideo}</span>
+                </div>
+              )}
+            </div>
+
+            <p className="text-xs text-subtle">{general.coverHint}</p>
+
+            {coverProgress !== null ? (
+              <Progress value={coverProgress} label={general.coverUpload} />
+            ) : (
+              <>
+                <input
+                  ref={coverInput}
+                  type="file"
+                  accept={UPLOAD_ACCEPT.cover.join(",")}
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) {
+                      void onCoverPicked(file);
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  block
+                  disabled={readOnly}
+                  onClick={() => coverInput.current?.click()}
+                >
+                  <Upload aria-hidden />
+                  {coverUrl ? general.coverReplace : general.coverUpload}
+                </Button>
+              </>
+            )}
+          </CardBody>
+        </Card>
+      </div>
     </div>
   );
 }

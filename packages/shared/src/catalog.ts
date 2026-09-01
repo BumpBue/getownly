@@ -64,6 +64,10 @@ export interface CourseDetail extends CourseListItem {
   isEnrolled: boolean;
   isOwner: boolean;
   createdAt: string;
+  /** Cumulative bytes used by this course's video + material files. */
+  storageUsedBytes: number;
+  /** The fixed cap every course is held to, currently a 3 GB flat rate. */
+  storageLimitBytes: number;
 }
 
 export interface InstructorCourse {

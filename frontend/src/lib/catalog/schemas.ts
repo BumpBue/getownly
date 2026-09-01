@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { instructorMessages } from "@/lib/messages/instructor";
+import { z } from 'zod';
+import { instructorMessages } from '@/lib/messages/instructor';
 
 /**
  * Client-side validation, for UX only.

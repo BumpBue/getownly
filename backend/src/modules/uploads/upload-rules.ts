@@ -85,6 +85,13 @@ export const UPLOAD_RULES: Record<UploadKind, KindRule> = {
 
 const BYTES_PER_MB = 1024 * 1024;
 
+/**
+ * Scope 2.3.2: total bytes a single course's lesson videos and materials may
+ * use, combined. Checked against `Course.storageUsedBytes`, a running total,
+ * never by summing every file on every request.
+ */
+export const COURSE_MAX_STORAGE_BYTES = 3 * 1024 * 1024 * 1024;
+
 export function maxBytesFor(kind: UploadKind, limits: UploadLimitsMb): number {
   return limits[UPLOAD_RULES[kind].limit] * BYTES_PER_MB;
 }

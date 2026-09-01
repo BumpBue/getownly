@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { CourseStatus } from '@prisma/client';
 import {
+  CourseStorageLimitExceededException,
   LessonAccessDeniedException,
   LessonHasNoVideoException,
   LessonOrderMismatchException,
@@ -9,6 +10,8 @@ import {
 } from '@/common/exceptions/catalog.exceptions';
 import { PrismaService } from '@/infra/prisma.service';
 import { CourseAccessService } from '@/modules/courses/course-access.service';
+import { COURSE_MAX_STORAGE_BYTES } from '@/modules/uploads/upload-rules';
+import { FileNotFoundException } from '@/modules/uploads/uploads.errors';
 import { LessonsService, parseRangeHeader } from './lessons.service';
 import {
   asAuthUser,
@@ -236,6 +239,98 @@ describe('LessonsService', () => {
       await expect(
         lessons.openVideo(lessonId, asAuthUser(owner), undefined),
       ).rejects.toBeInstanceOf(LessonHasNoVideoException);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Scope 2.3.2: the 3 GB course storage cap
+  // -------------------------------------------------------------------------
+
+  describe('video storage tracking', () => {
+    async function courseStorageUsed(): Promise<bigint> {
+      const course = await prisma.course.findUniqueOrThrow({
+        where: { id: courseId },
+        select: { storageUsedBytes: true },
+      });
+      return course.storageUsedBytes;
+    }
+
+    it('adds the video size onto the course total when a lesson is created', async () => {
+      const videoKey = `video/${owner.id}/lesson.mp4`;
+      storage.put(videoKey, Buffer.alloc(10 * 1024 * 1024), 'video/mp4');
+
+      await lessons.create(courseId, asAuthUser(owner), { title: 'บทใหม่', videoKey });
+
+      expect(await courseStorageUsed()).toBe(10n * 1024n * 1024n);
+    });
+
+    it('refuses a lesson video that would push the course over 3 GB', async () => {
+      await prisma.course.update({
+        where: { id: courseId },
+        data: { storageUsedBytes: BigInt(COURSE_MAX_STORAGE_BYTES) - 1024n },
+      });
+      const videoKey = `video/${owner.id}/too-big.mp4`;
+      storage.put(videoKey, Buffer.alloc(2048), 'video/mp4');
+
+      await expect(
+        lessons.create(courseId, asAuthUser(owner), { title: 'บทใหม่', videoKey }),
+      ).rejects.toBeInstanceOf(CourseStorageLimitExceededException);
+    });
+
+    it('refuses a video key nothing was ever uploaded to', async () => {
+      await expect(
+        lessons.create(courseId, asAuthUser(owner), {
+          title: 'บทใหม่',
+          videoKey: `video/${owner.id}/ghost.mp4`,
+        }),
+      ).rejects.toBeInstanceOf(FileNotFoundException);
+    });
+
+    it('adjusts the total by the difference when a video is replaced', async () => {
+      const firstKey = `video/${owner.id}/first.mp4`;
+      storage.put(firstKey, Buffer.alloc(10 * 1024 * 1024), 'video/mp4');
+      const lesson = await lessons.create(courseId, asAuthUser(owner), {
+        title: 'บทใหม่',
+        videoKey: firstKey,
+      });
+      expect(await courseStorageUsed()).toBe(10n * 1024n * 1024n);
+
+      const secondKey = `video/${owner.id}/second.mp4`;
+      storage.put(secondKey, Buffer.alloc(4 * 1024 * 1024), 'video/mp4');
+      await lessons.update(lesson.id, asAuthUser(owner), { videoKey: secondKey });
+
+      // Replaced a 10MB video with a 4MB one: the total drops, it does not add.
+      expect(await courseStorageUsed()).toBe(4n * 1024n * 1024n);
+      expect(storage.removed).toContain(firstKey);
+    });
+
+    it('frees the video and every material size when a lesson is deleted', async () => {
+      const videoKey = `video/${owner.id}/lesson.mp4`;
+      storage.put(videoKey, Buffer.alloc(5 * 1024 * 1024), 'video/mp4');
+      const lesson = await lessons.create(courseId, asAuthUser(owner), {
+        title: 'บทใหม่',
+        videoKey,
+      });
+      await prisma.material.create({
+        data: {
+          lessonId: lesson.id,
+          fileName: 'เอกสาร.pdf',
+          fileKey: `material/${owner.id}/doc.pdf`,
+          fileSize: 1024 * 1024,
+          mimeType: 'application/pdf',
+        },
+      });
+      // Created the material directly rather than through MaterialsService,
+      // so mirror what that service would have added onto the running total.
+      await prisma.course.update({
+        where: { id: courseId },
+        data: { storageUsedBytes: { increment: 1024 * 1024 } },
+      });
+      expect(await courseStorageUsed()).toBe(6n * 1024n * 1024n);
+
+      await lessons.remove(lesson.id, asAuthUser(owner));
+
+      expect(await courseStorageUsed()).toBe(0n);
     });
   });
 });

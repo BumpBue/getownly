@@ -46,7 +46,7 @@ export class MaterialsService {
     user: AuthenticatedUser,
     dto: CreateMaterialDto,
   ): Promise<MaterialDto> {
-    await this.access.assertLessonOwner(lessonId, user);
+    const lesson = await this.access.assertLessonOwner(lessonId, user);
 
     const parsed = parseObjectKey(dto.fileKey);
     if (!parsed || parsed.kind !== 'material') {
@@ -67,6 +67,10 @@ export class MaterialsService {
     if (!(dto.mimeType in UPLOAD_RULES.material.extensionByMimeType)) {
       throw new UnsupportedFileTypeException(UPLOAD_RULES.material.acceptLabel, dto.mimeType);
     }
+    // Re-checked against the real size: the presign step only saw what the
+    // client claimed (CLAUDE.md, scope 2.3.2 - the running total, not a fresh
+    // SUM, is what makes this cheap to check again here).
+    this.access.assertStorageAvailable(lesson.course.storageUsedBytes, stored.sizeBytes);
 
     const material = await this.prisma.material.create({
       data: {
@@ -88,13 +92,15 @@ export class MaterialsService {
       },
     });
 
+    await this.access.adjustStorageUsage(lesson.courseId, stored.sizeBytes);
+
     return { ...material, createdAt: material.createdAt.toISOString() };
   }
 
   async remove(materialId: string, user: AuthenticatedUser): Promise<{ message: string }> {
     const material = await this.prisma.material.findUnique({
       where: { id: materialId },
-      select: { id: true, fileKey: true, lessonId: true },
+      select: { id: true, fileKey: true, fileSize: true, lessonId: true },
     });
 
     if (!material) {
@@ -103,9 +109,10 @@ export class MaterialsService {
 
     // Ownership is decided by the course the lesson belongs to, never by the
     // uploader id in the key.
-    await this.access.assertLessonOwner(material.lessonId, user);
+    const lesson = await this.access.assertLessonOwner(material.lessonId, user);
 
     await this.prisma.material.delete({ where: { id: materialId } });
+    await this.access.adjustStorageUsage(lesson.courseId, -material.fileSize);
     await this.storage.remove(material.fileKey);
 
     return { message: 'ลบเอกสารประกอบเรียบร้อยแล้ว' };

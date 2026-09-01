@@ -12,6 +12,7 @@ import type {
   SignedUrlResponseDto,
 } from './dto/presign-upload.dto';
 import {
+  CourseIdRequiredForUploadException,
   FileAccessDeniedException,
   FileTooLargeException,
   InvalidFileKeyException,
@@ -81,6 +82,15 @@ export class UploadsService {
 
     if (dto.fileSize > maxBytesFor(dto.kind, this.limits)) {
       throw new FileTooLargeException(maxMbFor(dto.kind, this.limits), dto.fileSize);
+    }
+
+    // Only these two kinds count against a course's 3 GB cap (scope 2.3.2).
+    if (dto.kind === 'video' || dto.kind === 'material') {
+      if (!dto.courseId) {
+        throw new CourseIdRequiredForUploadException();
+      }
+      const course = await this.access.assertCourseOwner(dto.courseId, user);
+      this.access.assertStorageAvailable(course.storageUsedBytes, dto.fileSize);
     }
 
     const fileKey = buildObjectKey(dto.kind, user.id, randomUUID(), extension);

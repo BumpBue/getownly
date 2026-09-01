@@ -143,3 +143,21 @@ export class LessonAccessDeniedException extends BusinessException {
     );
   }
 }
+
+/**
+ * Scope 2.3.2: a course's video + material files together may not exceed
+ * 3 GB. Raised both before a presigned upload URL is issued and again once
+ * the real file size is known, so a bigger-than-declared upload cannot slip
+ * the cap either.
+ */
+export class CourseStorageLimitExceededException extends BusinessException {
+  constructor(remainingBytes: number, fileSize: number) {
+    const remainingMb = Math.max(0, Math.floor(remainingBytes / (1024 * 1024)));
+    super(
+      HttpStatus.PAYLOAD_TOO_LARGE,
+      'COURSE_STORAGE_LIMIT_EXCEEDED',
+      `พื้นที่จัดเก็บของคอร์สนี้เหลือไม่พอ เหลืออีก ${remainingMb} MB จากทั้งหมด 3 GB`,
+      { remainingBytes: Math.max(0, remainingBytes), fileSize },
+    );
+  }
+}

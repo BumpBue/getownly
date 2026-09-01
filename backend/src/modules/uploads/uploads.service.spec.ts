@@ -2,9 +2,11 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { ConfigService } from '@nestjs/config';
 import { CourseStatus } from '@prisma/client';
 import { PrismaService } from '@/infra/prisma.service';
+import { CourseStorageLimitExceededException, NotCourseOwnerException } from '@/common/exceptions/catalog.exceptions';
 import { CourseAccessService } from '@/modules/courses/course-access.service';
 import { UploadsService } from './uploads.service';
 import {
+  CourseIdRequiredForUploadException,
   FileAccessDeniedException,
   FileTooLargeException,
   InvalidFileKeyException,
@@ -12,7 +14,7 @@ import {
   UploadKindNotAllowedException,
   VideoNotDownloadableException,
 } from './uploads.errors';
-import { parseObjectKey } from './upload-rules';
+import { COURSE_MAX_STORAGE_BYTES, parseObjectKey } from './upload-rules';
 import {
   asAuthUser,
   createCategory,
@@ -46,6 +48,7 @@ describe('UploadsService', () => {
   let student: TestUser;
   let buyer: TestUser;
   let admin: TestUser;
+  let courseId: string;
 
   beforeAll(async () => {
     prisma = new PrismaService();
@@ -70,6 +73,13 @@ describe('UploadsService', () => {
     student = await createUser(prisma, { role: 'STUDENT' });
     buyer = await createUser(prisma, { role: 'STUDENT' });
     admin = await createUser(prisma, { role: 'ADMIN' });
+
+    const categoryId = await createCategory(prisma);
+    courseId = await createCourse(prisma, {
+      instructorId: instructor.id,
+      categoryId,
+      price: '990.00',
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -83,6 +93,7 @@ describe('UploadsService', () => {
         fileName: '../../etc/passwd.exe',
         mimeType: 'video/mp4',
         fileSize: 10 * MB,
+        courseId,
       });
 
       expect(result.fileKey).toMatch(new RegExp(`^video/${instructor.id}/[0-9a-f-]{36}\\.mp4$`));
@@ -121,6 +132,7 @@ describe('UploadsService', () => {
           fileName: 'clip.mp4',
           mimeType: 'video/mp4',
           fileSize: 6 * MB,
+          courseId,
         }),
       ).resolves.toMatchObject({ expiresIn: 900 });
     });
@@ -145,6 +157,82 @@ describe('UploadsService', () => {
         fileSize: 1024,
       });
       expect(slip.fileKey.startsWith(`slip/${student.id}/`)).toBe(true);
+    });
+
+    // -----------------------------------------------------------------------
+    // Scope 2.3.2: 3 GB storage cap per course
+    // -----------------------------------------------------------------------
+
+    describe('course storage cap', () => {
+      it('requires a courseId for video and material, but not for cover, avatar or slip', async () => {
+        for (const kind of ['video', 'material'] as const) {
+          await expect(
+            uploads.presignUpload(asAuthUser(instructor), {
+              kind,
+              fileName: 'file',
+              mimeType: kind === 'video' ? 'video/mp4' : 'application/pdf',
+              fileSize: 1024,
+            }),
+          ).rejects.toBeInstanceOf(CourseIdRequiredForUploadException);
+        }
+
+        await expect(
+          uploads.presignUpload(asAuthUser(instructor), {
+            kind: 'cover',
+            fileName: 'cover.jpg',
+            mimeType: 'image/jpeg',
+            fileSize: 1024,
+          }),
+        ).resolves.toBeDefined();
+      });
+
+      it('refuses a courseId that belongs to someone else', async () => {
+        const otherInstructor = await createUser(prisma, { role: 'INSTRUCTOR' });
+
+        await expect(
+          uploads.presignUpload(asAuthUser(otherInstructor), {
+            kind: 'video',
+            fileName: 'clip.mp4',
+            mimeType: 'video/mp4',
+            fileSize: 1024,
+            courseId,
+          }),
+        ).rejects.toBeInstanceOf(NotCourseOwnerException);
+      });
+
+      it('refuses an upload that would push the course over 3 GB', async () => {
+        await prisma.course.update({
+          where: { id: courseId },
+          data: { storageUsedBytes: BigInt(COURSE_MAX_STORAGE_BYTES) - BigInt(10 * MB) },
+        });
+
+        await expect(
+          uploads.presignUpload(asAuthUser(instructor), {
+            kind: 'material',
+            fileName: 'handout.pdf',
+            mimeType: 'application/pdf',
+            fileSize: 20 * MB,
+            courseId,
+          }),
+        ).rejects.toBeInstanceOf(CourseStorageLimitExceededException);
+      });
+
+      it('allows an upload that fits exactly under the remaining space', async () => {
+        await prisma.course.update({
+          where: { id: courseId },
+          data: { storageUsedBytes: BigInt(COURSE_MAX_STORAGE_BYTES) - BigInt(10 * MB) },
+        });
+
+        await expect(
+          uploads.presignUpload(asAuthUser(instructor), {
+            kind: 'material',
+            fileName: 'handout.pdf',
+            mimeType: 'application/pdf',
+            fileSize: 10 * MB,
+            courseId,
+          }),
+        ).resolves.toBeDefined();
+      });
     });
   });
 

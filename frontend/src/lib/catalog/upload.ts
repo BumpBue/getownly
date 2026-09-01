@@ -1,6 +1,6 @@
-import { instructorMessages } from "@/lib/messages/instructor";
-import { presignUpload } from "./api";
-import { UPLOAD_ACCEPT, UPLOAD_MAX_MB, type UploadKind } from "./types";
+import { instructorMessages } from '@/lib/messages/instructor';
+import { presignUpload } from './api';
+import { UPLOAD_ACCEPT, UPLOAD_MAX_MB, type UploadKind } from './types';
 
 /**
  * Uploads a file straight to MinIO with a presigned URL.
@@ -43,6 +43,7 @@ export function uploadFile(
   kind: UploadKind,
   file: File,
   onProgress: (percent: number) => void,
+  options?: { courseId?: string },
 ): UploadHandle {
   const request = new XMLHttpRequest();
   let cancelled = false;
@@ -54,12 +55,14 @@ export function uploadFile(
     }
 
     // The server re-checks type and size before it issues the URL; the check
-    // above only saves the user a round trip.
+    // above only saves the user a round trip. courseId is what lets it also
+    // check the 3 GB per-course cap for a video or a material.
     const { uploadUrl, fileKey } = await presignUpload({
       kind,
       fileName: file.name,
       mimeType: file.type,
       fileSize: file.size,
+      courseId: options?.courseId,
     });
 
     if (cancelled) {
@@ -67,24 +70,28 @@ export function uploadFile(
     }
 
     await new Promise<void>((resolve, reject) => {
-      request.open("PUT", uploadUrl);
-      request.setRequestHeader("Content-Type", file.type);
+      request.open('PUT', uploadUrl);
+      request.setRequestHeader('Content-Type', file.type);
 
-      request.upload.addEventListener("progress", (event) => {
+      request.upload.addEventListener('progress', (event) => {
         if (event.lengthComputable) {
           onProgress(Math.round((event.loaded / event.total) * 100));
         }
       });
 
-      request.addEventListener("load", () => {
+      request.addEventListener('load', () => {
         if (request.status >= 200 && request.status < 300) {
           resolve();
         } else {
           reject(new UploadError(instructorMessages.upload.failed));
         }
       });
-      request.addEventListener("error", () => reject(new UploadError(instructorMessages.upload.failed)));
-      request.addEventListener("abort", () => reject(new UploadError(instructorMessages.upload.cancel)));
+      request.addEventListener('error', () =>
+        reject(new UploadError(instructorMessages.upload.failed)),
+      );
+      request.addEventListener('abort', () =>
+        reject(new UploadError(instructorMessages.upload.cancel)),
+      );
 
       request.send(file);
     });

@@ -3,6 +3,7 @@ import { CourseStatus, Prisma, Role } from '@prisma/client';
 import {
   CourseNotFoundException,
   CourseNotVisibleException,
+  CourseStorageLimitExceededException,
   LessonNotFoundException,
   NotCourseOwnerException,
 } from '@/common/exceptions/catalog.exceptions';
@@ -10,6 +11,7 @@ import { NotEnrolledException } from '@/common/exceptions/learning.exceptions';
 import { QnaAccessDeniedException } from '@/common/exceptions/qna.exceptions';
 import type { AuthenticatedUser } from '@/common/types/authenticated-user';
 import { PrismaService } from '@/infra/prisma.service';
+import { COURSE_MAX_STORAGE_BYTES } from '@/modules/uploads/upload-rules';
 
 /**
  * The second of the two permission layers described in CLAUDE.md, "Auth และสิทธิ์".
@@ -27,7 +29,14 @@ export class CourseAccessService {
   async assertCourseOwner(courseId: string, user: AuthenticatedUser): Promise<OwnedCourse> {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
-      select: { id: true, instructorId: true, status: true, title: true, price: true },
+      select: {
+        id: true,
+        instructorId: true,
+        status: true,
+        title: true,
+        price: true,
+        storageUsedBytes: true,
+      },
     });
 
     if (!course) {
@@ -50,8 +59,9 @@ export class CourseAccessService {
         id: true,
         courseId: true,
         videoKey: true,
+        videoSize: true,
         orderIndex: true,
-        course: { select: { instructorId: true, status: true } },
+        course: { select: { instructorId: true, status: true, storageUsedBytes: true } },
       },
     });
 
@@ -105,6 +115,42 @@ export class CourseAccessService {
     });
 
     return enrollment !== null;
+  }
+
+  /**
+   * Throws unless `addingBytes` more still fits under the 3 GB course cap
+   * (scope 2.3.2), given `usedBytes` already spent.
+   *
+   * Called twice on the way to a stored file: once at presign time against
+   * the client's claimed size, and again once StorageService.stat() reports
+   * what actually landed — the same two-checkpoint pattern the per-file MIME
+   * and size rules already use.
+   */
+  assertStorageAvailable(usedBytes: bigint, addingBytes: number): void {
+    const projected = usedBytes + BigInt(addingBytes);
+    if (projected > BigInt(COURSE_MAX_STORAGE_BYTES)) {
+      const remaining = BigInt(COURSE_MAX_STORAGE_BYTES) - usedBytes;
+      throw new CourseStorageLimitExceededException(
+        Number(remaining > 0n ? remaining : 0n),
+        addingBytes,
+      );
+    }
+  }
+
+  /**
+   * Adjusts the cached storage total by a signed delta in bytes.
+   *
+   * The running total is the whole point: answering "is there room" must
+   * never cost a fresh SUM over every video and material the course owns.
+   */
+  async adjustStorageUsage(courseId: string, deltaBytes: number): Promise<void> {
+    if (deltaBytes === 0) {
+      return;
+    }
+    await this.prisma.course.update({
+      where: { id: courseId },
+      data: { storageUsedBytes: { increment: BigInt(deltaBytes) } },
+    });
   }
 
   /** Whether the viewer already owns the course, used to pick the detail page CTA. */
@@ -186,6 +232,7 @@ export interface OwnedCourse {
   status: CourseStatus;
   title: string;
   price: Prisma.Decimal;
+  storageUsedBytes: bigint;
 }
 
 export interface EnrolledCourse {
@@ -210,6 +257,7 @@ export interface OwnedLesson {
   id: string;
   courseId: string;
   videoKey: string | null;
+  videoSize: number | null;
   orderIndex: number;
-  course: { instructorId: string; status: CourseStatus };
+  course: { instructorId: string; status: CourseStatus; storageUsedBytes: bigint };
 }

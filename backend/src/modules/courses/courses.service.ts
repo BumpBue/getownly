@@ -12,6 +12,7 @@ import {
 import type { AuthenticatedUser } from '@/common/types/authenticated-user';
 import { PrismaService } from '@/infra/prisma.service';
 import { StorageService } from '@/infra/storage/storage.service';
+import { COURSE_MAX_STORAGE_BYTES } from '@/modules/uploads/upload-rules';
 import { CourseAccessService } from './course-access.service';
 import type {
   CreateCourseDto,
@@ -103,6 +104,7 @@ export class CoursesService {
         rejectReason: true,
         instructorId: true,
         createdAt: true,
+        storageUsedBytes: true,
         lessons: {
           select: {
             id: true,
@@ -143,6 +145,8 @@ export class CoursesService {
       enrollmentCount: course._count.enrollments,
       publishedAt: course.publishedAt?.toISOString() ?? null,
       createdAt: course.createdAt.toISOString(),
+      storageUsedBytes: Number(course.storageUsedBytes),
+      storageLimitBytes: COURSE_MAX_STORAGE_BYTES,
       isEnrolled,
       isOwner,
       lessons: course.lessons.map((lesson) => ({

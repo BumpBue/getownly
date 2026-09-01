@@ -167,6 +167,13 @@ model Course {
   coverKey    String?
   /// Selling price in baht. 0 means the course is free.
   price       Decimal @default(0) @db.Decimal(10, 2)
+  /// Cumulative bytes used by this course's lesson videos and materials
+  /// combined. Scope 2.3.2 caps this at 3 GB. Kept as a running total —
+  /// incremented/decremented by LessonsService and MaterialsService whenever
+  /// a file is attached, replaced or removed — so checking "is there room"
+  /// never needs a fresh SUM over every file the course owns. BigInt because
+  /// the 3 GB cap itself does not fit in a 32-bit Int.
+  storageUsedBytes BigInt @default(0)
 
   status       CourseStatus @default(DRAFT)
   /// Filled in by an admin when status becomes REJECTED.
@@ -194,6 +201,10 @@ model Lesson {
   orderIndex Int
   /// MinIO object key of the video. Streamed through the API, never presigned.
   videoKey    String?
+  /// Size of the video in bytes, captured via StorageService.stat() the
+  /// moment videoKey is set. Feeds Course.storageUsedBytes; nothing else
+  /// records a lesson video's size.
+  videoSize   Int?
   durationSec Int?
   /// Preview lessons are watchable before buying the course.
   isPreview   Boolean @default(false)

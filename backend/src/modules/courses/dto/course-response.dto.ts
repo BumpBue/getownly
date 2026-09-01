@@ -61,6 +61,10 @@ export interface CourseDetailDto extends CourseListItemDto {
   /** True when the viewer is the instructor who owns it, or an admin. */
   isOwner: boolean;
   createdAt: string;
+  /** Cumulative bytes used by this course's video + material files. */
+  storageUsedBytes: number;
+  /** The fixed cap every course is held to (scope 2.3.2), currently 3 GB. */
+  storageLimitBytes: number;
 }
 
 /** A row in the instructor's own course table: every status, plus the reject note. */

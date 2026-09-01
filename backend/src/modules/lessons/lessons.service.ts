@@ -8,6 +8,7 @@ import {
   LessonOrderMismatchException,
   RangeNotSatisfiableException,
 } from '@/common/exceptions/catalog.exceptions';
+import { FileNotFoundException } from '@/modules/uploads/uploads.errors';
 import type { AuthenticatedUser } from '@/common/types/authenticated-user';
 import { PrismaService } from '@/infra/prisma.service';
 import { StorageService } from '@/infra/storage/storage.service';
@@ -93,7 +94,19 @@ export class LessonsService {
     user: AuthenticatedUser,
     dto: CreateLessonDto,
   ): Promise<LessonDto> {
-    await this.access.assertCourseOwner(courseId, user);
+    const course = await this.access.assertCourseOwner(courseId, user);
+
+    // Stat happens before the transaction: it is a call to MinIO, not to
+    // Postgres, and must not hold a row lock while it waits on one.
+    let videoSize: number | null = null;
+    if (dto.videoKey) {
+      const stat = await this.storage.stat(dto.videoKey);
+      if (!stat) {
+        throw new FileNotFoundException();
+      }
+      this.access.assertStorageAvailable(course.storageUsedBytes, stat.sizeBytes);
+      videoSize = stat.sizeBytes;
+    }
 
     const lesson = await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "Course" WHERE id = ${courseId} FOR UPDATE`;
@@ -109,12 +122,17 @@ export class LessonsService {
           title: dto.title.trim(),
           orderIndex: (highest._max.orderIndex ?? 0) + 1,
           videoKey: dto.videoKey ?? null,
+          videoSize,
           durationSec: dto.durationSec ?? null,
           isPreview: dto.isPreview ?? false,
         },
         select: lessonSelect,
       });
     });
+
+    if (videoSize !== null) {
+      await this.access.adjustStorageUsage(courseId, videoSize);
+    }
 
     return toLessonDto(lesson);
   }
@@ -126,16 +144,35 @@ export class LessonsService {
   ): Promise<LessonDto> {
     const existing = await this.access.assertLessonOwner(lessonId, user);
 
+    // A replacement video is stat'd and checked against the cap before the
+    // write, the same way a brand-new one is in create().
+    let nextVideoSize: number | null = existing.videoSize;
+    if (dto.videoKey !== undefined) {
+      const stat = await this.storage.stat(dto.videoKey);
+      if (!stat) {
+        throw new FileNotFoundException();
+      }
+      const usedWithoutOldVideo =
+        existing.course.storageUsedBytes - BigInt(existing.videoSize ?? 0);
+      this.access.assertStorageAvailable(usedWithoutOldVideo, stat.sizeBytes);
+      nextVideoSize = stat.sizeBytes;
+    }
+
     const lesson = await this.prisma.lesson.update({
       where: { id: lessonId },
       data: {
         ...(dto.title !== undefined ? { title: dto.title.trim() } : {}),
-        ...(dto.videoKey !== undefined ? { videoKey: dto.videoKey } : {}),
+        ...(dto.videoKey !== undefined ? { videoKey: dto.videoKey, videoSize: nextVideoSize } : {}),
         ...(dto.durationSec !== undefined ? { durationSec: dto.durationSec } : {}),
         ...(dto.isPreview !== undefined ? { isPreview: dto.isPreview } : {}),
       },
       select: lessonSelect,
     });
+
+    if (dto.videoKey !== undefined) {
+      const delta = (nextVideoSize ?? 0) - (existing.videoSize ?? 0);
+      await this.access.adjustStorageUsage(existing.courseId, delta);
+    }
 
     // Replacing the video leaves the old object with nothing pointing at it.
     if (dto.videoKey !== undefined && existing.videoKey && existing.videoKey !== dto.videoKey) {
@@ -161,7 +198,7 @@ export class LessonsService {
 
     const materials = await this.prisma.material.findMany({
       where: { lessonId },
-      select: { fileKey: true },
+      select: { fileKey: true, fileSize: true },
     });
 
     await this.prisma.$transaction(async (tx) => {
@@ -174,6 +211,12 @@ export class LessonsService {
         WHERE "courseId" = ${lesson.courseId} AND "orderIndex" > ${lesson.orderIndex}
       `;
     });
+
+    const freedBytes =
+      (lesson.videoSize ?? 0) + materials.reduce((sum, material) => sum + material.fileSize, 0);
+    if (freedBytes > 0) {
+      await this.access.adjustStorageUsage(lesson.courseId, -freedBytes);
+    }
 
     const orphaned = [lesson.videoKey, ...materials.map((m) => m.fileKey)].filter(
       (key): key is string => key !== null,

@@ -7,26 +7,26 @@
  * does arithmetic with the result.
  */
 
-const bahtFormatter = new Intl.NumberFormat("th-TH", {
+const bahtFormatter = new Intl.NumberFormat('th-TH', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
 
-const wholeBahtFormatter = new Intl.NumberFormat("th-TH", {
+const wholeBahtFormatter = new Intl.NumberFormat('th-TH', {
   maximumFractionDigits: 0,
 });
 
-const countFormatter = new Intl.NumberFormat("th-TH");
+const countFormatter = new Intl.NumberFormat('th-TH');
 
-const dateFormatter = new Intl.DateTimeFormat("th-TH", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
+const dateFormatter = new Intl.DateTimeFormat('th-TH', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
 });
 
-const timeFormatter = new Intl.DateTimeFormat("th-TH", {
-  hour: "2-digit",
-  minute: "2-digit",
+const timeFormatter = new Intl.DateTimeFormat('th-TH', {
+  hour: '2-digit',
+  minute: '2-digit',
 });
 
 /** "฿1,290.00" — the form used wherever an exact amount matters. */
@@ -53,7 +53,7 @@ export function formatCount(value: number): string {
 /** "3 ชม. 25 นาที" · "48 นาที" · "45 วินาที" */
 export function formatDuration(totalSeconds: number): string {
   if (totalSeconds <= 0) {
-    return "—";
+    return '—';
   }
 
   const hours = Math.floor(totalSeconds / 3600);
@@ -71,12 +71,12 @@ export function formatDuration(totalSeconds: number): string {
 /** "12:05" — the compact form used inside a lesson list. */
 export function formatClock(totalSeconds: number | null): string {
   if (totalSeconds === null || totalSeconds <= 0) {
-    return "--:--";
+    return '--:--';
   }
 
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
 export function formatFileSize(bytes: number): string {
@@ -86,13 +86,16 @@ export function formatFileSize(bytes: number): string {
   if (bytes < 1024 * 1024) {
     return `${(bytes / 1024).toFixed(0)} KB`;
   }
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
 /** "11 ส.ค. 2569" — Thai Buddhist calendar, which th-TH gives by default. */
 export function formatDate(isoDate: string | null): string {
   if (!isoDate) {
-    return "—";
+    return '—';
   }
   return dateFormatter.format(new Date(isoDate));
 }
@@ -100,7 +103,7 @@ export function formatDate(isoDate: string | null): string {
 /** "14:35" — used where the time of day matters, e.g. when a QR stops being shown. */
 export function formatTime(isoDate: string | null): string {
   if (!isoDate) {
-    return "—";
+    return '—';
   }
   return timeFormatter.format(new Date(isoDate));
 }
@@ -108,7 +111,7 @@ export function formatTime(isoDate: string | null): string {
 /** "11 ส.ค. 2569 14:35" — for review queues, where "today" is not precise enough. */
 export function formatDateTime(isoDate: string | null): string {
   if (!isoDate) {
-    return "—";
+    return '—';
   }
   const date = new Date(isoDate);
   return `${dateFormatter.format(date)} ${timeFormatter.format(date)}`;

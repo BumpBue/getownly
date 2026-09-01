@@ -63,3 +63,17 @@ export class FileNotFoundException extends BusinessException {
     super(HttpStatus.NOT_FOUND, 'FILE_NOT_FOUND', 'ไม่พบไฟล์ที่ระบุ');
   }
 }
+
+/**
+ * A video or a material counts against its course's 3 GB cap (scope 2.3.2),
+ * so the API needs to know which course before it can check there is room.
+ */
+export class CourseIdRequiredForUploadException extends BusinessException {
+  constructor() {
+    super(
+      HttpStatus.BAD_REQUEST,
+      'COURSE_REQUIRED_FOR_UPLOAD',
+      'ต้องระบุคอร์สก่อนอัปโหลดวิดีโอหรือเอกสารประกอบ',
+    );
+  }
+}

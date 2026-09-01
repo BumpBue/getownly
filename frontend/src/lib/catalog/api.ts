@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/api-client";
+import { apiRequest } from '@/lib/api-client';
 import type {
   Category,
   CourseDetail,
@@ -10,18 +10,18 @@ import type {
   PresignUploadResponse,
   SignedUrlResponse,
   UploadKind,
-} from "./types";
+} from './types';
 
 /** Thin wrappers over the catalog endpoints, called from client components. */
 
 // --- public ----------------------------------------------------------------
 
 export function listCategories(): Promise<Category[]> {
-  return apiRequest<Category[]>("/categories");
+  return apiRequest<Category[]>('/categories');
 }
 
 export function listCourses(query: string): Promise<PaginatedCourses> {
-  return apiRequest<PaginatedCourses>(`/courses${query ? `?${query}` : ""}`);
+  return apiRequest<PaginatedCourses>(`/courses${query ? `?${query}` : ''}`);
 }
 
 export function getCourse(courseId: string): Promise<CourseDetail> {
@@ -31,11 +31,11 @@ export function getCourse(courseId: string): Promise<CourseDetail> {
 // --- instructor: courses ---------------------------------------------------
 
 export function listMyCourses(): Promise<InstructorCourse[]> {
-  return apiRequest<InstructorCourse[]>("/courses/mine");
+  return apiRequest<InstructorCourse[]>('/courses/mine');
 }
 
 export function getMyStats(): Promise<InstructorStats> {
-  return apiRequest<InstructorStats>("/courses/mine/stats");
+  return apiRequest<InstructorStats>('/courses/mine/stats');
 }
 
 export interface CourseInput {
@@ -47,24 +47,24 @@ export interface CourseInput {
 }
 
 export function createCourse(input: CourseInput): Promise<CourseDetail> {
-  return apiRequest<CourseDetail>("/courses", { method: "POST", body: input });
+  return apiRequest<CourseDetail>('/courses', { method: 'POST', body: input });
 }
 
 export function updateCourse(courseId: string, input: CourseInput): Promise<CourseDetail> {
-  return apiRequest<CourseDetail>(`/courses/${courseId}`, { method: "PATCH", body: input });
+  return apiRequest<CourseDetail>(`/courses/${courseId}`, { method: 'PATCH', body: input });
 }
 
 export function deleteCourse(courseId: string): Promise<{ message: string }> {
-  return apiRequest<{ message: string }>(`/courses/${courseId}`, { method: "DELETE" });
+  return apiRequest<{ message: string }>(`/courses/${courseId}`, { method: 'DELETE' });
 }
 
 export function submitCourse(courseId: string): Promise<CourseDetail> {
-  return apiRequest<CourseDetail>(`/courses/${courseId}/submit`, { method: "POST" });
+  return apiRequest<CourseDetail>(`/courses/${courseId}/submit`, { method: 'POST' });
 }
 
 /** Takes a published course off the market without deleting it. */
 export function unpublishCourse(courseId: string): Promise<CourseDetail> {
-  return apiRequest<CourseDetail>(`/courses/${courseId}/unpublish`, { method: "POST" });
+  return apiRequest<CourseDetail>(`/courses/${courseId}/unpublish`, { method: 'POST' });
 }
 
 // --- instructor: lessons ---------------------------------------------------
@@ -81,20 +81,20 @@ export interface LessonInput {
 }
 
 export function createLesson(courseId: string, input: LessonInput): Promise<Lesson> {
-  return apiRequest<Lesson>(`/courses/${courseId}/lessons`, { method: "POST", body: input });
+  return apiRequest<Lesson>(`/courses/${courseId}/lessons`, { method: 'POST', body: input });
 }
 
 export function updateLesson(lessonId: string, input: LessonInput): Promise<Lesson> {
-  return apiRequest<Lesson>(`/lessons/${lessonId}`, { method: "PATCH", body: input });
+  return apiRequest<Lesson>(`/lessons/${lessonId}`, { method: 'PATCH', body: input });
 }
 
 export function deleteLesson(lessonId: string): Promise<{ message: string }> {
-  return apiRequest<{ message: string }>(`/lessons/${lessonId}`, { method: "DELETE" });
+  return apiRequest<{ message: string }>(`/lessons/${lessonId}`, { method: 'DELETE' });
 }
 
 export function reorderLessons(courseId: string, lessonIds: string[]): Promise<Lesson[]> {
   return apiRequest<Lesson[]>(`/courses/${courseId}/lessons/reorder`, {
-    method: "PATCH",
+    method: 'PATCH',
     body: { lessonIds },
   });
 }
@@ -109,11 +109,11 @@ export interface MaterialInput {
 }
 
 export function createMaterial(lessonId: string, input: MaterialInput): Promise<Material> {
-  return apiRequest<Material>(`/lessons/${lessonId}/materials`, { method: "POST", body: input });
+  return apiRequest<Material>(`/lessons/${lessonId}/materials`, { method: 'POST', body: input });
 }
 
 export function deleteMaterial(materialId: string): Promise<{ message: string }> {
-  return apiRequest<{ message: string }>(`/materials/${materialId}`, { method: "DELETE" });
+  return apiRequest<{ message: string }>(`/materials/${materialId}`, { method: 'DELETE' });
 }
 
 // --- uploads ---------------------------------------------------------------
@@ -123,8 +123,10 @@ export function presignUpload(input: {
   fileName: string;
   mimeType: string;
   fileSize: number;
+  /** Required for "video" and "material": which course's 3 GB cap to check. */
+  courseId?: string;
 }): Promise<PresignUploadResponse> {
-  return apiRequest<PresignUploadResponse>("/uploads/presign", { method: "POST", body: input });
+  return apiRequest<PresignUploadResponse>('/uploads/presign', { method: 'POST', body: input });
 }
 
 export function getSignedUrl(fileKey: string): Promise<SignedUrlResponse> {

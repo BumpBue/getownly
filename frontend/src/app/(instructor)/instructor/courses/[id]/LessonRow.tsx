@@ -109,7 +109,9 @@ export function LessonRow({
     setError(null);
     setVideoProgress(0);
     try {
-      const uploaded = await uploadFile("video", file, setVideoProgress).promise;
+      const uploaded = await uploadFile("video", file, setVideoProgress, {
+        courseId: lesson.courseId,
+      }).promise;
       onChanged(await updateLesson(lesson.id, { videoKey: uploaded.fileKey }));
     } catch (caught) {
       reportError(caught);
@@ -123,7 +125,9 @@ export function LessonRow({
     setError(null);
     setMaterialProgress(0);
     try {
-      const uploaded = await uploadFile("material", file, setMaterialProgress).promise;
+      const uploaded = await uploadFile("material", file, setMaterialProgress, {
+        courseId: lesson.courseId,
+      }).promise;
       const material = await createMaterial(lesson.id, uploaded);
       onChanged({ ...lesson, materials: [...lesson.materials, material] });
     } catch (caught) {

@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsString, MaxLength, Min, MinLength } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator';
 import { UPLOAD_KINDS, type UploadKind } from '../upload-rules';
 
 export class PresignUploadDto {
@@ -21,6 +21,14 @@ export class PresignUploadDto {
   @IsInt({ message: 'ขนาดไฟล์ไม่ถูกต้อง' })
   @Min(1, { message: 'ไฟล์ว่างเปล่า ไม่สามารถอัปโหลดได้' })
   fileSize!: number;
+
+  /**
+   * Required when `kind` is "video" or "material": which course's 3 GB
+   * storage cap to check (scope 2.3.2). Every other kind ignores it.
+   */
+  @IsOptional()
+  @IsString()
+  courseId?: string;
 }
 
 export interface PresignUploadResponseDto {
