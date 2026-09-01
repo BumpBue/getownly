@@ -53,4 +53,8 @@ export const homeMessages = {
     suffix: "รายการ",
     cta: "ไปดำเนินการ",
   },
+
+  featured: {
+    heading: "คอร์สแนะนำสำหรับคุณ",
+  },
 } as const;

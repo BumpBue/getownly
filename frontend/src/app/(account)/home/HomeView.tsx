@@ -21,12 +21,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CourseCard } from "@/components/shared/CourseCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { ApiError } from "@/lib/api-client";
 import { getInstructorOverview, listPendingCourses } from "@/lib/admin/api";
 import { me } from "@/lib/auth/api";
 import type { UserProfile } from "@/lib/auth/types";
+import { listCourses } from "@/lib/catalog/api";
+import type { CourseListItem } from "@/lib/catalog/types";
 import { listContentReports } from "@/lib/content-reports/api";
 import { formatBaht, formatCount, formatDuration } from "@/lib/format";
 import { type AdminPendingCounts, pickResumeCourse, summarizeAdminPending } from "@/lib/home/logic";
@@ -71,6 +74,7 @@ export function HomeView() {
   const [instructorSummary, setInstructorSummary] = useState<InstructorSummary | null>(null);
   const [pendingQuestions, setPendingQuestions] = useState<number | null>(null);
   const [adminCounts, setAdminCounts] = useState<AdminPendingCounts | null>(null);
+  const [featuredCourses, setFeaturedCourses] = useState<CourseListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,7 +86,10 @@ export function HomeView() {
       const { user: loaded } = await me();
       setUser(loaded);
 
-      const tasks: Promise<unknown>[] = [listMyEnrollments().then(setEnrollments)];
+      const tasks: Promise<unknown>[] = [
+        listMyEnrollments().then(setEnrollments),
+        listCourses("sort=popular&limit=6").then((result) => setFeaturedCourses(result.items)),
+      ];
 
       if (loaded.role === "INSTRUCTOR") {
         tasks.push(
@@ -133,6 +140,11 @@ export function HomeView() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }, (_, index) => (
             <Skeleton key={index} className="h-32 rounded-card" />
+          ))}
+        </div>
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }, (_, index) => (
+            <Skeleton key={index} className="h-64 rounded-card" />
           ))}
         </div>
       </Shell>
@@ -284,6 +296,17 @@ export function HomeView() {
             </Button>
           }
         />
+      )}
+
+      {featuredCourses.length > 0 && (
+        <section className="flex flex-col gap-4">
+          <SectionHeading title={homeMessages.featured.heading} />
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {featuredCourses.map((course) => (
+              <CourseCard key={course.id} course={course} />
+            ))}
+          </div>
+        </section>
       )}
     </Shell>
   );
