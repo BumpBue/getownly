@@ -41,4 +41,16 @@ export const homeMessages = {
     body: "เลือกคอร์สที่สนใจแล้วเริ่มเรียนได้ทันที",
     cta: "ไปเลือกคอร์สเรียน",
   },
+
+  pendingQuestions: {
+    prefix: "มีคำถามรอตอบ",
+    suffix: "ข้อ",
+    cta: "ไปตอบคำถาม",
+  },
+
+  adminPendingBanner: {
+    prefix: "มีรายการรออนุมัติ",
+    suffix: "รายการ",
+    cta: "ไปดำเนินการ",
+  },
 } as const;

@@ -18,4 +18,11 @@ export interface MyEnrollmentDto {
   /** 0-100, rounded. 0 when the course has no lessons yet. */
   progressPercent: number;
   totalDurationSec: number;
+  /**
+   * Latest `LessonProgress.updatedAt` across this enrollment, or `enrolledAt`
+   * when nothing has been watched yet. /home's "resume learning" card uses
+   * this to pick the one course actually touched most recently — enrolledAt
+   * alone would pick the most recently *bought* course instead.
+   */
+  lastActivityAt: string;
 }

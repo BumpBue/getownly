@@ -5,15 +5,18 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
+  AlertTriangle,
   ArrowRight,
   Compass,
   GraduationCap,
+  HelpCircle,
   ImageOff,
   LayoutDashboard,
   ReceiptText,
   ServerCrash,
   UserRound,
 } from "lucide-react";
+import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -24,10 +27,13 @@ import { ApiError } from "@/lib/api-client";
 import { getInstructorOverview, listPendingCourses } from "@/lib/admin/api";
 import { me } from "@/lib/auth/api";
 import type { UserProfile } from "@/lib/auth/types";
+import { listContentReports } from "@/lib/content-reports/api";
 import { formatBaht, formatCount, formatDuration } from "@/lib/format";
+import { type AdminPendingCounts, pickResumeCourse, summarizeAdminPending } from "@/lib/home/logic";
 import { authMessages } from "@/lib/messages/auth";
 import { courseMessages } from "@/lib/messages/courses";
 import { homeMessages } from "@/lib/messages/home";
+import { listPendingQna } from "@/lib/qna/api";
 import { cn } from "@/lib/utils";
 import { listMyEnrollments, listTopupsForAdmin } from "@/lib/wallet/api";
 import type { MyEnrollment } from "@/lib/wallet/types";
@@ -63,7 +69,8 @@ export function HomeView() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [enrollments, setEnrollments] = useState<MyEnrollment[] | null>(null);
   const [instructorSummary, setInstructorSummary] = useState<InstructorSummary | null>(null);
-  const [adminPendingCount, setAdminPendingCount] = useState<number | null>(null);
+  const [pendingQuestions, setPendingQuestions] = useState<number | null>(null);
+  const [adminCounts, setAdminCounts] = useState<AdminPendingCounts | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -86,6 +93,7 @@ export function HomeView() {
             }),
           ),
         );
+        tasks.push(listPendingQna({ page: 1 }).then((result) => setPendingQuestions(result.total)));
       }
 
       if (loaded.role === "ADMIN") {
@@ -93,7 +101,14 @@ export function HomeView() {
           Promise.all([
             listTopupsForAdmin({ status: "PENDING", limit: 1 }),
             listPendingCourses(1),
-          ]).then(([topups, courses]) => setAdminPendingCount(topups.pendingTotal + courses.total)),
+            listContentReports({ status: "PENDING", page: 1 }),
+          ]).then(([topups, courses, contentReports]) =>
+            setAdminCounts({
+              topups: topups.pendingTotal,
+              courses: courses.total,
+              contentReports: contentReports.total,
+            }),
+          ),
         );
       }
 
@@ -114,6 +129,7 @@ export function HomeView() {
       <Shell>
         <span className="sr-only">{homeMessages.loading}</span>
         <Skeleton className="h-9 w-64" />
+        <Skeleton className="h-14 rounded-card" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }, (_, index) => (
             <Skeleton key={index} className="h-32 rounded-card" />
@@ -141,11 +157,9 @@ export function HomeView() {
     );
   }
 
-  const inProgress =
-    user.role === "STUDENT"
-      ? (enrollments ?? []).find((item) => item.progressPercent > 0 && item.progressPercent < 100)
-      : undefined;
+  const resumeCourse = user.role === "STUDENT" ? pickResumeCourse(enrollments ?? []) : undefined;
   const latestProgress = (enrollments ?? [])[0];
+  const adminSummary = adminCounts ? summarizeAdminPending(adminCounts) : null;
 
   return (
     <Shell>
@@ -155,6 +169,33 @@ export function HomeView() {
         </h1>
         <p className="mt-1 text-sm text-muted">{homeMessages.subtitle}</p>
       </header>
+
+      {user.role === "STUDENT" && resumeCourse && (
+        <section className="flex flex-col gap-4">
+          <SectionHeading title={continueLearning.heading} />
+          <ResumeCourseCard enrollment={resumeCourse} />
+        </section>
+      )}
+
+      {user.role === "INSTRUCTOR" && pendingQuestions !== null && pendingQuestions > 0 && (
+        <PendingBanner
+          icon={HelpCircle}
+          tone="pending"
+          href="/instructor/qna"
+          label={`${homeMessages.pendingQuestions.prefix} ${formatCount(pendingQuestions)} ${homeMessages.pendingQuestions.suffix}`}
+          cta={homeMessages.pendingQuestions.cta}
+        />
+      )}
+
+      {user.role === "ADMIN" && adminSummary && (
+        <PendingBanner
+          icon={AlertTriangle}
+          tone={adminSummary.tone}
+          href={adminSummary.href}
+          label={`${homeMessages.adminPendingBanner.prefix} ${formatCount(adminSummary.total)} ${homeMessages.adminPendingBanner.suffix}`}
+          cta={homeMessages.adminPendingBanner.cta}
+        />
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <ActionCard
@@ -217,9 +258,9 @@ export function HomeView() {
             title={actions.adminDashboard}
             href="/admin"
             badge={
-              adminPendingCount !== null && adminPendingCount > 0 ? (
-                <Badge tone="pending">
-                  {actions.adminPending} {formatCount(adminPendingCount)}
+              adminSummary ? (
+                <Badge tone={adminSummary.tone}>
+                  {actions.adminPending} {formatCount(adminSummary.total)}
                 </Badge>
               ) : (
                 actions.adminAllClear
@@ -229,29 +270,20 @@ export function HomeView() {
         )}
       </div>
 
-      {user.role === "STUDENT" && (
-        <section className="flex flex-col gap-4">
-          {inProgress ? (
-            <>
-              <SectionHeading title={continueLearning.heading} />
-              <ResumeCourseCard enrollment={inProgress} />
-            </>
-          ) : enrollments && enrollments.length === 0 ? (
-            <EmptyState
-              icon={GraduationCap}
-              title={emptyState.title}
-              body={emptyState.body}
-              action={
-                <Button asChild>
-                  <Link href="/courses">
-                    {emptyState.cta}
-                    <ArrowRight aria-hidden />
-                  </Link>
-                </Button>
-              }
-            />
-          ) : null}
-        </section>
+      {user.role === "STUDENT" && !resumeCourse && enrollments && enrollments.length === 0 && (
+        <EmptyState
+          icon={GraduationCap}
+          title={emptyState.title}
+          body={emptyState.body}
+          action={
+            <Button asChild>
+              <Link href="/courses">
+                {emptyState.cta}
+                <ArrowRight aria-hidden />
+              </Link>
+            </Button>
+          }
+        />
       )}
     </Shell>
   );
@@ -319,6 +351,39 @@ function ActionCard({
       <span className={cn("font-semibold", featured ? "text-primary-foreground" : "text-foreground")}>
         {title}
       </span>
+    </Link>
+  );
+}
+
+/** A slim, clickable notice for "something of yours needs attention". */
+function PendingBanner({
+  icon: Icon,
+  tone,
+  href,
+  label,
+  cta,
+}: {
+  icon: LucideIcon;
+  tone: "pending" | "destructive";
+  href: string;
+  label: string;
+  cta: string;
+}) {
+  return (
+    <Link href={href} className="block">
+      <Alert
+        tone={tone === "destructive" ? "error" : "pending"}
+        className="items-center justify-between transition-colors duration-150 hover:bg-black/2"
+      >
+        <span className="flex items-center gap-2 font-medium">
+          <Icon aria-hidden className="size-4 shrink-0" />
+          {label}
+        </span>
+        <span className="flex shrink-0 items-center gap-1 text-xs font-medium">
+          {cta}
+          <ArrowRight aria-hidden className="size-3.5" />
+        </span>
+      </Alert>
     </Link>
   );
 }

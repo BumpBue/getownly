@@ -26,7 +26,7 @@
     "demo:reset": "pnpm --filter backend demo:reset",
     "seed": "pnpm --filter backend db:seed",
     "db:studio": "pnpm --filter backend db:studio",
-    "test": "pnpm --filter backend test",
+    "test": "pnpm --filter backend test && pnpm --filter frontend test",
     "test:watch": "pnpm --filter backend test:watch",
     "lint": "pnpm --filter backend lint && pnpm --filter frontend lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,md,yaml,yml,css}\" --ignore-path .gitignore",

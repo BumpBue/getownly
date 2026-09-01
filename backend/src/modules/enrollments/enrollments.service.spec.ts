@@ -123,6 +123,55 @@ describe('EnrollmentsService', () => {
     expect(fourth).toBeDefined();
   });
 
+  it('falls back to enrolledAt for lastActivityAt when nothing has been watched yet', async () => {
+    const courseId = await createCourse(prisma, {
+      instructorId: instructor.id,
+      categoryId,
+      price: '0.00',
+    });
+    await wallet.purchaseCourse(student.id, courseId);
+
+    const [item] = await enrollments.listMine(student.id);
+
+    expect(item.lastActivityAt).toBe(item.enrolledAt);
+  });
+
+  it('reports lastActivityAt as the most recently touched lesson, completed or not', async () => {
+    const courseId = await createCourse(prisma, {
+      instructorId: instructor.id,
+      categoryId,
+      price: '0.00',
+    });
+    const first = await createLesson(prisma, { courseId, orderIndex: 1 });
+    const second = await createLesson(prisma, { courseId, orderIndex: 2 });
+
+    const purchase = await wallet.purchaseCourse(student.id, courseId);
+
+    // Completed a while ago...
+    await prisma.lessonProgress.create({
+      data: {
+        enrollmentId: purchase.enrollmentId,
+        lessonId: first,
+        completedAt: new Date('2026-01-01T00:00:00Z'),
+        updatedAt: new Date('2026-01-01T00:00:00Z'),
+      },
+    });
+    // ...but watched (unfinished) much more recently. That later touch is
+    // what "resume this course" should key off, not the older completion.
+    await prisma.lessonProgress.create({
+      data: {
+        enrollmentId: purchase.enrollmentId,
+        lessonId: second,
+        lastPositionSec: 42,
+        updatedAt: new Date('2026-02-01T00:00:00Z'),
+      },
+    });
+
+    const [item] = await enrollments.listMine(student.id);
+
+    expect(item.lastActivityAt).toBe(new Date('2026-02-01T00:00:00Z').toISOString());
+  });
+
   it('reports 0% rather than dividing by zero when a course has no lessons yet', async () => {
     const courseId = await createCourse(prisma, {
       instructorId: instructor.id,

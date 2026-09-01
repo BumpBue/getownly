@@ -368,6 +368,9 @@ model LessonProgress {
   /// Resume position of the video player, in seconds.
   lastPositionSec Int       @default(0)
   completedAt     DateTime?
+  /// Bumped on every save, watched or completed — the "was this course
+  /// touched recently" signal /home uses to pick which one to resume.
+  updatedAt       DateTime  @updatedAt
 
   enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
   lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)

@@ -133,6 +133,8 @@ export interface MyEnrollment {
   completedLessonCount: number;
   progressPercent: number;
   totalDurationSec: number;
+  /** Latest lesson-progress save, or enrolledAt when nothing has been watched yet. */
+  lastActivityAt: string;
 }
 
 /** The buttons on /wallet/topup, in baht. */

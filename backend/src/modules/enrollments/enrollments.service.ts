@@ -33,11 +33,10 @@ export class EnrollmentsService {
             lessons: { select: { durationSec: true } },
           },
         },
-        // A lesson counts as done only once it has been marked complete;
-        // a resume position is not progress.
+        // Every row, not just completed ones — a watched-but-unfinished
+        // lesson still counts as "recent activity" for lastActivityAt below.
         progress: {
-          where: { completedAt: { not: null } },
-          select: { id: true },
+          select: { completedAt: true, updatedAt: true },
         },
       },
     });
@@ -45,7 +44,11 @@ export class EnrollmentsService {
     return Promise.all(
       rows.map(async (row): Promise<MyEnrollmentDto> => {
         const lessonCount = row.course.lessons.length;
-        const completedLessonCount = row.progress.length;
+        const completedLessonCount = row.progress.filter((p) => p.completedAt !== null).length;
+        const lastProgressAt = row.progress.reduce<Date | null>(
+          (latest, p) => (latest === null || p.updatedAt > latest ? p.updatedAt : latest),
+          null,
+        );
 
         return {
           id: row.id,
@@ -63,6 +66,7 @@ export class EnrollmentsService {
             (total, lesson) => total + (lesson.durationSec ?? 0),
             0,
           ),
+          lastActivityAt: (lastProgressAt ?? row.enrolledAt).toISOString(),
         };
       }),
     );
