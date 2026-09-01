@@ -1,4 +1,5 @@
 import { BottomNav } from "@/components/shared/BottomNav";
+import { Footer } from "@/components/shared/Footer";
 import { MainNav } from "@/components/shared/MainNav";
 
 /**
@@ -11,11 +12,13 @@ import { MainNav } from "@/components/shared/MainNav";
  */
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col">
+    // pb-16 is on the wrapper, not <main>, so the footer clears BottomNav too
+    // (fixed, floating over the reserved gap) - same arrangement as (public).
+    <div className="flex min-h-screen flex-col pb-16 md:pb-0">
       <MainNav />
       {/* MainNav is `fixed`; see the same comment in (public)/layout.tsx. */}
-      {/* pb-16 clears BottomNav on phones, where it is fixed to the bottom. */}
-      <main className="flex-1 bg-background pt-16 pb-16 md:pb-0">{children}</main>
+      <main className="flex-1 bg-background pt-16">{children}</main>
+      <Footer variant="compact" />
       <BottomNav />
     </div>
   );

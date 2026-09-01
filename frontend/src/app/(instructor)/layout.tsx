@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, BarChart3, Inbox, LayoutDashboard, Plus, UserRound } from "lucide-react";
+import { Footer } from "@/components/shared/Footer";
 import { SidebarLink } from "@/components/shared/SidebarLink";
 import { instructorMessages } from "@/lib/messages/instructor";
 
@@ -58,7 +59,10 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
         </Link>
       </aside>
 
-      <main className="flex-1 bg-background px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+      <div className="flex flex-1 flex-col">
+        <main className="flex-1 bg-background px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+        <Footer variant="compact" />
+      </div>
     </div>
   );
 }
