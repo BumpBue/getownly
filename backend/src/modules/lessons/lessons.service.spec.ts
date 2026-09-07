@@ -18,6 +18,7 @@ import {
   asAuthUser,
   createCategory,
   createCourse,
+  createAttempt,
   createLesson,
   createQuiz,
   createUser,
@@ -184,9 +185,7 @@ describe('LessonsService', () => {
         videoKey: null,
       });
       const quizId = await createQuiz(prisma, { lessonId, questions: 2 });
-      await prisma.quizAttempt.create({
-        data: { quizId, studentId: buyer.id, score: 100, passed: true },
-      });
+      await createAttempt(prisma, { quizId, studentId: buyer.id, score: 100 });
 
       // No progress row exists at all, so the watched-lesson guard above lets
       // this through and something else has to catch it.

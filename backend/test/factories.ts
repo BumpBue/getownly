@@ -236,6 +236,39 @@ export async function createQuiz(
   return quiz.id;
 }
 
+/**
+ * Records a quiz attempt the way QuizzesService.submit does, snapshot and all.
+ *
+ * `passed` and `passScoreSnapshot` are written together here for the same
+ * reason they are written together in the service: a row where one disagrees
+ * with the other would be a state the application can never produce.
+ */
+export async function createAttempt(
+  prisma: PrismaService,
+  options: { quizId: string; studentId: string; score: number; passScoreSnapshot?: number },
+): Promise<string> {
+  const passScoreSnapshot =
+    options.passScoreSnapshot ??
+    (
+      await prisma.quiz.findUniqueOrThrow({
+        where: { id: options.quizId },
+        select: { passScore: true },
+      })
+    ).passScore;
+
+  const attempt = await prisma.quizAttempt.create({
+    data: {
+      quizId: options.quizId,
+      studentId: options.studentId,
+      score: options.score,
+      passed: options.score >= passScoreSnapshot,
+      passScoreSnapshot,
+    },
+    select: { id: true },
+  });
+  return attempt.id;
+}
+
 /** Enrols a student without moving money, for tests that only care about access. */
 export async function enrol(
   prisma: PrismaService,

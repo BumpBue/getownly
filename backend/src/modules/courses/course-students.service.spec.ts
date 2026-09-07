@@ -7,6 +7,7 @@ import { WalletService } from '@/modules/ledger/wallet.service';
 import { CourseAccessService } from './course-access.service';
 import { CourseStudentsService } from './course-students.service';
 import {
+  createAttempt,
   createCategory,
   createCourse,
   createLesson,
@@ -159,9 +160,7 @@ describe('CourseStudentsService', () => {
     const student = await buyer();
 
     // Sat quiz A and got everything wrong; never opened quiz B at all.
-    await prisma.quizAttempt.create({
-      data: { quizId: quizA, studentId: student.id, score: 0, passed: false },
-    });
+    await createAttempt(prisma, { quizId: quizA, studentId: student.id, score: 0 });
 
     const roster = await students.listForCourse(courseId, {});
     const byTitle = new Map(roster.items[0].quizzes.map((quiz) => [quiz.quizTitle, quiz]));
@@ -187,9 +186,7 @@ describe('CourseStudentsService', () => {
     const student = await buyer();
 
     for (const score of [40, 100, 25]) {
-      await prisma.quizAttempt.create({
-        data: { quizId: quiz, studentId: student.id, score, passed: score >= 60 },
-      });
+      await createAttempt(prisma, { quizId: quiz, studentId: student.id, score });
     }
 
     const roster = await students.listForCourse(courseId, {});
@@ -209,9 +206,7 @@ describe('CourseStudentsService', () => {
     await createQuiz(prisma, { lessonId: lessonB, questions: 2, passScore: 60 });
 
     const student = await buyer();
-    await prisma.quizAttempt.create({
-      data: { quizId: passed, studentId: student.id, score: 80, passed: true },
-    });
+    await createAttempt(prisma, { quizId: passed, studentId: student.id, score: 80 });
 
     const roster = await students.listForCourse(courseId, {});
 
@@ -267,6 +262,109 @@ describe('CourseStudentsService', () => {
     expect(roster.total).toBe(1);
     expect(roster.items[0].studentId).toBe(student.id);
   });
+
+  // --- (ญ) the pass mark moving under a recorded verdict --------------------
+
+  it('(ญ) keeps an old pass on the roster after the pass mark is raised', async () => {
+    const lessonId = await createLesson(prisma, { courseId, orderIndex: 1 });
+    const quizId = await createQuiz(prisma, { lessonId, questions: 4, passScore: 60 });
+
+    const student = await buyer();
+    // 65 against a bar of 60: passed, and recorded as such.
+    await createAttempt(prisma, { quizId, studentId: student.id, score: 65 });
+
+    const before = await students.listForCourse(courseId, {});
+    expect(before.items[0].quizzes[0].hasPassed).toBe(true);
+    expect(before.items[0].passedQuizCount).toBe(1);
+
+    // The instructor raises the bar afterwards.
+    await prisma.quiz.update({ where: { id: quizId }, data: { passScore: 70 } });
+
+    const after = await students.listForCourse(courseId, {});
+    const standing = after.items[0].quizzes[0];
+
+    // The verdict already recorded does not move...
+    expect(standing.hasPassed).toBe(true);
+    expect(after.items[0].passedQuizCount).toBe(1);
+    // ...while the bar shown for a new attempt is the current one.
+    expect(standing.passScore).toBe(70);
+    expect(standing.bestScore).toBe(65);
+  });
+
+  it('(ญ) judges an attempt sat after the change by the new mark', async () => {
+    const lessonId = await createLesson(prisma, { courseId, orderIndex: 1 });
+    const quizId = await createQuiz(prisma, { lessonId, questions: 4, passScore: 60 });
+
+    const student = await buyer();
+    await prisma.quiz.update({ where: { id: quizId }, data: { passScore: 70 } });
+    // The same 65 that would have passed before now does not.
+    await createAttempt(prisma, { quizId, studentId: student.id, score: 65 });
+
+    const roster = await students.listForCourse(courseId, {});
+
+    expect(roster.items[0].quizzes[0].hasPassed).toBe(false);
+    expect(roster.items[0].passedQuizCount).toBe(0);
+  });
+
+  it('(ญ) shows the same student passed and failed on either side of the change', async () => {
+    const lessonId = await createLesson(prisma, { courseId, orderIndex: 1 });
+    const quizId = await createQuiz(prisma, { lessonId, questions: 4, passScore: 60 });
+
+    const student = await buyer();
+    await createAttempt(prisma, { quizId, studentId: student.id, score: 65 });
+    await prisma.quiz.update({ where: { id: quizId }, data: { passScore: 70 } });
+    await createAttempt(prisma, { quizId, studentId: student.id, score: 65 });
+
+    const attempts = await prisma.quizAttempt.findMany({
+      where: { quizId, studentId: student.id },
+      orderBy: { passScoreSnapshot: 'asc' },
+      select: { score: true, passed: true, passScoreSnapshot: true },
+    });
+
+    expect(attempts).toEqual([
+      { score: 65, passed: true, passScoreSnapshot: 60 },
+      { score: 65, passed: false, passScoreSnapshot: 70 },
+    ]);
+
+    // Ever having cleared it is the honest answer for the roster: they did.
+    const roster = await students.listForCourse(courseId, {});
+    expect(roster.items[0].quizzes[0].hasPassed).toBe(true);
+    expect(roster.items[0].quizzes[0].attemptCount).toBe(2);
+  });
+
+  // --- (ฏ) nothing re-judges from the live pass mark -------------------------
+
+  it('(ฏ) leaves every recorded verdict alone however far the mark moves', async () => {
+    const lessonId = await createLesson(prisma, { courseId, orderIndex: 1 });
+    const quizId = await createQuiz(prisma, { lessonId, questions: 4, passScore: 60 });
+
+    const passer = await buyer();
+    const failer = await buyer();
+    await createAttempt(prisma, { quizId, studentId: passer.id, score: 65 });
+    await createAttempt(prisma, { quizId, studentId: failer.id, score: 40 });
+
+    const verdictsBefore = await readVerdicts(quizId);
+
+    // Both extremes: a bar nobody could clear, then one everybody clears.
+    for (const passScore of [100, 60]) {
+      await prisma.quiz.update({ where: { id: quizId }, data: { passScore } });
+      const roster = await students.listForCourse(courseId, {});
+      const byStudent = new Map(roster.items.map((item) => [item.studentId, item]));
+
+      expect(byStudent.get(passer.id)?.quizzes[0].hasPassed).toBe(true);
+      expect(byStudent.get(failer.id)?.quizzes[0].hasPassed).toBe(false);
+    }
+
+    expect(await readVerdicts(quizId)).toEqual(verdictsBefore);
+  });
+
+  async function readVerdicts(quizId: string) {
+    return prisma.quizAttempt.findMany({
+      where: { quizId },
+      orderBy: { score: 'asc' },
+      select: { score: true, passed: true, passScoreSnapshot: true },
+    });
+  }
 
   // --- privacy and empty states --------------------------------------------
 

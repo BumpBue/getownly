@@ -31,11 +31,11 @@ export class CourseStudentsService {
   /**
    * One page of the roster.
    *
-   * Six queries, whatever the page size: the page of enrolments, its total,
+   * Seven queries, whatever the page size: the page of enrolments, its total,
    * the course's lesson count, the course's quizzes, completed-lesson counts
-   * grouped per enrolment, and quiz standings grouped per (student, quiz).
-   * The last two are the ones that would otherwise be a query per student, so
-   * both are `groupBy` over the whole page at once.
+   * per enrolment, best-score-and-attempt-count per (student, quiz), and which
+   * of those pairs has ever passed. The last three would otherwise be a query
+   * per student, so each is one `groupBy` over the whole page at once.
    *
    * Free enrolments are included. The roster is about who is *learning*, not
    * about who paid — a free sign-up is as real a student as a buyer, and the
@@ -84,7 +84,7 @@ export class CourseStudentsService {
     const studentIds = enrollments.map((row) => row.student.id);
     const quizIds = quizzes.map((quiz) => quiz.id);
 
-    const [completedRows, attemptRows] = await Promise.all([
+    const [completedRows, attemptRows, passedRows] = await Promise.all([
       enrollmentIds.length === 0
         ? []
         : this.prisma.lessonProgress.groupBy({
@@ -94,13 +94,25 @@ export class CourseStudentsService {
           }),
       studentIds.length === 0 || quizIds.length === 0
         ? []
-        : this.prisma.quizAttempt.groupBy({
+        : // Highest score, not latest: a quiz may be re-sat as often as the
+          // student likes (Soft Lock).
+          this.prisma.quizAttempt.groupBy({
             by: ['studentId', 'quizId'],
             where: { studentId: { in: studentIds }, quizId: { in: quizIds } },
-            // Highest score, not latest: a quiz may be re-sat as often as the
-            // student likes (Soft Lock), and the best attempt is the one that
-            // decides whether they passed.
             _max: { score: true },
+            _count: { _all: true },
+          }),
+      // Passing is a separate question from scoring highest, and once the pass
+      // mark can move the two stop agreeing: 65 against a bar of 60 passed,
+      // and raising the bar to 70 afterwards does not un-pass it. `passed` is
+      // the verdict recorded against that attempt's own passScoreSnapshot, so
+      // counting the rows where it is true answers "has this student ever
+      // cleared this quiz" without re-judging anything.
+      studentIds.length === 0 || quizIds.length === 0
+        ? []
+        : this.prisma.quizAttempt.groupBy({
+            by: ['studentId', 'quizId'],
+            where: { studentId: { in: studentIds }, quizId: { in: quizIds }, passed: true },
             _count: { _all: true },
           }),
     ]);
@@ -114,22 +126,29 @@ export class CourseStudentsService {
         { bestScore: row._max.score, attemptCount: row._count._all },
       ]),
     );
+    const passedStudentQuiz = new Set(
+      passedRows
+        .filter((row) => row._count._all > 0)
+        .map((row) => `${row.studentId}:${row.quizId}`),
+    );
 
     const items = enrollments.map((enrollment): CourseStudentDto => {
       const completedLessonCount = completedByEnrollment.get(enrollment.id) ?? 0;
 
       const quizStandings = quizzes.map((quiz): CourseStudentQuizDto => {
-        const standing = standingByStudentQuiz.get(`${enrollment.student.id}:${quiz.id}`);
-        const bestScore = standing?.bestScore ?? null;
+        const key = `${enrollment.student.id}:${quiz.id}`;
+        const standing = standingByStudentQuiz.get(key);
 
         return {
           quizId: quiz.id,
           lessonId: quiz.lesson.id,
           lessonTitle: quiz.lesson.title,
           quizTitle: quiz.title,
+          // The bar a *new* attempt would face. Verdicts below come from each
+          // attempt's own snapshot, not from this number.
           passScore: quiz.passScore,
-          bestScore,
-          hasPassed: bestScore !== null && bestScore >= quiz.passScore,
+          bestScore: standing?.bestScore ?? null,
+          hasPassed: passedStudentQuiz.has(key),
           attemptCount: standing?.attemptCount ?? 0,
         };
       });

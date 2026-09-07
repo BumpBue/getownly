@@ -9,6 +9,7 @@ import {
 } from '@/common/exceptions/learning.exceptions';
 import type { AuthenticatedUser } from '@/common/types/authenticated-user';
 import { PrismaService } from '@/infra/prisma.service';
+import { isPassingScore, summariseAttempts, type QuizStanding } from '@/common/quiz-scoring';
 import { CourseAccessService } from '@/modules/courses/course-access.service';
 import type {
   CreateQuizDto,
@@ -104,9 +105,15 @@ export class QuizzesService {
    * the moment somebody sits it.
    */
   async update(quizId: string, user: AuthenticatedUser, dto: UpdateQuizDto): Promise<QuizDto> {
-    const quiz = await this.loadOwned(quizId, user);
+    const { quiz, attemptCount } = await this.loadOwned(quizId, user);
 
     if (dto.questions) {
+      // Title and pass mark stay editable for a sat quiz; the paper does not.
+      // A new pass mark only ever applies to attempts made after it, because
+      // each attempt carries the mark it was judged against.
+      if (attemptCount > 0) {
+        throw new QuizHasAttemptsException(attemptCount);
+      }
       assertOneCorrectChoicePerQuestion(dto.questions);
     }
 
@@ -130,7 +137,12 @@ export class QuizzesService {
   }
 
   async remove(quizId: string, user: AuthenticatedUser): Promise<{ message: string }> {
-    const quiz = await this.loadOwned(quizId, user);
+    const { quiz, attemptCount } = await this.loadOwned(quizId, user);
+
+    // Deleting takes the recorded scores with it, so a sat quiz stays.
+    if (attemptCount > 0) {
+      throw new QuizHasAttemptsException(attemptCount);
+    }
 
     await this.prisma.quiz.delete({ where: { id: quiz.id } });
 
@@ -150,7 +162,7 @@ export class QuizzesService {
    */
   async take(quizId: string, studentId: string): Promise<QuizTakeDto> {
     const quiz = await this.loadForStudent(quizId, studentId);
-    const standing = await this.readStanding(quizId, studentId, quiz.passScore);
+    const standing = await this.readStanding(quizId, studentId);
 
     return {
       id: quiz.id,
@@ -199,7 +211,12 @@ export class QuizzesService {
     // Every question weighs the same. Math.round is half-up for positives,
     // which is the direction a student would expect on a borderline mark.
     const score = Math.round((correctCount / quiz.questions.length) * 100);
-    const passed = score >= quiz.passScore;
+
+    // The bar in force right now is both applied and written down. From here
+    // on nothing re-derives this verdict from Quiz.passScore, which the
+    // instructor may move afterwards (ทก.01 A7).
+    const passScoreSnapshot = quiz.passScore;
+    const passed = isPassingScore(score, passScoreSnapshot);
 
     const attempt = await this.prisma.quizAttempt.create({
       data: {
@@ -207,6 +224,7 @@ export class QuizzesService {
         studentId,
         score,
         passed,
+        passScoreSnapshot,
         answers: {
           create: quiz.questions.map((question) => ({
             questionId: question.id,
@@ -243,13 +261,15 @@ export class QuizzesService {
         id: true,
         score: true,
         passed: true,
+        passScoreSnapshot: true,
         attemptedAt: true,
         answers: { select: { questionId: true, choiceId: true } },
       },
     });
 
     const attemptCount = await this.prisma.quizAttempt.count({ where: { quizId, studentId } });
-    const bestScore = attempts.length === 0 ? null : Math.max(...attempts.map((a) => a.score));
+    // Summarised from the rows above, each carrying the bar it was sat under.
+    const standing = summariseAttempts(attempts);
     const latest = attempts[0];
 
     return {
@@ -259,8 +279,8 @@ export class QuizzesService {
       quizTitle: quiz.title,
       passScore: quiz.passScore,
       questionCount: quiz.questions.length,
-      bestScore,
-      hasPassed: bestScore !== null && bestScore >= quiz.passScore,
+      bestScore: standing.bestScore,
+      hasPassed: standing.hasPassed,
       attemptCount,
       attempts: attempts.map((attempt, index) => ({
         id: attempt.id,
@@ -288,7 +308,20 @@ export class QuizzesService {
   // -------------------------------------------------------------------------
 
   /** Loads a quiz and proves the caller owns the course it belongs to. */
-  private async loadOwned(quizId: string, user: AuthenticatedUser): Promise<FullQuiz> {
+  /**
+   * Loads a quiz the caller owns, and counts how many times it has been sat.
+   *
+   * The count is returned rather than acted on, because what it forbids
+   * depends on the caller (ทก.01 A7): the title and the pass mark may always
+   * be changed, while the questions, the choices and the answer key freeze the
+   * moment anybody sits it — rewriting them would leave recorded scores
+   * describing a paper that no longer exists, and the database refuses it
+   * anyway through QuizAttemptAnswer's RESTRICT on questionId.
+   */
+  private async loadOwned(
+    quizId: string,
+    user: AuthenticatedUser,
+  ): Promise<{ quiz: FullQuiz; attemptCount: number }> {
     const quiz = await this.prisma.quiz.findUnique({
       where: { id: quizId },
       select: fullQuizSelect,
@@ -300,14 +333,9 @@ export class QuizzesService {
 
     await this.access.assertLessonOwner(quiz.lessonId, user);
 
-    // Attempts reference questions with onDelete: Restrict, so rewriting a
-    // sat quiz would fail at the database anyway. Refusing here says why.
     const attemptCount = await this.prisma.quizAttempt.count({ where: { quizId } });
-    if (attemptCount > 0) {
-      throw new QuizHasAttemptsException(attemptCount);
-    }
 
-    return quiz;
+    return { quiz, attemptCount };
   }
 
   /** Loads a quiz and proves the caller has bought the course it belongs to. */
@@ -356,24 +384,17 @@ export class QuizzesService {
     };
   }
 
-  private async readStanding(
-    quizId: string,
-    studentId: string,
-    passScore: number,
-  ): Promise<{ bestScore: number | null; hasPassed: boolean; attemptCount: number }> {
-    const standing = await this.prisma.quizAttempt.aggregate({
+  /**
+   * This student's standing on one quiz, judged attempt by attempt against the
+   * bar each was sat under rather than against the quiz's current pass mark.
+   */
+  private async readStanding(quizId: string, studentId: string): Promise<QuizStanding> {
+    const attempts = await this.prisma.quizAttempt.findMany({
       where: { quizId, studentId },
-      _max: { score: true },
-      _count: { _all: true },
+      select: { score: true, passScoreSnapshot: true },
     });
 
-    const bestScore = standing._count._all === 0 ? null : (standing._max.score ?? 0);
-
-    return {
-      bestScore,
-      hasPassed: bestScore !== null && bestScore >= passScore,
-      attemptCount: standing._count._all,
-    };
+    return summariseAttempts(attempts);
   }
 }
 

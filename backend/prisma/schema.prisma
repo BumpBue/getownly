@@ -313,6 +313,14 @@ model QuizAttempt {
   /// Percentage scored on this attempt, 0-100.
   score  Int
   passed Boolean
+  /// The pass mark that applied when this attempt was graded.
+  ///
+  /// Snapshotted for the same reason Enrollment.commissionRateSnapshot is: an
+  /// instructor may raise or lower Quiz.passScore afterwards, and a verdict
+  /// recorded under the old bar must not silently flip when they do. `passed`
+  /// above is always `score >= passScoreSnapshot`; nothing re-derives it from
+  /// the quiz's current value.
+  passScoreSnapshot Int
 
   attemptedAt DateTime @default(now())
 

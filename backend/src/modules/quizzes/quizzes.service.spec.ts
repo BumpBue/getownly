@@ -1,6 +1,9 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 import { PrismaService } from '@/infra/prisma.service';
 import { CourseAccessService } from '@/modules/courses/course-access.service';
+import { UpdateQuizDto } from './dto/quiz-request.dto';
 import { QuizzesService } from './quizzes.service';
 import {
   asAuthUser,
@@ -192,18 +195,171 @@ describe('QuizzesService', () => {
     expect(await prisma.quizQuestion.count({ where: { quizId: quiz.id } })).toBe(1);
   });
 
-  it('freezes a quiz once somebody has sat it', async () => {
-    const quiz = await quizzes.create(lessonId, asAuthUser(instructor), quizInput);
-    const key = await readKey(prisma, quiz.id);
-    await quizzes.submit(quiz.id, student.id, {
-      answers: [{ questionId: key[0].questionId, choiceId: key[0].correctChoiceId }],
+  /**
+   * ทก.01 A7: once a quiz has been sat, the paper freezes but its heading does
+   * not. The instructor can still fix a title or move the pass mark; what they
+   * cannot do is rewrite questions that recorded scores refer to.
+   */
+  describe('a quiz somebody has already sat', () => {
+    async function sitOnce() {
+      const quiz = await quizzes.create(lessonId, asAuthUser(instructor), quizInput);
+      const key = await readKey(prisma, quiz.id);
+      await quizzes.submit(quiz.id, student.id, {
+        answers: [{ questionId: key[0].questionId, choiceId: key[0].correctChoiceId }],
+      });
+      return quiz;
+    }
+
+    it('(ฌ) still accepts a new title and a new pass mark', async () => {
+      const quiz = await sitOnce();
+
+      const updated = await quizzes.update(quiz.id, asAuthUser(instructor), {
+        title: 'ชื่อใหม่หลังมีคนทำแล้ว',
+        passScore: 90,
+      });
+
+      expect(updated.title).toBe('ชื่อใหม่หลังมีคนทำแล้ว');
+      expect(updated.passScore).toBe(90);
     });
 
-    await expect(
-      quizzes.update(quiz.id, asAuthUser(instructor), { title: 'ชื่อใหม่' }),
-    ).rejects.toMatchObject({ code: 'QUIZ_HAS_ATTEMPTS' });
-    await expect(quizzes.remove(quiz.id, asAuthUser(instructor))).rejects.toMatchObject({
-      code: 'QUIZ_HAS_ATTEMPTS',
+    it('(ฌ) refuses a rewrite of the questions', async () => {
+      const quiz = await sitOnce();
+
+      await expect(
+        quizzes.update(quiz.id, asAuthUser(instructor), {
+          questions: [
+            {
+              questionText: 'คำถามใหม่ที่จะทำให้คะแนนเดิมไร้ความหมาย',
+              choices: [
+                { choiceText: 'ใช่', isCorrect: true },
+                { choiceText: 'ไม่ใช่', isCorrect: false },
+              ],
+            },
+          ],
+        }),
+      ).rejects.toMatchObject({ code: 'QUIZ_HAS_ATTEMPTS' });
+
+      // Nothing was half-applied: the original paper is still intact.
+      const unchanged = await quizzes.update(quiz.id, asAuthUser(instructor), {});
+      expect(unchanged.questions[0]?.questionText).toBe(quizInput.questions[0].questionText);
+    });
+
+    it('(ฌ) refuses deletion, which would take the scores with it', async () => {
+      const quiz = await sitOnce();
+
+      await expect(quizzes.remove(quiz.id, asAuthUser(instructor))).rejects.toMatchObject({
+        code: 'QUIZ_HAS_ATTEMPTS',
+      });
+      expect(await prisma.quiz.count({ where: { id: quiz.id } })).toBe(1);
+    });
+
+    it('(ฌ) refuses a pass mark outside 60-100 even now', async () => {
+      const quiz = await sitOnce();
+
+      // The DTO is the gate here, so this proves the rule is not skipped on
+      // the "metadata is always editable" path.
+      const dto = plainToInstance(UpdateQuizDto, { passScore: 59 });
+      expect(await validate(dto)).not.toHaveLength(0);
+      expect(quiz.passScore).toBe(quizInput.passScore);
+    });
+
+    /**
+     * (ญ) The snapshot is the whole point: a verdict already recorded must not
+     * move when the bar does.
+     */
+    it('(ญ) keeps an old verdict and judges a new attempt by the new mark', async () => {
+      // Two questions, so 1 of 2 correct scores exactly 50 and 2 of 2 scores 100.
+      const quiz = await quizzes.create(lessonId, asAuthUser(instructor), {
+        title: 'แบบทดสอบทดสอบเกณฑ์ที่ขยับ',
+        passScore: 60,
+        questions: [
+          {
+            questionText: 'คำถามข้อที่หนึ่งของชุดนี้',
+            choices: [
+              { choiceText: 'ถูก', isCorrect: true },
+              { choiceText: 'ผิด', isCorrect: false },
+            ],
+          },
+          {
+            questionText: 'คำถามข้อที่สองของชุดนี้',
+            choices: [
+              { choiceText: 'ถูก', isCorrect: true },
+              { choiceText: 'ผิด', isCorrect: false },
+            ],
+          },
+        ],
+      });
+      const key = await readKey(prisma, quiz.id);
+
+      // Both right: 100 against a bar of 60, comfortably passed.
+      const before = await quizzes.submit(quiz.id, student.id, {
+        answers: key.map((entry) => ({
+          questionId: entry.questionId,
+          choiceId: entry.correctChoiceId,
+        })),
+      });
+      expect(before.score).toBe(100);
+      expect(before.passed).toBe(true);
+
+      // The instructor raises the bar above what a half-right paper scores.
+      await quizzes.update(quiz.id, asAuthUser(instructor), { passScore: 70 });
+
+      const stored = await prisma.quizAttempt.findFirstOrThrow({
+        where: { quizId: quiz.id },
+        select: { passed: true, passScoreSnapshot: true },
+      });
+      expect(stored.passed).toBe(true);
+      expect(stored.passScoreSnapshot).toBe(60);
+
+      // One right, one wrong: 50, which cleared nothing under either bar —
+      // so sit a paper worth exactly 50 and check it is judged at 70.
+      const wrongChoice = await prisma.quizChoice.findFirstOrThrow({
+        where: { questionId: key[1].questionId, isCorrect: false },
+        select: { id: true },
+      });
+      const after = await quizzes.submit(quiz.id, student.id, {
+        answers: [
+          { questionId: key[0].questionId, choiceId: key[0].correctChoiceId },
+          { questionId: key[1].questionId, choiceId: wrongChoice.id },
+        ],
+      });
+      expect(after.score).toBe(50);
+      expect(after.passed).toBe(false);
+
+      const newest = await prisma.quizAttempt.findFirstOrThrow({
+        where: { quizId: quiz.id },
+        orderBy: { attemptedAt: 'desc' },
+        select: { passScoreSnapshot: true },
+      });
+      expect(newest.passScoreSnapshot).toBe(70);
+
+      // And the student still counts as having passed, because they did.
+      const history = await quizzes.listMyAttempts(quiz.id, student.id);
+      expect(history.hasPassed).toBe(true);
+      expect(history.bestScore).toBe(100);
+      expect(history.attempts.map((attempt) => attempt.passed)).toEqual([false, true]);
+    });
+
+    it('(ฏ) never re-derives a stored verdict from the quiz current pass mark', async () => {
+      const quiz = await sitOnce();
+      await quizzes.update(quiz.id, asAuthUser(instructor), { passScore: 100 });
+
+      const attempt = await prisma.quizAttempt.findFirstOrThrow({
+        where: { quizId: quiz.id },
+        select: { score: true, passed: true, passScoreSnapshot: true },
+      });
+
+      // Scored 100 under a bar of 70; the bar is now 100. Judged against the
+      // live value the verdict would still be true here, so the check that
+      // matters is that the row kept the bar it was actually sat under.
+      expect(attempt.passScoreSnapshot).toBe(quizInput.passScore);
+      expect(attempt.passed).toBe(attempt.score >= attempt.passScoreSnapshot);
+
+      const take = await quizzes.take(quiz.id, student.id);
+      // The paper advertises the new bar to whoever sits it next...
+      expect(take.passScore).toBe(100);
+      // ...while the standing still reflects the attempt already recorded.
+      expect(take.hasPassed).toBe(true);
     });
   });
 

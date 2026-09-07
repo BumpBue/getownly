@@ -378,9 +378,11 @@ async function main(): Promise<void> {
       progressRows += 1;
 
       if (index < completed && lesson.quiz) {
-        const questionCount = await prisma.quizQuestion.count({
-          where: { quizId: lesson.quiz.id },
+        const quiz = await prisma.quiz.findUniqueOrThrow({
+          where: { id: lesson.quiz.id },
+          select: { passScore: true, _count: { select: { questions: true } } },
         });
+        const questionCount = quiz._count.questions;
         if (questionCount === 0) {
           continue;
         }
@@ -388,12 +390,16 @@ async function main(): Promise<void> {
         const correct = Math.round(questionCount * (0.5 + random() * 0.5));
         const score = Math.round((correct / questionCount) * 100);
 
+        // The verdict and the bar it was judged against, written together the
+        // way QuizzesService.submit does. The bar comes from the quiz rather
+        // than a literal, so a seeded pass is a pass by that quiz's own rule.
         await prisma.quizAttempt.create({
           data: {
             quizId: lesson.quiz.id,
             studentId: enrollment.studentId,
             score,
-            passed: score >= 70,
+            passed: score >= quiz.passScore,
+            passScoreSnapshot: quiz.passScore,
             attemptedAt: daysAgo(Math.floor(random() * 60)),
           },
         });

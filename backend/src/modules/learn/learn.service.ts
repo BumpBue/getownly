@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { CourseNotFoundException } from '@/common/exceptions/catalog.exceptions';
 import { courseProgressPercent } from '@/common/progress';
+import { summariseAttempts, type QuizStanding as Standing } from '@/common/quiz-scoring';
 import { LessonNotInCourseException } from '@/common/exceptions/learning.exceptions';
 import { PrismaService } from '@/infra/prisma.service';
 import { StorageService } from '@/infra/storage/storage.service';
@@ -36,8 +37,8 @@ const classroomLessonSelect = {
 
 type ClassroomLesson = Prisma.LessonGetPayload<{ select: typeof classroomLessonSelect }>;
 
-/** Best score and attempt count per quiz, for the student asking. */
-type QuizStanding = Map<string, { bestScore: number; attemptCount: number }>;
+/** This student's standing on each quiz in the course, keyed by quiz id. */
+type QuizStanding = Map<string, Standing>;
 
 /** Resume position and completion, per lesson, for the student asking. */
 type ProgressByLesson = Map<string, { lastPositionSec: number; completedAt: Date | null }>;
@@ -297,18 +298,22 @@ export class LearnService {
       return new Map();
     }
 
-    const rows = await this.prisma.quizAttempt.groupBy({
-      by: ['quizId'],
+    // One query for the whole course, then grouped here — a verdict depends
+    // on each attempt's own pass mark, which no SQL aggregate can express.
+    const rows = await this.prisma.quizAttempt.findMany({
       where: { quizId: { in: quizIds }, studentId },
-      _max: { score: true },
-      _count: { _all: true },
+      select: { quizId: true, score: true, passScoreSnapshot: true },
     });
 
+    const byQuiz = new Map<string, { score: number; passScoreSnapshot: number }[]>();
+    for (const row of rows) {
+      const bucket = byQuiz.get(row.quizId) ?? [];
+      bucket.push(row);
+      byQuiz.set(row.quizId, bucket);
+    }
+
     return new Map(
-      rows.map((row) => [
-        row.quizId,
-        { bestScore: row._max.score ?? 0, attemptCount: row._count._all },
-      ]),
+      [...byQuiz.entries()].map(([quizId, attempts]) => [quizId, summariseAttempts(attempts)]),
     );
   }
 }
@@ -346,16 +351,16 @@ function toQuizSummary(
   }
 
   const standing = standings.get(quiz.id);
-  const bestScore = standing?.bestScore ?? null;
 
   return {
     id: quiz.id,
     title: quiz.title,
+    // The bar for a *new* attempt. Past verdicts came from each attempt's own
+    // snapshot and are not recomputed against this number.
     passScore: quiz.passScore,
     questionCount: quiz._count.questions,
-    bestScore,
-    // The best attempt is what counts, which is why retakes are unlimited.
-    hasPassed: bestScore !== null && bestScore >= quiz.passScore,
+    bestScore: standing?.bestScore ?? null,
+    hasPassed: standing?.hasPassed ?? false,
     attemptCount: standing?.attemptCount ?? 0,
   };
 }

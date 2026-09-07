@@ -3,6 +3,7 @@ import { PrismaService } from '@/infra/prisma.service';
 import { CourseAccessService } from '@/modules/courses/course-access.service';
 import { LearnService } from './learn.service';
 import {
+  createAttempt,
   createCategory,
   createCourse,
   createLesson,
@@ -179,12 +180,9 @@ describe('LearnService', () => {
       questions: 4,
       passScore: 70,
     });
-    await prisma.quizAttempt.createMany({
-      data: [
-        { quizId, studentId: student.id, score: 50, passed: false },
-        { quizId, studentId: student.id, score: 75, passed: true },
-      ],
-    });
+    for (const score of [50, 75]) {
+      await createAttempt(prisma, { quizId, studentId: student.id, score });
+    }
 
     const lesson = await learn.getLesson(courseId, lessonIds[0], student.id);
 
@@ -200,9 +198,7 @@ describe('LearnService', () => {
     await enrol(prisma, { courseId, studentId: other.id });
 
     const quizId = await createQuiz(prisma, { lessonId: lessonIds[0], questions: 2 });
-    await prisma.quizAttempt.create({
-      data: { quizId, studentId: other.id, score: 100, passed: true },
-    });
+    await createAttempt(prisma, { quizId, studentId: other.id, score: 100 });
 
     const lesson = await learn.getLesson(courseId, lessonIds[0], student.id);
 
