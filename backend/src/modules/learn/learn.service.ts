@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { CourseNotFoundException } from '@/common/exceptions/catalog.exceptions';
+import { courseProgressPercent } from '@/common/progress';
 import { LessonNotInCourseException } from '@/common/exceptions/learning.exceptions';
 import { PrismaService } from '@/infra/prisma.service';
 import { StorageService } from '@/infra/storage/storage.service';
@@ -259,7 +260,7 @@ export class LearnService {
       course: {
         lessonCount,
         completedLessonCount,
-        progressPercent: percentOf(completedLessonCount, lessonCount),
+        progressPercent: courseProgressPercent(completedLessonCount, lessonCount),
       },
     };
   }
@@ -376,11 +377,6 @@ function summarise(lessons: LearnLessonSummaryDto[]): CourseProgressDto {
   return {
     lessonCount: lessons.length,
     completedLessonCount,
-    progressPercent: percentOf(completedLessonCount, lessons.length),
+    progressPercent: courseProgressPercent(completedLessonCount, lessons.length),
   };
-}
-
-/** 0 rather than NaN for a course with no lessons yet. */
-function percentOf(part: number, whole: number): number {
-  return whole === 0 ? 0 : Math.round((part / whole) * 100);
 }

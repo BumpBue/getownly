@@ -19,8 +19,9 @@ import { instructorMessages } from "@/lib/messages/instructor";
 import { cn } from "@/lib/utils";
 import { CurriculumTab } from "./CurriculumTab";
 import { GeneralTab } from "./GeneralTab";
+import { StudentsTab } from "./StudentsTab";
 
-const TAB_IDS = ["general", "curriculum", "quizzes"] as const;
+const TAB_IDS = ["general", "curriculum", "quizzes", "students"] as const;
 type TabId = (typeof TAB_IDS)[number];
 
 /**
@@ -252,6 +253,9 @@ export default function CourseEditorPage() {
           body={instructorMessages.quizzes.comingSoonBody}
         />
       )}
+      {/* ทก.01 A9 — the roster lives beside the course it is about, because
+          this URL is already the only instructor screen scoped to one course. */}
+      {tab === "students" && <StudentsTab courseId={course.id} />}
     </div>
   );
 }

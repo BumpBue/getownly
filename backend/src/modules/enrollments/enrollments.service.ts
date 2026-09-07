@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { courseProgressPercent } from '@/common/progress';
 import { PrismaService } from '@/infra/prisma.service';
 import { StorageService } from '@/infra/storage/storage.service';
 import type { MyEnrollmentDto } from './dto/enrollment-response.dto';
@@ -60,8 +61,7 @@ export class EnrollmentsService {
           instructorName: row.course.instructor.displayName,
           lessonCount,
           completedLessonCount,
-          progressPercent:
-            lessonCount === 0 ? 0 : Math.round((completedLessonCount / lessonCount) * 100),
+          progressPercent: courseProgressPercent(completedLessonCount, lessonCount),
           totalDurationSec: row.course.lessons.reduce(
             (total, lesson) => total + (lesson.durationSec ?? 0),
             0,

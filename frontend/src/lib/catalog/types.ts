@@ -37,6 +37,51 @@ import {
 } from "@getownly/shared";
 
 export { COURSE_SORTS, COURSE_STATUSES, UPLOAD_ACCEPT, UPLOAD_KINDS, UPLOAD_MAX_MB };
+
+/**
+ * How one student stands on one quiz (ทก.01 A9).
+ *
+ * `bestScore: null` means never attempted, which is not the same as scoring
+ * zero — the roster shows "ยังไม่ทำ" for one and "0%" for the other.
+ */
+export interface CourseStudentQuiz {
+  quizId: string;
+  lessonId: string;
+  lessonTitle: string;
+  quizTitle: string;
+  passScore: number;
+  bestScore: number | null;
+  hasPassed: boolean;
+  attemptCount: number;
+}
+
+/**
+ * One row of the roster. Carries no email or other contact detail: the scope
+ * grants an instructor the right to see who is enrolled and how they are
+ * getting on, not a way to reach them.
+ */
+export interface CourseStudent {
+  enrollmentId: string;
+  studentId: string;
+  displayName: string;
+  enrolledAt: string;
+  lessonCount: number;
+  completedLessonCount: number;
+  progressPercent: number;
+  passedQuizCount: number;
+  quizCount: number;
+  quizzes: CourseStudentQuiz[];
+}
+
+export interface PaginatedCourseStudents {
+  items: CourseStudent[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  lessonCount: number;
+  quizCount: number;
+}
 export type {
   Category,
   CourseCategory,

@@ -7,6 +7,7 @@ import type {
   Lesson,
   Material,
   PaginatedCourses,
+  PaginatedCourseStudents,
   PresignUploadResponse,
   SignedUrlResponse,
   UploadKind,
@@ -29,6 +30,19 @@ export function getCourse(courseId: string): Promise<CourseDetail> {
 }
 
 // --- instructor: courses ---------------------------------------------------
+
+/**
+ * ทก.01 A9: who is enrolled in one of my courses, and how they are doing.
+ * Refused with NOT_COURSE_OWNER for a course belonging to somebody else.
+ */
+export function getCourseStudents(
+  courseId: string,
+  page = 1,
+): Promise<PaginatedCourseStudents> {
+  return apiRequest<PaginatedCourseStudents>(
+    `/instructor/courses/${courseId}/students?page=${page}`,
+  );
+}
 
 export function listMyCourses(): Promise<InstructorCourse[]> {
   return apiRequest<InstructorCourse[]>('/courses/mine');
