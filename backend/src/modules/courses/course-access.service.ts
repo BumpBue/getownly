@@ -11,7 +11,7 @@ import { NotEnrolledException } from '@/common/exceptions/learning.exceptions';
 import { QnaAccessDeniedException } from '@/common/exceptions/qna.exceptions';
 import type { AuthenticatedUser } from '@/common/types/authenticated-user';
 import { PrismaService } from '@/infra/prisma.service';
-import { COURSE_MAX_STORAGE_BYTES } from '@/modules/uploads/upload-rules';
+import { COURSE_MAX_STORAGE_BYTES } from '@getownly/shared';
 
 /**
  * The second of the two permission layers described in CLAUDE.md, "Auth และสิทธิ์".
@@ -118,8 +118,8 @@ export class CourseAccessService {
   }
 
   /**
-   * Throws unless `addingBytes` more still fits under the 3 GB course cap
-   * (scope 2.3.2), given `usedBytes` already spent.
+   * Throws unless `addingBytes` more still fits under the course storage cap
+   * (ทก.01 A6), given `usedBytes` already spent.
    *
    * Called twice on the way to a stored file: once at presign time against
    * the client's claimed size, and again once StorageService.stat() reports
@@ -131,6 +131,7 @@ export class CourseAccessService {
     if (projected > BigInt(COURSE_MAX_STORAGE_BYTES)) {
       const remaining = BigInt(COURSE_MAX_STORAGE_BYTES) - usedBytes;
       throw new CourseStorageLimitExceededException(
+        Number(usedBytes),
         Number(remaining > 0n ? remaining : 0n),
         addingBytes,
       );

@@ -320,6 +320,36 @@ URL ที่ใช้ตอน dev
 เฟส 8 ยังไม่มี Playwright e2e การส่งออก CSV และ AuditLog
 **ถัดไปที่คุ้มที่สุด: ตะกร้า/checkout · การถอนเงินของผู้สอน · รีวิว · ใบประกาศนียบัตร**
 
+### ค่าคงที่ของขอบเขต (ทก.01) — `packages/shared/src/limits.ts`
+
+**ตัวเลขทุกตัวที่เอกสาร ทก.01 กำหนดไว้ อยู่ในไฟล์นี้ไฟล์เดียว** ห้ามประกาศซ้ำที่อื่นเด็ดขาด
+`COURSE_MAX_PRICE_BAHT` (10,000) · `UPLOAD_MAX_MB` (video **150**, material 50, cover/avatar/slip 5) ·
+`COURSE_MAX_STORAGE_BYTES` (**1 GB**) · `QUIZ_PASS_SCORE_MIN`/`MAX` (**60**-100) · `TOPUP_REVIEW_TARGET_HOURS` (24)
+พร้อม helper `mbToBytes()` และ `formatBytesThai()` ที่ทุกข้อความเรื่องโควตาต้องใช้ตัวเดียวกัน
+
+- **backend เพิ่ม dependency `@getownly/shared` แล้ว** (เดิมมีแต่ frontend) — `packages/shared` จึงมี
+  `"prepare": "tsc -p tsconfig.json"` เพื่อให้ `pnpm install` สร้าง `dist/` ให้เอง
+  **ถ้า `pnpm dev:be`/`pnpm test` พังด้วย "Cannot find module '@getownly/shared'" ให้รัน `pnpm build:shared`**
+  (`dist/` ยังอยู่ใน .gitignore ตามเดิม)
+- **ลบ `UPLOAD_MAX_VIDEO_MB` / `UPLOAD_MAX_DOCUMENT_MB` / `UPLOAD_MAX_IMAGE_MB` ออกจาก env แล้ว**
+  ทั้งใน `.env.example` และ `env.validation.ts` — เพดานพวกนี้เป็น**ข้อผูกพันของเอกสาร ไม่ใช่ค่าคอนฟิกของ deployment**
+  ถ้าปล่อยไว้ใน env จะมีทางที่เครื่องหนึ่งบังคับ 150MB แต่อีกเครื่องบังคับ 500MB ซึ่งตอบกรรมการไม่ได้
+  ค่าที่ค้างอยู่ใน `.env` เก่าถูกเพิกเฉยเงียบๆ ไม่ throw (`validateEnv` เก็บ key ส่วนเกินไว้อยู่แล้ว)
+  `MaterialsService` จึงไม่รับ `ConfigService` อีกต่อไป (constructor เหลือ 3 ตัว)
+- **`upload-rules.ts` ไม่มี `UploadLimitsMb` และ `LimitName` อีกแล้ว** `maxBytesFor(kind)`/`maxMbFor(kind)`
+  รับพารามิเตอร์เดียว อ่านจาก `UPLOAD_MAX_MB` ตรงๆ — `UploadsService` `MaterialsService` `TopupsService`
+  ใช้เส้นทางเดียวกันหมด
+- **`backend/src/config/scope-limits.spec.ts` เป็นที่เดียวในระบบที่เขียนตัวเลขเหล่านี้ด้วยมือ**
+  เทสต์อื่นทั้งหมด import ค่าจาก `limits.ts` ซึ่งดีตรงที่ไม่มีทางหลุด แต่แปลว่าถ้าพิมพ์ผิดใน `limits.ts`
+  เทสต์ทุกข้อจะเลื่อนตามไปด้วยและยังผ่านอยู่ ไฟล์นี้จึงกางค่าจริงออกมาเทียบ เพื่อให้การแก้ตัวเลขต้องตั้งใจเสมอ
+- **ข้อความโควตาบอกตัวเลขจริง** `CourseStorageLimitExceededException` รับ `(usedBytes, remainingBytes, fileSize)`
+  แล้วขึ้นว่า "ใช้ไป 467 MB จาก 1 GB เหลือ 557 MB แต่ไฟล์นี้มีขนาด 600 MB" พร้อมส่ง 4 ค่าเดียวกันใน `details`
+- **`prisma/seed.ts` บันทึก `Lesson.videoSize` และ `Course.storageUsedBytes` จริงแล้ว** (เดิมไม่เคยบันทึกเลย
+  แถบโควตาบนหน้าแก้ไขคอร์สจึงขึ้น 0 ทั้งที่มีวิดีโอหลายบท) ขนาดคำนวณจาก `durationSec x 40,000 ไบต์/วินาที`
+  แล้ว **throw ถ้าเกินเพดาน** ทั้งระดับคลิปและระดับคอร์ส — ข้อมูลสาธิตต้องเคารพกฎที่กำลังจะอธิบายให้กรรมการฟัง
+  ผลจริงหลังแก้: คอร์สใหญ่สุด 467 MB · คลิปใหญ่สุด 82 MB
+- **`Quiz.passScore` ใน seed เป็น 70 และ 75 ทั้ง 7 ชุด** ไม่มีชุดไหนต่ำกว่า 60 จึงไม่ต้องแก้
+
 ### สิ่งที่ตัดสินใจเพิ่มตอนทำขอบเขตอัปเดต 2.3.1–2.3.4 (ราคาคอร์ส พื้นที่จัดเก็บ เกณฑ์ผ่าน Soft Lock และการแจ้งเนื้อหา)
 
 รอบนี้เริ่มจากตรวจสอบสถานะปัจจุบันก่อนลงมือ (`SCOPE_UPDATE_AUDIT.md` ที่ root ของ repo) แล้วค่อยแก้ตามที่ตรวจพบ

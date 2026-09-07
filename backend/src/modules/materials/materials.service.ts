@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Role } from '@prisma/client';
 import { MaterialNotFoundException } from '@/common/exceptions/catalog.exceptions';
 import type { AuthenticatedUser } from '@/common/types/authenticated-user';
@@ -13,26 +12,25 @@ import {
   InvalidFileKeyException,
   UnsupportedFileTypeException,
 } from '@/modules/uploads/uploads.errors';
-import { UPLOAD_RULES, parseObjectKey } from '@/modules/uploads/upload-rules';
+import {
+  UPLOAD_RULES,
+  maxBytesFor,
+  maxMbFor,
+  parseObjectKey,
+} from '@/modules/uploads/upload-rules';
 import type { MaterialDto } from '@/modules/lessons/dto/lesson-response.dto';
 import type { CreateMaterialDto } from './dto/create-material.dto';
 
-const BYTES_PER_MB = 1024 * 1024;
-
 @Injectable()
 export class MaterialsService {
-  private readonly maxDocumentBytes: number;
-  private readonly maxDocumentMb: number;
+  private readonly maxDocumentBytes = maxBytesFor('material');
+  private readonly maxDocumentMb = maxMbFor('material');
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
     private readonly access: CourseAccessService,
-    config: ConfigService,
-  ) {
-    this.maxDocumentMb = Number(config.getOrThrow<string | number>('UPLOAD_MAX_DOCUMENT_MB'));
-    this.maxDocumentBytes = this.maxDocumentMb * BYTES_PER_MB;
-  }
+  ) {}
 
   /**
    * Attaches an already-uploaded file to a lesson.

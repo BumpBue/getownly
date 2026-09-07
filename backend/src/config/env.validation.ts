@@ -145,24 +145,10 @@ export class EnvironmentVariables {
   @Min(60)
   MINIO_PRESIGN_UPLOAD_EXPIRY_SECONDS!: number;
 
-  // --- upload limits -------------------------------------------------------
-  // Checked before a presigned URL is issued, so an oversized file never gets
-  // a place to land.
-
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  UPLOAD_MAX_VIDEO_MB!: number;
-
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  UPLOAD_MAX_DOCUMENT_MB!: number;
-
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  UPLOAD_MAX_IMAGE_MB!: number;
+  // Upload size ceilings are deliberately absent. They are fixed by the scope
+  // document (ทก.01 A6) rather than by a deployment, so they live in
+  // packages/shared/src/limits.ts where the web app reads the same numbers.
+  // A UPLOAD_MAX_* left over in an old .env is simply ignored.
 
   // --- top-up and PromptPay ------------------------------------------------
 

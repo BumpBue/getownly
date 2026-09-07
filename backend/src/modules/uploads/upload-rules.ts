@@ -1,4 +1,5 @@
 import { Role } from '@prisma/client';
+import { UPLOAD_MAX_MB, mbToBytes } from '@getownly/shared';
 
 /**
  * What may be uploaded, by whom, and how big.
@@ -6,24 +7,19 @@ import { Role } from '@prisma/client';
  * This table is the whole enforcement point: the API refuses to hand out a
  * presigned URL unless the request matches a row here, so an oversized or
  * unexpected file never gets anywhere to land (CLAUDE.md, "ไฟล์และวิดีโอ").
+ *
+ * The sizes themselves are not here and are not in `.env`: they are fixed by
+ * the scope document and live in packages/shared/src/limits.ts, so the web app
+ * refuses the same file for the same reason and no deployment can raise a
+ * ceiling the document promises.
  */
 
 export const UPLOAD_KINDS = ['video', 'material', 'cover', 'avatar', 'slip'] as const;
 export type UploadKind = (typeof UPLOAD_KINDS)[number];
 
-/** Which env limit a kind is measured against. */
-type LimitName = 'video' | 'document' | 'image';
-
-export interface UploadLimitsMb {
-  video: number;
-  document: number;
-  image: number;
-}
-
 interface KindRule {
   /** Accepted MIME type -> the extension the object key will end with. */
   extensionByMimeType: Record<string, string>;
-  limit: LimitName;
   /** Roles allowed to upload this kind. `null` means any signed-in user. */
   allowedRoles: Role[] | null;
   /** Thai wording used in the "unsupported type" message. */
@@ -42,7 +38,6 @@ export const UPLOAD_RULES: Record<UploadKind, KindRule> = {
       'video/mp4': 'mp4',
       'video/webm': 'webm',
     },
-    limit: 'video',
     allowedRoles: [Role.INSTRUCTOR, Role.ADMIN],
     acceptLabel: 'MP4 หรือ WebM',
   },
@@ -56,19 +51,16 @@ export const UPLOAD_RULES: Record<UploadKind, KindRule> = {
       // Windows and older browsers label .zip this way.
       'application/x-zip-compressed': 'zip',
     },
-    limit: 'document',
     allowedRoles: [Role.INSTRUCTOR, Role.ADMIN],
     acceptLabel: 'PDF, DOCX, PPTX, XLSX หรือ ZIP',
   },
   cover: {
     extensionByMimeType: IMAGE_TYPES,
-    limit: 'image',
     allowedRoles: [Role.INSTRUCTOR, Role.ADMIN],
     acceptLabel: 'JPG, PNG หรือ WebP',
   },
   avatar: {
     extensionByMimeType: IMAGE_TYPES,
-    limit: 'image',
     allowedRoles: null,
     acceptLabel: 'JPG, PNG หรือ WebP',
   },
@@ -77,27 +69,17 @@ export const UPLOAD_RULES: Record<UploadKind, KindRule> = {
       'image/jpeg': 'jpg',
       'image/png': 'png',
     },
-    limit: 'image',
     allowedRoles: null,
     acceptLabel: 'JPG หรือ PNG',
   },
 };
 
-const BYTES_PER_MB = 1024 * 1024;
-
-/**
- * Scope 2.3.2: total bytes a single course's lesson videos and materials may
- * use, combined. Checked against `Course.storageUsedBytes`, a running total,
- * never by summing every file on every request.
- */
-export const COURSE_MAX_STORAGE_BYTES = 3 * 1024 * 1024 * 1024;
-
-export function maxBytesFor(kind: UploadKind, limits: UploadLimitsMb): number {
-  return limits[UPLOAD_RULES[kind].limit] * BYTES_PER_MB;
+export function maxBytesFor(kind: UploadKind): number {
+  return mbToBytes(UPLOAD_MAX_MB[kind]);
 }
 
-export function maxMbFor(kind: UploadKind, limits: UploadLimitsMb): number {
-  return limits[UPLOAD_RULES[kind].limit];
+export function maxMbFor(kind: UploadKind): number {
+  return UPLOAD_MAX_MB[kind];
 }
 
 export function isUploadKind(value: string): value is UploadKind {

@@ -12,7 +12,7 @@ import {
 import type { AuthenticatedUser } from '@/common/types/authenticated-user';
 import { PrismaService } from '@/infra/prisma.service';
 import { StorageService } from '@/infra/storage/storage.service';
-import { COURSE_MAX_STORAGE_BYTES } from '@/modules/uploads/upload-rules';
+import { COURSE_MAX_STORAGE_BYTES } from '@getownly/shared';
 import { CourseAccessService } from './course-access.service';
 import type {
   CreateCourseDto,

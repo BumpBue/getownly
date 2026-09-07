@@ -1,4 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
+import { COURSE_MAX_STORAGE_BYTES, formatBytesThai } from '@getownly/shared';
 import { BusinessException } from './business.exception';
 
 // Errors raised by the catalog: courses, lessons, materials and uploads.
@@ -150,14 +151,27 @@ export class LessonAccessDeniedException extends BusinessException {
  * the real file size is known, so a bigger-than-declared upload cannot slip
  * the cap either.
  */
+/**
+ * The quota refusal names every number the instructor needs to decide what to
+ * do next: what the course has already spent, what the ceiling is, what is
+ * left, and how big the file they just tried to add was. "พื้นที่ไม่พอ" on its
+ * own tells them nothing they can act on.
+ */
 export class CourseStorageLimitExceededException extends BusinessException {
-  constructor(remainingBytes: number, fileSize: number) {
-    const remainingMb = Math.max(0, Math.floor(remainingBytes / (1024 * 1024)));
+  constructor(usedBytes: number, remainingBytes: number, fileSize: number) {
+    const remaining = Math.max(0, remainingBytes);
     super(
       HttpStatus.PAYLOAD_TOO_LARGE,
       'COURSE_STORAGE_LIMIT_EXCEEDED',
-      `พื้นที่จัดเก็บของคอร์สนี้เหลือไม่พอ เหลืออีก ${remainingMb} MB จากทั้งหมด 3 GB`,
-      { remainingBytes: Math.max(0, remainingBytes), fileSize },
+      `พื้นที่จัดเก็บของคอร์สนี้ไม่พอ ใช้ไป ${formatBytesThai(usedBytes)} ` +
+        `จาก ${formatBytesThai(COURSE_MAX_STORAGE_BYTES)} เหลือ ${formatBytesThai(remaining)} ` +
+        `แต่ไฟล์นี้มีขนาด ${formatBytesThai(fileSize)}`,
+      {
+        usedBytes,
+        limitBytes: COURSE_MAX_STORAGE_BYTES,
+        remainingBytes: remaining,
+        fileSize,
+      },
     );
   }
 }

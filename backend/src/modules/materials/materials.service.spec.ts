@@ -1,9 +1,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { ConfigService } from '@nestjs/config';
 import { CourseStorageLimitExceededException } from '@/common/exceptions/catalog.exceptions';
 import { PrismaService } from '@/infra/prisma.service';
 import { CourseAccessService } from '@/modules/courses/course-access.service';
-import { COURSE_MAX_STORAGE_BYTES } from '@/modules/uploads/upload-rules';
+import { COURSE_MAX_STORAGE_BYTES } from '@getownly/shared';
 import { FileTooLargeException } from '@/modules/uploads/uploads.errors';
 import { MaterialsService } from './materials.service';
 import {
@@ -44,12 +43,7 @@ describe('MaterialsService', () => {
   beforeEach(async () => {
     await resetDatabase(prisma);
     storage = new FakeStorage();
-    materials = new MaterialsService(
-      prisma,
-      storage.asService(),
-      new CourseAccessService(prisma),
-      new ConfigService({ UPLOAD_MAX_DOCUMENT_MB: 50 }),
-    );
+    materials = new MaterialsService(prisma, storage.asService(), new CourseAccessService(prisma));
 
     owner = await createUser(prisma, { role: 'INSTRUCTOR' });
     const categoryId = await createCategory(prisma);

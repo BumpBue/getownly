@@ -17,7 +17,8 @@ import {
   UploadKindNotAllowedException,
   VideoNotDownloadableException,
 } from './uploads.errors';
-import { COURSE_MAX_STORAGE_BYTES, parseObjectKey } from './upload-rules';
+import { COURSE_MAX_STORAGE_BYTES } from '@getownly/shared';
+import { parseObjectKey } from './upload-rules';
 import {
   asAuthUser,
   createCategory,
@@ -33,11 +34,13 @@ import { FakeStorage } from '../../../test/fake-storage';
 
 const MB = 1024 * 1024;
 
-/** Mirrors the UPLOAD_MAX_* and MINIO_PRESIGN_* values in .env. */
+/**
+ * Only the presign lifetimes still come from config. File size ceilings are
+ * fixed by the scope document and read straight from @getownly/shared, so a
+ * test cannot quietly stand up a service with a different limit than
+ * production has.
+ */
 const config = new ConfigService({
-  UPLOAD_MAX_VIDEO_MB: 500,
-  UPLOAD_MAX_DOCUMENT_MB: 50,
-  UPLOAD_MAX_IMAGE_MB: 5,
   MINIO_PRESIGN_EXPIRY_SECONDS: 3600,
   MINIO_PRESIGN_UPLOAD_EXPIRY_SECONDS: 900,
 });

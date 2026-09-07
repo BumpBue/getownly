@@ -163,11 +163,5 @@ export const UPLOAD_ACCEPT: Record<UploadKind, string[]> = {
   slip: ['image/jpeg', 'image/png'],
 };
 
-/** Size ceilings in megabytes, matching the UPLOAD_MAX_* values in .env. */
-export const UPLOAD_MAX_MB: Record<UploadKind, number> = {
-  video: 500,
-  material: 50,
-  cover: 5,
-  avatar: 5,
-  slip: 5,
-};
+// Size ceilings per file live in ./limits.ts, next to the other numbers the
+// scope document fixes.

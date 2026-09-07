@@ -10,7 +10,7 @@ import {
   TopupRequestNotFoundException,
 } from '@/modules/ledger/ledger.errors';
 import { WalletService } from '@/modules/ledger/wallet.service';
-import { parseObjectKey } from '@/modules/uploads/upload-rules';
+import { maxMbFor, parseObjectKey } from '@/modules/uploads/upload-rules';
 import { PromptPayService } from './promptpay.service';
 import type {
   AdminListTopupsQueryDto,
@@ -100,8 +100,9 @@ export class TopupsService {
     this.maxAmount = new Prisma.Decimal(
       this.config.getOrThrow<string | number>('TOPUP_MAX_AMOUNT'),
     );
-    // A slip is a photo, so it is measured against the image ceiling.
-    this.maxSlipMb = Number(this.config.getOrThrow<string | number>('UPLOAD_MAX_IMAGE_MB'));
+    // A slip is a photo, so it is measured against the slip ceiling in
+    // packages/shared/src/limits.ts, the same one the presign step used.
+    this.maxSlipMb = maxMbFor('slip');
   }
 
   // -------------------------------------------------------------------------

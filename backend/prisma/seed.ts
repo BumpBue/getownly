@@ -11,6 +11,12 @@
  * MinIO yet. They exist so list screens look real; actual uploads arrive in
  * phase 3.
  */
+import {
+  COURSE_MAX_STORAGE_BYTES,
+  UPLOAD_MAX_MB,
+  formatBytesThai,
+  mbToBytes,
+} from '@getownly/shared';
 import { CourseStatus, PrismaClient, Role } from '@prisma/client';
 import { hash } from 'bcrypt';
 
@@ -18,6 +24,34 @@ import { hash } from 'bcrypt';
 const BCRYPT_COST = Number(process.env.BCRYPT_COST ?? 12);
 
 const prisma = new PrismaClient();
+
+/**
+ * Seeded lessons have no real file behind them, so a size has to be invented.
+ * 40 KB/s (~320 kbps) is what a talking-head lecture at 720p actually costs,
+ * and it keeps every seeded clip well under the per-file ceiling.
+ */
+const SEED_VIDEO_BYTES_PER_SECOND = 40_000;
+
+function seedVideoSize(durationSec: number): number {
+  const size = durationSec * SEED_VIDEO_BYTES_PER_SECOND;
+  if (size > mbToBytes(UPLOAD_MAX_MB.video)) {
+    throw new Error(
+      `ข้อมูลตัวอย่างมีวิดีโอขนาด ${formatBytesThai(size)} ซึ่งเกินเพดานต่อคลิป ` +
+        `${UPLOAD_MAX_MB.video} MB — ลด durationSec หรือ SEED_VIDEO_BYTES_PER_SECOND`,
+    );
+  }
+  return size;
+}
+
+/** Demo data must obey the rule the demo is about to explain. */
+function assertSeedStorageWithinQuota(courseTitle: string, usedBytes: number): void {
+  if (usedBytes > COURSE_MAX_STORAGE_BYTES) {
+    throw new Error(
+      `คอร์สตัวอย่าง "${courseTitle}" ใช้พื้นที่ ${formatBytesThai(usedBytes)} ` +
+        `เกินโควตา ${formatBytesThai(COURSE_MAX_STORAGE_BYTES)}`,
+    );
+  }
+}
 
 const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL ?? 'admin@getownly.local';
 const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? 'Admin@1234';
@@ -695,14 +729,20 @@ async function main(): Promise<void> {
       },
     });
 
+    let courseStorageBytes = 0;
+
     for (const [index, lesson] of course.lessons.entries()) {
       const orderIndex = index + 1;
+      const videoSize = seedVideoSize(lesson.durationSec);
+      courseStorageBytes += videoSize;
+
       const createdLesson = await prisma.lesson.create({
         data: {
           courseId: createdCourse.id,
           title: lesson.title,
           orderIndex,
           videoKey: `video/${course.key}/${String(orderIndex).padStart(2, '0')}.mp4`,
+          videoSize,
           durationSec: lesson.durationSec,
           isPreview: lesson.isPreview ?? false,
         },
@@ -713,6 +753,7 @@ async function main(): Promise<void> {
         await prisma.material.create({
           data: { lessonId: createdLesson.id, ...material },
         });
+        courseStorageBytes += material.fileSize;
         materialCount += 1;
       }
 
@@ -754,6 +795,15 @@ async function main(): Promise<void> {
         }
       }
     }
+
+    // The quota the instructor screen shows has to be the truth about the
+    // files that exist, or the very first thing a demo shows about ทก.01 A6
+    // is a progress bar reading 0 next to six videos.
+    assertSeedStorageWithinQuota(course.title, courseStorageBytes);
+    await prisma.course.update({
+      where: { id: createdCourse.id },
+      data: { storageUsedBytes: BigInt(courseStorageBytes) },
+    });
   }
 
   console.log('สร้างบัญชีในระบบบัญชีคู่...');

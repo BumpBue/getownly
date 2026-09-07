@@ -26,7 +26,6 @@ import {
   maxBytesFor,
   maxMbFor,
   parseObjectKey,
-  type UploadLimitsMb,
 } from './upload-rules';
 
 /**
@@ -36,7 +35,6 @@ import {
  */
 @Injectable()
 export class UploadsService {
-  private readonly limits: UploadLimitsMb;
   private readonly downloadExpirySeconds: number;
   private readonly uploadExpirySeconds: number;
 
@@ -46,11 +44,6 @@ export class UploadsService {
     private readonly prisma: PrismaService,
     private readonly access: CourseAccessService,
   ) {
-    this.limits = {
-      video: Number(this.config.getOrThrow<string | number>('UPLOAD_MAX_VIDEO_MB')),
-      document: Number(this.config.getOrThrow<string | number>('UPLOAD_MAX_DOCUMENT_MB')),
-      image: Number(this.config.getOrThrow<string | number>('UPLOAD_MAX_IMAGE_MB')),
-    };
     this.downloadExpirySeconds = Number(
       this.config.getOrThrow<string | number>('MINIO_PRESIGN_EXPIRY_SECONDS'),
     );
@@ -80,11 +73,11 @@ export class UploadsService {
       throw new UnsupportedFileTypeException(rule.acceptLabel, dto.mimeType);
     }
 
-    if (dto.fileSize > maxBytesFor(dto.kind, this.limits)) {
-      throw new FileTooLargeException(maxMbFor(dto.kind, this.limits), dto.fileSize);
+    if (dto.fileSize > maxBytesFor(dto.kind)) {
+      throw new FileTooLargeException(maxMbFor(dto.kind), dto.fileSize);
     }
 
-    // Only these two kinds count against a course's 3 GB cap (scope 2.3.2).
+    // Only these two kinds count against the course storage cap (ทก.01 A6).
     if (dto.kind === 'video' || dto.kind === 'material') {
       if (!dto.courseId) {
         throw new CourseIdRequiredForUploadException();

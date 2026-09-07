@@ -1,3 +1,4 @@
+import { QUIZ_PASS_SCORE_MAX, QUIZ_PASS_SCORE_MIN } from '@getownly/shared';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -23,6 +24,9 @@ import {
 
 const MAX_QUESTIONS = 50;
 const MAX_CHOICES = 6;
+
+/** ทก.01 A7. One message for both ends of the range, and for both DTOs. */
+const PASS_SCORE_MESSAGE = `เกณฑ์ผ่านต้องอยู่ระหว่าง ${QUIZ_PASS_SCORE_MIN}-${QUIZ_PASS_SCORE_MAX}`;
 
 export class QuizChoiceInputDto {
   @IsString()
@@ -55,11 +59,11 @@ export class CreateQuizDto {
   @MaxLength(150, { message: 'ชื่อแบบทดสอบต้องยาวไม่เกิน 150 ตัวอักษร' })
   title!: string;
 
-  /** Percentage needed to pass. Scope 2.3.3: 50-100 inclusive. */
+  /** Percentage needed to pass. ทก.01 A7: 60-100 inclusive. */
   @Type(() => Number)
   @IsInt({ message: 'เกณฑ์ผ่านต้องเป็นจำนวนเต็ม' })
-  @Min(50, { message: 'เกณฑ์ผ่านต้องอยู่ระหว่าง 50-100' })
-  @Max(100, { message: 'เกณฑ์ผ่านต้องอยู่ระหว่าง 50-100' })
+  @Min(QUIZ_PASS_SCORE_MIN, { message: PASS_SCORE_MESSAGE })
+  @Max(QUIZ_PASS_SCORE_MAX, { message: PASS_SCORE_MESSAGE })
   passScore!: number;
 
   @IsArray({ message: 'ข้อสอบต้องเป็นรายการ' })
@@ -77,12 +81,12 @@ export class UpdateQuizDto {
   @MaxLength(150, { message: 'ชื่อแบบทดสอบต้องยาวไม่เกิน 150 ตัวอักษร' })
   title?: string;
 
-  /** Scope 2.3.3: 50-100 inclusive. */
+  /** ทก.01 A7: 60-100 inclusive. */
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'เกณฑ์ผ่านต้องเป็นจำนวนเต็ม' })
-  @Min(50, { message: 'เกณฑ์ผ่านต้องอยู่ระหว่าง 50-100' })
-  @Max(100, { message: 'เกณฑ์ผ่านต้องอยู่ระหว่าง 50-100' })
+  @Min(QUIZ_PASS_SCORE_MIN, { message: PASS_SCORE_MESSAGE })
+  @Max(QUIZ_PASS_SCORE_MAX, { message: PASS_SCORE_MESSAGE })
   passScore?: number;
 
   /** When present, replaces every question. Omit it to edit only the header. */

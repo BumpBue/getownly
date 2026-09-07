@@ -1,3 +1,4 @@
+import { COURSE_MAX_PRICE_BAHT } from '@getownly/shared';
 import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
@@ -24,8 +25,6 @@ import {
 const PRICE_PATTERN = /^\d{1,8}(\.\d{1,2})?$/;
 const PRICE_MESSAGE = 'ราคาต้องเป็นตัวเลขไม่ติดลบ ทศนิยมไม่เกิน 2 ตำแหน่ง';
 
-/** Scope 2.3.1: no course may be priced above this. */
-export const COURSE_MAX_PRICE_BAHT = 10000;
 const COURSE_MAX_PRICE_MESSAGE = `ราคาคอร์สต้องไม่เกิน ${COURSE_MAX_PRICE_BAHT.toLocaleString('th-TH')} บาท`;
 
 /** Validates the numeric value of a price string already shaped by PRICE_PATTERN. */

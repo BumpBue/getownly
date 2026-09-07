@@ -37,7 +37,7 @@ const config = new ConfigService({
   TOPUP_MIN_AMOUNT: 20,
   TOPUP_MAX_AMOUNT: 50000,
   TOPUP_QUOTE_EXPIRY_MINUTES: 15,
-  UPLOAD_MAX_IMAGE_MB: 5,
+  // The slip size ceiling is not config: it comes from @getownly/shared.
 });
 
 describe('TopupsService', () => {

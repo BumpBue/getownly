@@ -10,7 +10,7 @@ import {
 } from '@/common/exceptions/catalog.exceptions';
 import { PrismaService } from '@/infra/prisma.service';
 import { CourseAccessService } from '@/modules/courses/course-access.service';
-import { COURSE_MAX_STORAGE_BYTES } from '@/modules/uploads/upload-rules';
+import { COURSE_MAX_STORAGE_BYTES } from '@getownly/shared';
 import { FileNotFoundException } from '@/modules/uploads/uploads.errors';
 import { LessonsService, parseRangeHeader } from './lessons.service';
 import {

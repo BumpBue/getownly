@@ -1,3 +1,4 @@
+import { COURSE_MAX_PRICE_BAHT } from '@getownly/shared';
 import { z } from 'zod';
 import { instructorMessages } from '@/lib/messages/instructor';
 
@@ -13,8 +14,8 @@ const { validation } = instructorMessages;
 /** Digits with at most two decimals — the same shape the API accepts. */
 const pricePattern = /^\d{1,8}(\.\d{1,2})?$/;
 
-/** Scope 2.3.1: mirrors COURSE_MAX_PRICE_BAHT in course-request.dto.ts. */
-const COURSE_MAX_PRICE_BAHT = 10000;
+// COURSE_MAX_PRICE_BAHT comes from @getownly/shared, the same constant the
+// API's CreateCourseDto validates against. Never re-declare it here.
 
 export const courseFormSchema = z.object({
   title: z
