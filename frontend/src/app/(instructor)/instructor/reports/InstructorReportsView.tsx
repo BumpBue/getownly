@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CourseStatusBadge } from "@/components/shared/CourseStatusBadge";
+import { EarningsTable } from "./EarningsTable";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { MonthlyEarningsChart } from "@/components/shared/MonthlyEarningsChart";
 import { SectionHeading } from "@/components/shared/SectionHeading";
@@ -208,6 +209,10 @@ export function InstructorReportsView() {
           />
         )}
       </section>
+
+      {/* ทก.01 A10 — the split, sale by sale. It loads on its own because it
+          paginates and filters; the cards above are a single snapshot. */}
+      <EarningsTable courses={data?.courses ?? []} />
     </div>
   );
 }

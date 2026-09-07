@@ -153,3 +153,54 @@ export interface InstructorOverviewDto {
   monthly: InstructorMonthPointDto[];
   courses: InstructorCourseSalesDto[];
 }
+
+// --- per-transaction earnings breakdown (ทก.01 A10) -------------------------
+
+/**
+ * One sale, with the four figures the scope document asks an instructor to be
+ * able to see: what it sold for, the rate that applied *at the time*, what was
+ * deducted, and what was kept.
+ *
+ * Every one of them is a value that was written down when the purchase
+ * happened — three sums of `LedgerEntry` rows and one `Enrollment` snapshot.
+ * Nothing here is derived by multiplying a price by a rate at read time: the
+ * rate on this row may no longer be the instructor's current rate, and a
+ * recomputation would quietly rewrite history to match today's settings.
+ */
+export interface EarningTransactionDto {
+  /** The balanced transaction this row summarises. */
+  ledgerTransactionId: string;
+  enrollmentId: string;
+  courseId: string;
+  courseTitle: string;
+  /** ISO instant. The web app formats it; the API does not pick a locale. */
+  soldAt: string;
+  /** ราคาขาย — the DEBIT taken from the buyer's wallet. */
+  grossAmount: MoneyString;
+  /**
+   * อัตราส่วนแบ่ง ณ เวลานั้น — `Enrollment.commissionRateSnapshot`, four
+   * decimals as stored ("0.1750"). Never `User.commissionRate`, which is
+   * today's value and says nothing about this sale.
+   */
+  commissionRateSnapshot: string;
+  /** จำนวนที่ถูกหัก — the CREDIT posted to PLATFORM_REVENUE. */
+  platformFeeAmount: MoneyString;
+  /** ยอดสุทธิ — the CREDIT posted to this instructor's own wallet. */
+  netAmount: MoneyString;
+}
+
+/** Totals across every row the filters match, not just the page being shown. */
+export interface EarningTotalsDto {
+  grossAmount: MoneyString;
+  platformFeeAmount: MoneyString;
+  netAmount: MoneyString;
+}
+
+export interface PaginatedEarningTransactionsDto {
+  items: EarningTransactionDto[];
+  totals: EarningTotalsDto;
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}

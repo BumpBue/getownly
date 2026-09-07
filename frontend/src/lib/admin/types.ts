@@ -204,6 +204,43 @@ export interface InstructorOverview {
   courses: InstructorCourseSales[];
 }
 
+/**
+ * One sale and how it was split (ทก.01 A10).
+ *
+ * Every field is a value recorded when the purchase happened. `commissionRateSnapshot`
+ * in particular is the rate that applied *then*, which is not necessarily the
+ * instructor's rate today.
+ */
+export interface EarningTransaction {
+  ledgerTransactionId: string;
+  enrollmentId: string;
+  courseId: string;
+  courseTitle: string;
+  /** ISO instant; formatted for display by lib/format.ts, not by the API. */
+  soldAt: string;
+  grossAmount: string;
+  /** Four decimals as stored, e.g. "0.1750". */
+  commissionRateSnapshot: string;
+  platformFeeAmount: string;
+  netAmount: string;
+}
+
+export interface EarningTotals {
+  grossAmount: string;
+  platformFeeAmount: string;
+  netAmount: string;
+}
+
+export interface PaginatedEarningTransactions {
+  items: EarningTransaction[];
+  /** Across every row the filters match, not just this page. */
+  totals: EarningTotals;
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 /** The ranges the report screens offer, in days. */
 export const REPORT_RANGES = [7, 30, 90] as const;
 export type ReportRangeDays = (typeof REPORT_RANGES)[number];

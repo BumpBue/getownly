@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { AccountKind, CourseStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '@/infra/prisma.service';
-import type { ReportRangeQueryDto } from './dto/report-request.dto';
+import type { EarningTransactionsQueryDto, ReportRangeQueryDto } from './dto/report-request.dto';
 import type {
   AdminOverviewDto,
   DailySalesDto,
   InstructorOverviewDto,
   MetricDto,
+  PaginatedEarningTransactionsDto,
   TopCourseDto,
   TopInstructorDto,
   TrialBalanceDto,
@@ -18,6 +19,7 @@ import {
   lastMonths,
   previousRange,
   resolveRange,
+  shiftDate,
   startOfBangkokDayUtc,
   toRangeDto,
   todayInBangkok,
@@ -28,6 +30,7 @@ import {
 const TOP_LIST_SIZE = 5;
 const INSTRUCTOR_CHART_MONTHS = 6;
 const RECENT_DAYS = 30;
+const DEFAULT_EARNINGS_PAGE_SIZE = 20;
 
 /**
  * The Thai calendar date a ledger row falls on.
@@ -38,6 +41,35 @@ const RECENT_DAYS = 30;
  * different days on different machines.
  */
 const BANGKOK_DATE = Prisma.sql`((lt."createdAt" AT TIME ZONE 'UTC') AT TIME ZONE ${REPORT_TIME_ZONE})::date`;
+
+/**
+ * The three sides of a purchase, as recorded.
+ *
+ * Written once and reused by both the page query and the totals query, so the
+ * figures under a table can never be summed by a different rule than the rows
+ * above them.
+ */
+const EARNING_SUMS = Prisma.sql`
+  COALESCE(SUM(CASE WHEN le.direction = 'DEBIT' AND a.kind = 'USER_WALLET'
+                    THEN le.amount END), 0) AS gross,
+  COALESCE(SUM(CASE WHEN le.direction = 'CREDIT' AND a.kind = 'PLATFORM_REVENUE'
+                    THEN le.amount END), 0) AS platform_fee,
+  COALESCE(SUM(CASE WHEN le.direction = 'CREDIT' AND a.kind = 'USER_WALLET'
+                         AND a."ownerId" = c."instructorId"
+                    THEN le.amount END), 0) AS net
+`;
+
+interface EarningTransactionRow {
+  transaction_id: string;
+  enrollment_id: string;
+  course_id: string;
+  course_title: string;
+  sold_at: Date;
+  commission_rate: Prisma.Decimal;
+  gross: Prisma.Decimal | null;
+  platform_fee: Prisma.Decimal | null;
+  net: Prisma.Decimal | null;
+}
 
 /** Money totals, as Postgres returns them. */
 interface SumsRow {
@@ -354,6 +386,110 @@ export class ReportsService {
         };
       }),
       courses: courseRows,
+    };
+  }
+
+  /**
+   * One row per sale, showing how each was split (ทก.01 A10).
+   *
+   * The four figures are read, never recalculated. Three of them are sums of
+   * the `LedgerEntry` rows the purchase wrote, told apart by direction and
+   * account kind exactly as every other report here does it; the fourth is the
+   * commission rate `Enrollment` snapshotted at the time. Multiplying price by
+   * the instructor's *current* rate would produce numbers that change whenever
+   * an admin edits that rate, which is the thing snapshots exist to prevent.
+   *
+   * Free courses never appear: they write an Enrollment but no
+   * LedgerTransaction, and the join starts from the transaction.
+   *
+   * `c."instructorId" = ...` is inside the query rather than applied to the
+   * result, so there is no shape of call that reads another instructor's
+   * sales. `courseId` only ever narrows that set further.
+   */
+  async instructorEarningTransactions(
+    instructorId: string,
+    query: EarningTransactionsQueryDto,
+  ): Promise<PaginatedEarningTransactionsDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? DEFAULT_EARNINGS_PAGE_SIZE;
+
+    const filters = Prisma.sql`
+      lt.type = 'PURCHASE'
+      AND lt."referenceType" = 'Enrollment'
+      AND c."instructorId" = ${instructorId}
+      ${query.courseId ? Prisma.sql`AND c.id = ${query.courseId}` : Prisma.empty}
+      ${query.from ? Prisma.sql`AND lt."createdAt" >= ${startOfBangkokDayUtc(query.from)}` : Prisma.empty}
+      ${
+        query.to
+          ? Prisma.sql`AND lt."createdAt" < ${startOfBangkokDayUtc(shiftDate(query.to, 1))}`
+          : Prisma.empty
+      }
+    `;
+
+    const [rows, totals, countRow] = await Promise.all([
+      this.prisma.$queryRaw<EarningTransactionRow[]>`
+        SELECT
+          lt.id AS transaction_id,
+          e.id AS enrollment_id,
+          c.id AS course_id,
+          c.title AS course_title,
+          lt."createdAt" AS sold_at,
+          e."commissionRateSnapshot" AS commission_rate,
+          ${EARNING_SUMS}
+        FROM "LedgerTransaction" lt
+        JOIN "Enrollment" e ON e.id = lt."referenceId"
+        JOIN "Course" c ON c.id = e."courseId"
+        JOIN "LedgerEntry" le ON le."transactionId" = lt.id
+        JOIN "Account" a ON a.id = le."accountId"
+        WHERE ${filters}
+        GROUP BY lt.id, e.id, c.id, c.title, lt."createdAt", e."commissionRateSnapshot"
+        -- id breaks the tie: two sales in the same millisecond would otherwise
+        -- swap places between pages, showing one twice and hiding the other.
+        ORDER BY lt."createdAt" DESC, lt.id DESC
+        LIMIT ${limit} OFFSET ${(page - 1) * limit}
+      `,
+      this.prisma.$queryRaw<Omit<EarningTransactionRow, 'transaction_id'>[]>`
+        SELECT ${EARNING_SUMS}
+        FROM "LedgerTransaction" lt
+        JOIN "Enrollment" e ON e.id = lt."referenceId"
+        JOIN "Course" c ON c.id = e."courseId"
+        JOIN "LedgerEntry" le ON le."transactionId" = lt.id
+        JOIN "Account" a ON a.id = le."accountId"
+        WHERE ${filters}
+      `,
+      this.prisma.$queryRaw<{ total: bigint }[]>`
+        SELECT COUNT(*) AS total
+        FROM "LedgerTransaction" lt
+        JOIN "Enrollment" e ON e.id = lt."referenceId"
+        JOIN "Course" c ON c.id = e."courseId"
+        WHERE ${filters}
+      `,
+    ]);
+
+    const total = Number(countRow[0]?.total ?? 0);
+    const summed = totals[0];
+
+    return {
+      items: rows.map((row) => ({
+        ledgerTransactionId: row.transaction_id,
+        enrollmentId: row.enrollment_id,
+        courseId: row.course_id,
+        courseTitle: row.course_title,
+        soldAt: row.sold_at.toISOString(),
+        grossAmount: money(row.gross),
+        commissionRateSnapshot: row.commission_rate.toFixed(4),
+        platformFeeAmount: money(row.platform_fee),
+        netAmount: money(row.net),
+      })),
+      totals: {
+        grossAmount: money(summed?.gross ?? null),
+        platformFeeAmount: money(summed?.platform_fee ?? null),
+        netAmount: money(summed?.net ?? null),
+      },
+      page,
+      limit,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
     };
   }
 

@@ -3,15 +3,17 @@ import { Role } from '@prisma/client';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { Roles } from '@/common/decorators/roles.decorator';
 import type { AuthenticatedUser } from '@/common/types/authenticated-user';
-import { ReportRangeQueryDto } from './dto/report-request.dto';
+import { EarningTransactionsQueryDto, ReportRangeQueryDto } from './dto/report-request.dto';
 import type {
   AdminOverviewDto,
   DailySalesDto,
   InstructorOverviewDto,
+  PaginatedEarningTransactionsDto,
   TopCourseDto,
   TopInstructorDto,
   TrialBalanceDto,
 } from './dto/report-response.dto';
+import { CourseAccessService } from '@/modules/courses/course-access.service';
 import { ReportsService } from './reports.service';
 
 /**
@@ -60,10 +62,32 @@ export class AdminReportsController {
 @Roles(Role.INSTRUCTOR, Role.ADMIN)
 @Controller('instructor/reports')
 export class InstructorReportsController {
-  constructor(private readonly reports: ReportsService) {}
+  constructor(
+    private readonly reports: ReportsService,
+    private readonly access: CourseAccessService,
+  ) {}
 
   @Get('overview')
   overview(@CurrentUser() user: AuthenticatedUser): Promise<InstructorOverviewDto> {
     return this.reports.instructorOverview(user.id);
+  }
+
+  /**
+   * ทก.01 A10: how each individual sale was split.
+   *
+   * When the caller narrows to one course, ownership is proven first so that
+   * somebody else's course id comes back as a refusal rather than as an empty
+   * table that reads like "this course has never sold". The query underneath
+   * is pinned to the caller's own id either way.
+   */
+  @Get('transactions')
+  async earningTransactions(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: EarningTransactionsQueryDto,
+  ): Promise<PaginatedEarningTransactionsDto> {
+    if (query.courseId) {
+      await this.access.assertCourseOwner(query.courseId, user);
+    }
+    return this.reports.instructorEarningTransactions(user.id, query);
   }
 }

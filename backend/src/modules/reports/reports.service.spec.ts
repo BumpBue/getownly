@@ -10,6 +10,7 @@ import {
   createCourse,
   createSystemAccounts,
   createUser,
+  decimal,
   fundWallet,
   resetDatabase,
   type SystemAccounts,
@@ -419,6 +420,243 @@ describe('ReportsService', () => {
 
       expect(bank?.netBalance).toBe(bankBalance.toFixed(2));
       expect(bank?.netBalance).toBe('-500.00');
+    });
+  });
+  // --- ทก.01 A10: the per-transaction split ---------------------------------
+
+  describe('instructor earning transactions', () => {
+    it('shows the four figures the scope document asks for, and they reconcile', async () => {
+      await sellOne({ instructorId: instructor.id, price: '1000.00', title: 'คอร์สแรก' });
+
+      const page = await reports.instructorEarningTransactions(instructor.id, {});
+
+      expect(page.total).toBe(1);
+      const [row] = page.items;
+      expect(row.courseTitle).toBe('คอร์สแรก');
+      expect(row.grossAmount).toBe('1000.00');
+      expect(row.commissionRateSnapshot).toBe('0.3000');
+      expect(row.platformFeeAmount).toBe('300.00');
+      expect(row.netAmount).toBe('700.00');
+
+      // (ก) every row: price − deducted = net.
+      for (const item of page.items) {
+        expect(Number(item.grossAmount) - Number(item.platformFeeAmount)).toBeCloseTo(
+          Number(item.netAmount),
+          2,
+        );
+      }
+
+      await assertLedgerInvariants(prisma, ledger);
+    });
+
+    it('(ก) holds row by row across a mix of prices', async () => {
+      await prisma.user.update({
+        where: { id: instructor.id },
+        data: { commissionRate: '0.1750' },
+      });
+
+      for (const price of ['999.00', '0.01', '4999.99', '12.34']) {
+        await sellOne({ instructorId: instructor.id, price });
+      }
+
+      const page = await reports.instructorEarningTransactions(instructor.id, {});
+
+      expect(page.items).toHaveLength(4);
+      for (const item of page.items) {
+        expect(Number(item.grossAmount) - Number(item.platformFeeAmount)).toBeCloseTo(
+          Number(item.netAmount),
+          2,
+        );
+      }
+    });
+
+    it('(ข) totals match the earnings the dashboard reports', async () => {
+      await sellOne({ instructorId: instructor.id, price: '1000.00' });
+      await sellOne({ instructorId: instructor.id, price: '250.50' });
+      await sellOne({ instructorId: instructor.id, price: '99.99' });
+      // Another instructor's sale must not leak into either number.
+      await sellOne({ instructorId: otherInstructor.id, price: '2000.00' });
+
+      const page = await reports.instructorEarningTransactions(instructor.id, {});
+      const overview = await reports.instructorOverview(instructor.id);
+
+      expect(page.totals.netAmount).toBe(overview.totalEarnings);
+      expect(page.totals.grossAmount).toBe(overview.totalGrossSales);
+      expect(page.total).toBe(overview.totalSalesCount);
+
+      const summedRows = page.items.reduce((total, item) => total + Number(item.netAmount), 0);
+      expect(summedRows.toFixed(2)).toBe(overview.totalEarnings);
+    });
+
+    it('(ข) totals cover every match, not only the page being shown', async () => {
+      for (const price of ['100.00', '200.00', '300.00']) {
+        await sellOne({ instructorId: instructor.id, price });
+      }
+
+      const firstPage = await reports.instructorEarningTransactions(instructor.id, { limit: 2 });
+
+      expect(firstPage.items).toHaveLength(2);
+      expect(firstPage.total).toBe(3);
+      expect(firstPage.totalPages).toBe(2);
+      // 600 gross across all three, even though only two rows came back.
+      expect(firstPage.totals.grossAmount).toBe('600.00');
+    });
+
+    it('(ค) each purchase behind a row is a balanced transaction', async () => {
+      await sellOne({ instructorId: instructor.id, price: '1000.00' });
+      await sellOne({ instructorId: instructor.id, price: '777.77' });
+
+      const page = await reports.instructorEarningTransactions(instructor.id, {});
+
+      for (const item of page.items) {
+        const entries = await prisma.ledgerEntry.findMany({
+          where: { transactionId: item.ledgerTransactionId },
+          select: { direction: true, amount: true },
+        });
+
+        const signed = entries.reduce(
+          (total, entry) =>
+            entry.direction === 'DEBIT' ? total.plus(entry.amount) : total.minus(entry.amount),
+          decimal(0),
+        );
+        expect(signed.toFixed(2)).toBe('0.00');
+      }
+
+      await assertLedgerInvariants(prisma, ledger);
+    });
+
+    it('(ง) rounds 17.5% of 999 to 174.83 deducted and 824.17 kept', async () => {
+      await prisma.user.update({
+        where: { id: instructor.id },
+        data: { commissionRate: '0.1750' },
+      });
+
+      await sellOne({ instructorId: instructor.id, price: '999.00' });
+
+      const page = await reports.instructorEarningTransactions(instructor.id, {});
+      const [row] = page.items;
+
+      // 999 × 0.175 = 174.825, half-up to 174.83; the rest is the net, by
+      // subtraction, so the two still add back to exactly 999.
+      expect(row.grossAmount).toBe('999.00');
+      expect(row.commissionRateSnapshot).toBe('0.1750');
+      expect(row.platformFeeAmount).toBe('174.83');
+      expect(row.netAmount).toBe('824.17');
+    });
+
+    it('(จ) keeps the rate each sale was made under when the rate later changes', async () => {
+      await sellOne({ instructorId: instructor.id, price: '1000.00', title: 'ขายตอนสามสิบ' });
+
+      await prisma.user.update({
+        where: { id: instructor.id },
+        data: { commissionRate: '0.1000' },
+      });
+
+      await sellOne({ instructorId: instructor.id, price: '1000.00', title: 'ขายตอนสิบ' });
+
+      const page = await reports.instructorEarningTransactions(instructor.id, {});
+      const byTitle = new Map(page.items.map((item) => [item.courseTitle, item]));
+
+      const older = byTitle.get('ขายตอนสามสิบ');
+      const newer = byTitle.get('ขายตอนสิบ');
+
+      expect(older?.commissionRateSnapshot).toBe('0.3000');
+      expect(older?.platformFeeAmount).toBe('300.00');
+      expect(older?.netAmount).toBe('700.00');
+
+      expect(newer?.commissionRateSnapshot).toBe('0.1000');
+      expect(newer?.platformFeeAmount).toBe('100.00');
+      expect(newer?.netAmount).toBe('900.00');
+    });
+
+    it('(ฉ) leaves free enrolments out entirely', async () => {
+      const freeCourseId = await createCourse(prisma, {
+        instructorId: instructor.id,
+        categoryId,
+        price: '0.00',
+        title: 'คอร์สฟรี',
+      });
+      await wallet.purchaseCourse(student.id, freeCourseId);
+      await sellOne({ instructorId: instructor.id, price: '500.00', title: 'คอร์สที่ขายจริง' });
+
+      const page = await reports.instructorEarningTransactions(instructor.id, {});
+
+      // The free enrolment exists; it simply never moved money, so it has no
+      // ledger transaction and nothing to show in a table about splits.
+      expect(await prisma.enrollment.count({ where: { courseId: freeCourseId } })).toBe(1);
+      expect(page.total).toBe(1);
+      expect(page.items.map((item) => item.courseTitle)).toEqual(['คอร์สที่ขายจริง']);
+    });
+
+    it('(ช) scopes rows to the caller, at the query rather than afterwards', async () => {
+      await sellOne({ instructorId: instructor.id, price: '1000.00', title: 'ของครูคนแรก' });
+      await sellOne({
+        instructorId: otherInstructor.id,
+        price: '2000.00',
+        title: 'ของครูคนที่สอง',
+      });
+
+      const mine = await reports.instructorEarningTransactions(instructor.id, {});
+      const theirs = await reports.instructorEarningTransactions(otherInstructor.id, {});
+
+      expect(mine.items.map((item) => item.courseTitle)).toEqual(['ของครูคนแรก']);
+      expect(theirs.items.map((item) => item.courseTitle)).toEqual(['ของครูคนที่สอง']);
+      expect(mine.totals.grossAmount).toBe('1000.00');
+      expect(theirs.totals.grossAmount).toBe('2000.00');
+    });
+
+    it('yields nothing for a course id belonging to another instructor', async () => {
+      const theirSale = await sellOne({ instructorId: otherInstructor.id, price: '2000.00' });
+
+      // The controller refuses this before the query runs; even if it did not,
+      // the instructorId pinned inside the WHERE clause leaves no rows.
+      const page = await reports.instructorEarningTransactions(instructor.id, {
+        courseId: theirSale.courseId,
+      });
+
+      expect(page.total).toBe(0);
+      expect(page.items).toEqual([]);
+      expect(page.totals.netAmount).toBe('0.00');
+    });
+
+    it('filters by course and by date window', async () => {
+      const kept = await sellOne({
+        instructorId: instructor.id,
+        price: '100.00',
+        title: 'เก็บไว้',
+      });
+      await sellOne({ instructorId: instructor.id, price: '200.00', title: 'กรองออก' });
+
+      const byCourse = await reports.instructorEarningTransactions(instructor.id, {
+        courseId: kept.courseId,
+      });
+      expect(byCourse.items.map((item) => item.courseTitle)).toEqual(['เก็บไว้']);
+
+      const old = await sellOne({ instructorId: instructor.id, price: '900.00', title: 'ของเก่า' });
+      await backdate(prisma, old.enrollmentId, 40);
+
+      const recent = await reports.instructorEarningTransactions(instructor.id, {
+        from: shiftDate(todayInBangkok(), -7),
+      });
+      expect(recent.items.map((item) => item.courseTitle)).not.toContain('ของเก่า');
+
+      const onlyOld = await reports.instructorEarningTransactions(instructor.id, {
+        to: shiftDate(todayInBangkok(), -30),
+      });
+      expect(onlyOld.items.map((item) => item.courseTitle)).toEqual(['ของเก่า']);
+    });
+
+    it('returns an empty page rather than failing when nothing has sold', async () => {
+      const page = await reports.instructorEarningTransactions(instructor.id, {});
+
+      expect(page).toMatchObject({
+        items: [],
+        total: 0,
+        page: 1,
+        limit: 20,
+        totalPages: 1,
+        totals: { grossAmount: '0.00', platformFeeAmount: '0.00', netAmount: '0.00' },
+      });
     });
   });
 });

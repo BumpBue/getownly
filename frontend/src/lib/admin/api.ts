@@ -7,6 +7,7 @@ import type {
   DailySales,
   InstructorOverview,
   PaginatedAdminUsers,
+  PaginatedEarningTransactions,
   PaginatedPendingCourses,
   PendingCourse,
   TopCourse,
@@ -163,4 +164,31 @@ export function getTrialBalance(): Promise<TrialBalance> {
 
 export function getInstructorOverview(): Promise<InstructorOverview> {
   return apiRequest<InstructorOverview>("/instructor/reports/overview");
+}
+
+/**
+ * The per-sale split table (ทก.01 A10). Scoped to the caller by the API; the
+ * filters here only ever narrow that set further.
+ */
+export function getInstructorEarningTransactions(options: {
+  courseId?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+}): Promise<PaginatedEarningTransactions> {
+  const params = new URLSearchParams();
+  if (options.courseId) {
+    params.set("courseId", options.courseId);
+  }
+  if (options.from) {
+    params.set("from", options.from);
+  }
+  if (options.to) {
+    params.set("to", options.to);
+  }
+  params.set("page", String(options.page ?? 1));
+
+  return apiRequest<PaginatedEarningTransactions>(
+    `/instructor/reports/transactions?${params.toString()}`,
+  );
 }

@@ -42,6 +42,16 @@ export function formatBahtShort(amount: string): string {
     : `฿${bahtFormatter.format(value)}`;
 }
 
+/**
+ * "17.50%" from the four-decimal rate the API stores ("0.1750").
+ *
+ * A commission rate is not money, so it does not go through formatBaht — but
+ * it is parsed at exactly the same last moment, and only ever to be printed.
+ */
+export function formatRatePercent(rate: string): string {
+  return `${(Number(rate) * 100).toFixed(2)}%`;
+}
+
 export function isFree(amount: string): boolean {
   return Number(amount) === 0;
 }
