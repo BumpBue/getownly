@@ -8,6 +8,7 @@ import {
   LessonOrderMismatchException,
   RangeNotSatisfiableException,
 } from '@/common/exceptions/catalog.exceptions';
+import { LessonQuizHasAttemptsException } from '@/common/exceptions/learning.exceptions';
 import { FileNotFoundException } from '@/modules/uploads/uploads.errors';
 import type { AuthenticatedUser } from '@/common/types/authenticated-user';
 import { PrismaService } from '@/infra/prisma.service';
@@ -194,6 +195,17 @@ export class LessonsService {
     const watched = await this.prisma.lessonProgress.count({ where: { lessonId } });
     if (watched > 0) {
       throw new LessonAccessDeniedException();
+    }
+
+    // Sitting a quiz does not write LessonProgress — that only happens when a
+    // video plays — so a lesson with no video can carry sat quizzes and still
+    // look untouched to the check above. Without this, the delete reaches the
+    // database, trips QuizAttemptAnswer's RESTRICT, and surfaces as a 500.
+    const quizAttempts = await this.prisma.quizAttempt.count({
+      where: { quiz: { lessonId } },
+    });
+    if (quizAttempts > 0) {
+      throw new LessonQuizHasAttemptsException(quizAttempts);
     }
 
     const materials = await this.prisma.material.findMany({

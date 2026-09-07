@@ -62,6 +62,26 @@ export class QuizHasAttemptsException extends BusinessException {
   }
 }
 
+/**
+ * A lesson cannot be deleted out from under a quiz somebody has sat.
+ *
+ * `QuizAttemptAnswer.questionId` is RESTRICT, so the database refuses the
+ * delete regardless — but it refuses with a raw foreign key violation that the
+ * exception filter can only turn into a 500. This says the same thing in a
+ * sentence the instructor can act on.
+ */
+export class LessonQuizHasAttemptsException extends BusinessException {
+  constructor(attemptCount: number) {
+    super(
+      HttpStatus.CONFLICT,
+      'LESSON_QUIZ_HAS_ATTEMPTS',
+      `มีผู้เรียนทำแบบทดสอบของบทเรียนนี้ไปแล้ว ${attemptCount} ครั้ง จึงลบบทเรียนไม่ได้ ` +
+        'เพราะคะแนนที่บันทึกไว้จะหายไปด้วย',
+      { attemptCount },
+    );
+  }
+}
+
 /** Every question needs exactly one right answer for the score to mean anything. */
 export class QuizQuestionInvalidException extends BusinessException {
   constructor(questionIndex: number) {

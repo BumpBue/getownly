@@ -8,6 +8,7 @@ import {
   NotCourseOwnerException,
   RangeNotSatisfiableException,
 } from '@/common/exceptions/catalog.exceptions';
+import { LessonQuizHasAttemptsException } from '@/common/exceptions/learning.exceptions';
 import { PrismaService } from '@/infra/prisma.service';
 import { CourseAccessService } from '@/modules/courses/course-access.service';
 import { COURSE_MAX_STORAGE_BYTES } from '@getownly/shared';
@@ -18,6 +19,7 @@ import {
   createCategory,
   createCourse,
   createLesson,
+  createQuiz,
   createUser,
   enrol,
   resetDatabase,
@@ -167,6 +169,53 @@ describe('LessonsService', () => {
         LessonAccessDeniedException,
       );
       expect(await prisma.lesson.count({ where: { id: lessonId } })).toBe(1);
+    });
+
+    /**
+     * A lesson with no video never gets a LessonProgress row, because progress
+     * is only written while a video plays. The quiz on it can still have been
+     * sat, and QuizAttemptAnswer's RESTRICT then refuses the delete inside
+     * Postgres — which used to surface as a 500 with no explanation.
+     */
+    it('refuses in Thai, not with a database error, when its quiz has been sat', async () => {
+      const lessonId = await createLesson(prisma, {
+        courseId,
+        orderIndex: 1,
+        videoKey: null,
+      });
+      const quizId = await createQuiz(prisma, { lessonId, questions: 2 });
+      await prisma.quizAttempt.create({
+        data: { quizId, studentId: buyer.id, score: 100, passed: true },
+      });
+
+      // No progress row exists at all, so the watched-lesson guard above lets
+      // this through and something else has to catch it.
+      expect(await prisma.lessonProgress.count({ where: { lessonId } })).toBe(0);
+
+      const failure = await lessons
+        .remove(lessonId, asAuthUser(owner))
+        .then(() => null)
+        .catch((error: unknown) => error);
+
+      expect(failure).toBeInstanceOf(LessonQuizHasAttemptsException);
+      const thrown = failure as LessonQuizHasAttemptsException;
+      expect(thrown.getStatus()).toBe(409);
+      expect(thrown.getResponse()).toMatchObject({
+        code: 'LESSON_QUIZ_HAS_ATTEMPTS',
+        details: { attemptCount: 1 },
+      });
+      expect(await prisma.lesson.count({ where: { id: lessonId } })).toBe(1);
+      expect(await prisma.quizAttempt.count({ where: { quizId } })).toBe(1);
+    });
+
+    it('still deletes a lesson whose quiz nobody has sat', async () => {
+      const lessonId = await createLesson(prisma, { courseId, orderIndex: 1, videoKey: null });
+      await createQuiz(prisma, { lessonId, questions: 2 });
+
+      await lessons.remove(lessonId, asAuthUser(owner));
+
+      expect(await prisma.lesson.count({ where: { id: lessonId } })).toBe(0);
+      expect(await prisma.quiz.count({ where: { lessonId } })).toBe(0);
     });
   });
 
