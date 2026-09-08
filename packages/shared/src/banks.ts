@@ -1,54 +1,9 @@
-/**
- * The banks an instructor may be paid into.
- *
- * Stored and compared by the Bank of Thailand's three-digit code, never by
- * name. A bank's registered name changes — ทหารไทย and ธนชาต became ttb, and
- * เกียรตินาคิน became เกียรตินาคินภัทร — while the code it settles under does
- * not. Free text had the same problem one keystroke at a time: "กสิกร",
- * "KBANK" and "ธ.กสิกรไทย" are one bank as far as the admin making the
- * transfer is concerned, and three as far as the database was.
- *
- * Shared rather than duplicated: the API validates against this list and the
- * web app renders from it, and a dropdown that offers a code the server would
- * refuse is worse than no dropdown at all.
- *
- * Codes verified against the Bank of Thailand three-digit scheme as published
- * in the K API documentation (June 2026) and cross-checked against two payment
- * gateway references.
- */
-
 export interface Bank {
-  /** Bank of Thailand three-digit code. The stored value. */
   code: string;
-  /** Full registered name in Thai, as it should read on a transfer screen. */
   name: string;
-  /** How the bank is normally referred to, used in the dropdown's search. */
   abbreviation: string;
-  /**
-   * Two characters for the fallback badge, drawn when no logo file exists.
-   * Written out rather than sliced from `name`, because "ธนาคาร" prefixes
-   * every entry and slicing would give sixteen identical badges.
-   */
   initials: string;
-  /**
-   * The bank's own brand colour.
-   *
-   * The third and last place in this project allowed to hard-code a colour —
-   * after the HTML emails and `chart-theme.ts` — and for the same kind of
-   * reason: this is somebody else's brand, not a token in our palette
-   * (CLAUDE.md, หัวข้อ 4). It is used only as the ground of a fallback badge,
-   * never as page furniture.
-   */
   brandColor: string;
-  /**
-   * File name inside `frontend/public/banks/`, extension included, or null
-   * when no logo has been supplied yet.
-   *
-   * The whole name is written out rather than composed from `code + ".svg"`,
-   * because the files are not all one format: most are GIF, two are JPEG, and
-   * a composed path would silently 404 for those. A missing logo is a null
-   * here and a lettered badge on screen — never a broken image.
-   */
   logoFile: string | null;
 }
 
@@ -166,14 +121,12 @@ export const BANKS: readonly Bank[] = [
     logoFile: '069.gif',
   },
   {
-    // No logo file supplied yet. Everything still works: the dropdown lists
-    // it, the API accepts it, and the badge shows its initials.
     code: '071',
     name: 'ธนาคารไทยเครดิต',
     abbreviation: 'TCRB',
     initials: 'ทค',
     brandColor: '#0C4E9E',
-    logoFile: null,
+    logoFile: '071.jpg',
   },
   {
     code: '073',
@@ -195,14 +148,6 @@ export function findBank(code: string): Bank | undefined {
   return BY_CODE.get(code);
 }
 
-/**
- * The name to print for a stored code.
- *
- * `fallbackName` is the name snapshotted onto a payout request when it was
- * made. A request from before a bank left this list — or from before the list
- * existed — still has to read correctly years later, which is the entire
- * reason the snapshot is kept alongside the code.
- */
 export function bankDisplayName(code: string, fallbackName?: string | null): string {
   return findBank(code)?.name ?? fallbackName ?? code;
 }

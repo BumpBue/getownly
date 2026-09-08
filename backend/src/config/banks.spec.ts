@@ -100,13 +100,35 @@ describe('bank list', () => {
     ).toEqual([]);
   });
 
-  it('builds a public path only for a bank that has a file', () => {
-    expect(bankLogoPath('004')).toBe('/banks/004.gif');
+  it('builds a public path from the file name in the table, extension and all', () => {
     // Extensions differ between banks, so the path is never composed from the
-    // code plus an assumed ".svg".
+    // code plus an assumed ".svg" — these two prove both are read as stored.
+    expect(bankLogoPath('004')).toBe('/banks/004.gif');
     expect(bankLogoPath('024')).toBe('/banks/024.jpg');
-    expect(bankLogoPath('071')).toBeNull();
+  });
+
+  /**
+   * The null path, tested through a code that is not a bank at all rather than
+   * through whichever bank currently lacks a logo.
+   *
+   * Naming a real bank here would make this test fail the day somebody supplies
+   * its file — which is a success, not a regression. It happened once already.
+   */
+  it('has no path for a code it does not know', () => {
     expect(bankLogoPath('999')).toBeNull();
+  });
+
+  it('gives every bank either a real file or an explicit null', () => {
+    for (const bank of BANKS) {
+      const path = bankLogoPath(bank.code);
+      if (bank.logoFile === null) {
+        expect(path, `${bank.code} has no file, so it must have no path`).toBeNull();
+      } else {
+        expect(path, `${bank.code} has a file, so it must have a path`).toBe(
+          `/banks/${bank.logoFile}`,
+        );
+      }
+    }
   });
 
   describe('naming a stored code', () => {
