@@ -28,6 +28,7 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:demo": "tsx prisma/demo-seed.ts",
+    "db:bootstrap": "tsx prisma/bootstrap-admin.ts",
     "demo:reset": "prisma migrate reset --force --skip-seed && prisma db seed && tsx prisma/demo-seed.ts"
   },
   "dependencies": {

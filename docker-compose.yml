@@ -91,6 +91,35 @@ services:
 
   # --- the application itself, only under `--profile full` -----------------
 
+  # One-shot container: creates the database the `full` profile uses, then
+  # exits. Same shape as minio-init above.
+  #
+  # This exists so the containerised stack has a database of its own. Pointing
+  # it at `getownly` would mean `docker compose --profile full up` silently
+  # rebuilding and re-seeding the development database — a destructive act
+  # nobody asked for, reached by a command that reads like "start the app".
+  db-init:
+    profiles: ['full']
+    image: postgres:16-alpine
+    container_name: getownly-db-init
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: getownly_dev_password
+      TARGET_DB: ${GETOWNLY_DOCKER_DB:-getownly_docker}
+    entrypoint: >
+      /bin/sh -c "
+      if [ \"$$TARGET_DB\" = 'getownly' ]; then
+        echo 'ปฏิเสธ: GETOWNLY_DOCKER_DB ตั้งเป็น getownly ซึ่งเป็นฐานข้อมูลสำหรับพัฒนา' >&2;
+        echo 'REFUSED: the full profile must not target the development database' >&2;
+        exit 1;
+      fi;
+      psql -h postgres -U getownly -d postgres -tc \"SELECT 1 FROM pg_database WHERE datname='$$TARGET_DB'\" | grep -q 1 ||
+      psql -h postgres -U getownly -d postgres -c \"CREATE DATABASE \\\"$$TARGET_DB\\\"\";
+      echo \"database $$TARGET_DB is ready\";
+      "
+
   api:
     profiles: ['full']
     build:
@@ -103,13 +132,22 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       PORT: 4000
       API_PREFIX: api
       # Inside the compose network the database is `postgres:5432`, not the
       # host's published 5433.
-      DATABASE_URL: postgresql://getownly:getownly_dev_password@postgres:5432/getownly?schema=public
+      #
+      # And it is `getownly_docker`, not `getownly`: this profile runs
+      # migrations on start and the README tells you to seed it, both of which
+      # wipe what they touch. The development database is reached only by
+      # commands run deliberately on the host, never as a side effect of
+      # starting containers. Override with GETOWNLY_DOCKER_DB if you need a
+      # different one — db-init refuses `getownly`.
+      DATABASE_URL: postgresql://getownly:getownly_dev_password@postgres:5432/${GETOWNLY_DOCKER_DB:-getownly_docker}?schema=public
       JWT_ACCESS_SECRET: docker_demo_access_secret_change_me_before_production
       JWT_REFRESH_SECRET: docker_demo_refresh_secret_change_me_before_production
       JWT_ACCESS_EXPIRES_IN: 15m

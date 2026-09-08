@@ -23,6 +23,7 @@
     "db:reset": "pnpm --filter backend db:reset",
     "db:seed": "pnpm --filter backend db:seed",
     "db:demo": "pnpm --filter backend db:demo",
+    "db:bootstrap": "pnpm --filter backend db:bootstrap",
     "demo:reset": "pnpm --filter backend demo:reset",
     "seed": "pnpm --filter backend db:seed",
     "db:studio": "pnpm --filter backend db:studio",

@@ -288,6 +288,21 @@ URL ที่ใช้ตอน dev
 5. ห้ามลบหรือ UPDATE แถวใน `LedgerEntry` / `LedgerTransaction` ที่บันทึกแล้ว
 6. ห้ามอนุมัติเติมเงินหรือถอนเงินจาก endpoint ที่ไม่ใช่บทบาท ADMIN
 
+**เรื่องฐานข้อมูล (เพิ่มหลังเหตุการณ์จริงที่ข้อมูล dev ถูกเขียนทับ)**
+
+6.1 **ทุกคำสั่งที่เขียนข้อมูล (`seed`, `reset`, `migrate`, `demo`, `db push`, Prisma Studio)
+   ต้อง echo ชื่อฐานข้อมูลปลายทางออกมาก่อนรันเสมอ** ไม่ว่าจะรันบน host หรือใน container
+   ตัวอย่าง: `echo "$DATABASE_URL" | sed 's|.*/||; s|?.*||'`
+6.2 **ถ้าปลายทางคือ `getownly` ต้องหยุดถามผู้ใช้ก่อนทุกครั้ง ห้ามรันเอง**
+   `getownly_test` และ `getownly_docker` รันได้เลย เพราะเป็นฐานข้อมูลใช้แล้วทิ้ง
+6.3 **ข้อ 6.1–6.2 ใช้กับคำสั่งใน container ด้วย** — `docker compose exec api ... seed`
+   เขียนข้อมูลได้เหมือนกันทุกประการ และ**ข้ามด่านขออนุญาตของ Prisma ที่ทำงานบน host เท่านั้น**
+   เคยเกิดขึ้นจริง: ตอนพิสูจน์ Docker profile `full` คำสั่ง seed ใน container เขียนทับ `getownly`
+   โดยไม่มีอะไรเตือน เพราะ compose ชี้ `DATABASE_URL` ไปที่นั่นโดยปริยาย
+   แก้แล้วด้วยการให้ profile `full` ใช้ `getownly_docker` และมี `db-init` ที่ **ปฏิเสธถ้าถูกตั้งให้ชี้ `getownly`**
+6.4 **`pnpm docker:reset` ลบ volume ของ postgres** ข้อมูลใน `getownly` หายทั้งหมด
+   ชื่อคำสั่งไม่ได้บอกแบบนั้น ให้ถือว่าอยู่ในข้อ 6.2
+
 **เรื่องความปลอดภัย**
 
 7. ห้ามเชื่อค่าใดๆ จาก client ที่กำหนดสิทธิ์หรือราคา (`userId`, `role`, `price`, `revenueShare`, `orderTotal`)
