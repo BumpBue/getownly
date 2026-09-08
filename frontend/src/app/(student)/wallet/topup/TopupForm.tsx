@@ -329,8 +329,54 @@ function HistoryTable({
   const { historyColumns, viewSlip, cancelRequest: cancelLabel, cancelling } = walletMessages.topup;
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-160 text-sm">
+    <>
+      {/* Six columns cannot fit a phone, and the ones that fall off the end
+          are the slip link and the cancel button — the only two things this
+          list is for. One card per request below lg instead. */}
+      <ul className="divide-y divide-border lg:hidden">
+        {items.map((item) => (
+          <li key={item.id} className="flex flex-col gap-2 px-5 py-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-col gap-1">
+                <TopupStatusBadge status={item.status} />
+                <span className="tabular text-xs text-subtle">{formatDate(item.createdAt)}</span>
+              </div>
+              <span className="tabular shrink-0 font-semibold text-foreground">
+                {formatBaht(item.amount)}
+              </span>
+            </div>
+
+            {item.note && <p className="text-xs text-muted">{item.note}</p>}
+
+            <div className="flex flex-wrap items-center gap-3">
+              {item.slipUrl && (
+                <a
+                  href={item.slipUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-h-9 items-center text-sm text-primary underline-offset-4 hover:underline"
+                >
+                  {viewSlip}
+                </a>
+              )}
+              {item.status === "PENDING" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={cancellingId !== null}
+                  onClick={() => onCancel(item.id)}
+                >
+                  {cancellingId === item.id ? cancelling : cancelLabel}
+                </Button>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <div className="hidden overflow-x-auto lg:block">
+        <table className="w-full min-w-160 text-sm">
         <thead>
           <tr className="border-b border-border text-left text-xs text-muted">
             <th scope="col" className="px-5 py-3 font-medium">
@@ -396,8 +442,9 @@ function HistoryTable({
               </td>
             </tr>
           ))}
-        </tbody>
-      </table>
-    </div>
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }

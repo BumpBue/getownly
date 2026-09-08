@@ -121,7 +121,50 @@ export function CategoriesManager() {
         />
       ) : items && items.length > 0 ? (
         <div className="overflow-hidden rounded-card border border-border bg-card">
-          <div className="overflow-x-auto">
+          {/* Below md the edit and delete buttons fall off the right edge, and
+              they are the whole point of this screen. One card per category. */}
+          <ul className="divide-y divide-border md:hidden">
+            {items.map((category) => (
+              <li key={category.id} className="flex flex-col gap-2 px-5 py-4">
+                <div>
+                  <p className="font-medium text-foreground">{category.name}</p>
+                  <p className="break-all text-xs text-subtle">{category.slug}</p>
+                </div>
+
+                <p className="tabular text-xs text-muted">
+                  {formatCount(category.courseCount)} {messages.publishedSuffix} ·{" "}
+                  {formatCount(category.totalCourseCount)} {messages.totalSuffix}
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={busyId === category.id}
+                    onClick={() => setEditing(category)}
+                  >
+                    <Pencil aria-hidden />
+                    {messages.edit}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={busyId === category.id || category.totalCourseCount > 0}
+                    title={category.totalCourseCount > 0 ? messages.inUse : undefined}
+                    onClick={() => void remove(category)}
+                    className="text-destructive hover:bg-destructive/5 hover:text-destructive"
+                  >
+                    <Trash2 aria-hidden />
+                    {messages.remove}
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[40rem] text-sm">
               <thead className="border-b border-border text-left text-xs text-muted">
                 <tr>

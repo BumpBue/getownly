@@ -150,8 +150,47 @@ function CourseTable({ courses }: { courses: InstructorCourse[] }) {
   const { columns, manage } = instructorMessages.dashboard;
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[52rem] text-sm">
+    <>
+      {/* Eight columns push the manage button off the right edge below xl, and
+          that button is the only way into a course from this screen. One card
+          per course instead. */}
+      <ul className="divide-y divide-border xl:hidden">
+        {courses.map((course) => (
+          <li key={course.id} className="flex flex-col gap-3 px-5 py-4">
+            <div className="flex items-start justify-between gap-3">
+              <span className="line-clamp-2 font-medium text-foreground">{course.title}</span>
+              <span className="tabular shrink-0">
+                {isFree(course.price) ? (
+                  <span className="font-medium text-success">{courseMessages.card.free}</span>
+                ) : (
+                  <span className="font-semibold text-secondary">
+                    {formatBahtShort(course.price)}
+                  </span>
+                )}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted">
+              <CourseStatusBadge status={course.status} />
+              <span>{course.category.name}</span>
+              <span className="tabular">
+                {formatCount(course.lessonCount)} {columns.lessons}
+              </span>
+              <span className="tabular">
+                {formatCount(course.enrollmentCount)} {columns.students}
+              </span>
+              <span className="tabular">{formatDate(course.updatedAt)}</span>
+            </div>
+
+            <Button asChild variant="outline" size="sm" block>
+              <Link href={`/instructor/courses/${course.id}`}>{manage}</Link>
+            </Button>
+          </li>
+        ))}
+      </ul>
+
+      <div className="hidden overflow-x-auto xl:block">
+        <table className="w-full min-w-[52rem] text-sm">
         <thead>
           <tr className="border-b border-border text-left text-xs text-muted">
             <th scope="col" className="px-5 py-3 font-medium">
@@ -214,9 +253,10 @@ function CourseTable({ courses }: { courses: InstructorCourse[] }) {
               </td>
             </tr>
           ))}
-        </tbody>
-      </table>
-    </div>
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 

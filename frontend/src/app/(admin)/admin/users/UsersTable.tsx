@@ -228,7 +228,72 @@ export function UsersTable({ initialStatus }: { initialStatus?: UserStatus }) {
         />
       ) : data && data.items.length > 0 ? (
         <div className="overflow-hidden rounded-card border border-border bg-card">
-          <div className="overflow-x-auto">
+          {/* Below lg the six columns push both action buttons off-screen, and
+              an admin table whose only actions are invisible is a read-only
+              list. One card per user instead. */}
+          <ul className="divide-y divide-border lg:hidden">
+            {data.items.map((user) => (
+              <li key={user.id} className="flex flex-col gap-3 px-5 py-4">
+                <div>
+                  <p className="font-medium text-foreground">{user.displayName}</p>
+                  <p className="break-all text-xs text-subtle">{user.email}</p>
+                  <p className="tabular text-xs text-subtle">{formatDate(user.createdAt)}</p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+                  <Badge tone={user.role === "ADMIN" ? "primary" : "neutral"}>
+                    {roleLabels[user.role]}
+                  </Badge>
+                  <Badge tone={user.status === "ACTIVE" ? "success" : "destructive"}>
+                    {statusLabels[user.status]}
+                  </Badge>
+                  {user.role === "INSTRUCTOR" && (
+                    <span className="tabular">
+                      {messages.columnCommission}{" "}
+                      {Math.round(Number(user.commissionRate) * 100)}%
+                    </span>
+                  )}
+                  <span className="tabular">
+                    {user.role === "INSTRUCTOR"
+                      ? `${formatCount(user.courseCount)} ${messages.coursesSuffix}`
+                      : `${formatCount(user.enrollmentCount)} ${messages.enrollmentsSuffix}`}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {user.role === "INSTRUCTOR" && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={busyId === user.id}
+                      onClick={() => setEditing(user)}
+                    >
+                      <Percent aria-hidden />
+                      {messages.editCommission}
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={busyId === user.id}
+                    onClick={() => void toggleStatus(user)}
+                    className={
+                      user.status === "ACTIVE"
+                        ? "text-destructive hover:bg-destructive/5 hover:text-destructive"
+                        : "text-success hover:bg-success/5 hover:text-success"
+                    }
+                  >
+                    {user.status === "ACTIVE" ? <UserX aria-hidden /> : <UserCheck aria-hidden />}
+                    {user.status === "ACTIVE" ? messages.suspend : messages.restore}
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="hidden overflow-x-auto lg:block">
             <table className="w-full min-w-[56rem] text-sm">
               <thead className="border-b border-border text-left text-xs text-muted">
                 <tr>

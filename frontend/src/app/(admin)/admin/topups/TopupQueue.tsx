@@ -200,8 +200,61 @@ function QueueTable({
   const { columns, review, view } = walletMessages.admin.topups;
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-192 text-sm">
+    <>
+      {/* Below lg the table cannot show its action column without pushing it
+          off-screen, and a queue whose review button is invisible is not a
+          queue. One card per request instead. */}
+      <ul className="divide-y divide-border lg:hidden">
+        {items.map((item) => (
+          <li key={item.id} className="flex flex-col gap-3 px-5 py-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate font-medium text-foreground">
+                  {item.student.displayName}
+                </p>
+                <p className="truncate text-xs text-subtle">{item.student.email}</p>
+              </div>
+              <span className="tabular shrink-0 font-semibold text-secondary">
+                {formatBaht(item.amount)}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted">
+              <TopupStatusBadge status={item.status} />
+              <span className="tabular">{formatDateTime(item.createdAt)}</span>
+              {item.status === "PENDING" && (
+                <span
+                  className={cn(
+                    "tabular",
+                    hoursSince(item.createdAt) > TOPUP_REVIEW_TARGET_HOURS
+                      ? "font-medium text-destructive"
+                      : "text-muted",
+                  )}
+                >
+                  {columns.waitedFor} {formatElapsedSince(item.createdAt)}
+                </span>
+              )}
+              {item.reviewedBy && (
+                <span>
+                  {columns.reviewedBy} {item.reviewedBy.displayName}
+                </span>
+              )}
+            </div>
+
+            <Button
+              variant={item.status === "PENDING" ? "primary" : "outline"}
+              size="sm"
+              block
+              onClick={() => onSelect(item)}
+            >
+              {item.status === "PENDING" ? review : view}
+            </Button>
+          </li>
+        ))}
+      </ul>
+
+      <div className="hidden overflow-x-auto lg:block">
+        <table className="w-full min-w-192 text-sm">
         <thead>
           <tr className="border-b border-border text-left text-xs text-muted">
             <th scope="col" className="px-5 py-3 font-medium">
@@ -271,8 +324,9 @@ function QueueTable({
               </td>
             </tr>
           ))}
-        </tbody>
-      </table>
-    </div>
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
