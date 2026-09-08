@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -422,12 +421,11 @@ function ResumeCourseCard({ enrollment }: { enrollment: MyEnrollment }) {
     >
       <div className="relative aspect-video w-full shrink-0 border-b border-border bg-background sm:aspect-square sm:w-56 sm:border-b-0 sm:border-r">
         {enrollment.coverUrl ? (
-          <Image
+          // eslint-disable-next-line @next/next/no-img-element -- next/image optimises on the server, which cannot reach a URL signed for the browser
+          <img
             src={enrollment.coverUrl}
             alt={enrollment.courseTitle}
-            fill
-            sizes="(max-width: 640px) 100vw, 224px"
-            className="object-cover transition-transform duration-300 ease-out group-hover:scale-105"
+            className="absolute inset-0 size-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-subtle">

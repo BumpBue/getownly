@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -125,7 +124,12 @@ export function CourseSearchBox({ className }: { className?: string }) {
                     >
                       <div className="relative size-11 shrink-0 overflow-hidden rounded-control border border-border bg-background">
                         {course.coverUrl ? (
-                          <Image src={course.coverUrl} alt="" fill sizes="44px" className="object-cover" />
+                          // eslint-disable-next-line @next/next/no-img-element -- next/image optimises on the server, which cannot reach a URL signed for the browser
+                          <img
+                            src={course.coverUrl}
+                            alt=""
+                            className="absolute inset-0 size-full object-cover"
+                          />
                         ) : (
                           <div className="flex size-full items-center justify-center text-subtle">
                             <ImageOff aria-hidden className="size-4" />

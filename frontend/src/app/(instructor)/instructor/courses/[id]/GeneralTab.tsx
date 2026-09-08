@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -233,12 +232,11 @@ export function GeneralTab({
           <CardBody className="flex flex-col gap-3">
             <div className="relative aspect-video w-full overflow-hidden rounded-control border border-border bg-background">
               {coverUrl ? (
-                <Image
+                // eslint-disable-next-line @next/next/no-img-element -- next/image optimises on the server, which cannot reach a URL signed for the browser
+                <img
                   src={coverUrl}
                   alt={course.title}
-                  fill
-                  sizes="20rem"
-                  className="object-cover"
+                  className="absolute inset-0 size-full object-cover"
                 />
               ) : (
                 <div className="flex h-full flex-col items-center justify-center gap-2 text-subtle">

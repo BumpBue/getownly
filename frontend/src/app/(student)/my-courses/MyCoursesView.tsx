@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { BookOpen, Clock, GraduationCap, ImageOff, ServerCrash } from "lucide-react";
@@ -106,12 +105,11 @@ function EnrollmentCard({ enrollment }: { enrollment: MyEnrollment }) {
         className="relative aspect-video w-full border-b border-border bg-background"
       >
         {enrollment.coverUrl ? (
-          <Image
+          // eslint-disable-next-line @next/next/no-img-element -- next/image optimises on the server, which cannot reach a URL signed for the browser
+          <img
             src={enrollment.coverUrl}
             alt={enrollment.courseTitle}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-            className="object-cover"
+            className="absolute inset-0 size-full object-cover"
           />
         ) : (
           <span className="flex h-full flex-col items-center justify-center gap-2 text-subtle">

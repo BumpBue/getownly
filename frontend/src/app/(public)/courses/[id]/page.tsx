@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -132,13 +131,11 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
 
           <div className="relative aspect-video w-full overflow-hidden rounded-card border border-border bg-card">
             {course.coverUrl ? (
-              <Image
+              // eslint-disable-next-line @next/next/no-img-element -- next/image optimises on the server, which cannot reach a URL signed for the browser
+              <img
                 src={course.coverUrl}
                 alt={course.title}
-                fill
-                sizes="(max-width: 1024px) 100vw, 60vw"
-                priority
-                className="object-cover"
+                className="absolute inset-0 size-full object-cover"
               />
             ) : (
               <div className="flex h-full flex-col items-center justify-center gap-2 text-subtle">

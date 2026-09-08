@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Clock, ImageOff, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -23,12 +22,11 @@ export function CourseCard({ course }: { course: CourseListItem }) {
     >
       <div className="relative aspect-video w-full overflow-hidden border-b border-border bg-background">
         {course.coverUrl ? (
-          <Image
+          // eslint-disable-next-line @next/next/no-img-element -- next/image optimises on the server, which cannot reach a URL signed for the browser
+          <img
             src={course.coverUrl}
             alt={course.title}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-            className="object-cover transition-transform duration-300 ease-out group-hover:scale-105"
+            className="absolute inset-0 size-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-subtle">
