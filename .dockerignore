@@ -27,6 +27,7 @@ coverage
 test-results
 playwright-report
 **/test/responsive-output
+**/test/demo-flow-output
 
 # Repository and editor metadata
 .git

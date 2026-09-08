@@ -31,3 +31,7 @@ Thumbs.db
 *.log
 npm-debug.log*
 docker-data/
+
+# browser check artefacts
+frontend/test/responsive-output/
+frontend/test/demo-flow-output/

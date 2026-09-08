@@ -13,8 +13,8 @@
  *         pnpm --filter frontend test:responsive -- --screenshots
  */
 import { chromium } from 'playwright-core';
-import { accessSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { findBrowser } from './find-browser.mjs';
 import { ACCOUNTS, CHROME_LABELS, MIN_TOUCH_HEIGHT, WIDTHS } from './responsive.config.mjs';
 
 const BASE = process.env.RESPONSIVE_BASE_URL ?? 'http://localhost:3000';
@@ -33,63 +33,6 @@ const KEEP_SCREENSHOTS = process.argv.includes('--screenshots');
 const BLOCKING_KINDS = ['OVERFLOW', 'OFFSCREEN', 'TABLE', 'ERROR'];
 const isBlocking = (problem) => BLOCKING_KINDS.some((kind) => problem.startsWith(kind));
 const OUT_DIR = 'test/responsive-output';
-
-/**
- * Where to find a Chromium to drive.
- *
- * playwright-core ships no browser of its own, which is the point: rather than
- * downloading one, this reuses whatever the machine already has. Every
- * Windows install has Edge, so in practice nothing needs installing.
- */
-function findBrowser() {
-  if (process.env.RESPONSIVE_BROWSER) {
-    return process.env.RESPONSIVE_BROWSER;
-  }
-
-  const candidates = [];
-
-  // A browser Playwright downloaded previously, whatever its build number.
-  const cache = process.env.LOCALAPPDATA && join(process.env.LOCALAPPDATA, 'ms-playwright');
-  if (cache) {
-    try {
-      for (const entry of readdirSync(cache)) {
-        if (entry.startsWith('chromium_headless_shell-')) {
-          candidates.push(
-            join(cache, entry, 'chrome-headless-shell-win64', 'chrome-headless-shell.exe'),
-          );
-        }
-        if (entry.startsWith('chromium-')) {
-          candidates.push(join(cache, entry, 'chrome-win', 'chrome.exe'));
-        }
-      }
-    } catch {
-      // No cache directory; fall through to the installed browsers below.
-    }
-  }
-
-  candidates.push(
-    'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-    'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
-    'C:/Program Files/Google/Chrome/Application/chrome.exe',
-    'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
-    '/usr/bin/chromium',
-    '/usr/bin/google-chrome',
-  );
-
-  for (const path of candidates) {
-    try {
-      accessSync(path);
-      return path;
-    } catch {
-      // Try the next one.
-    }
-  }
-
-  throw new Error(
-    'ไม่พบเบราว์เซอร์สำหรับตรวจ — ติดตั้ง Microsoft Edge หรือ Google Chrome ' +
-      'หรือระบุ path เองด้วย RESPONSIVE_BROWSER',
-  );
-}
 
 /**
  * Everything measured in one pass inside the page, because reaching back into
