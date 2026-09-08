@@ -57,6 +57,25 @@ export const QUIZ_PASS_SCORE_MAX = 100;
  */
 export const TOPUP_REVIEW_TARGET_HOURS = 24;
 
+// --- extensions beyond ทก.01 ------------------------------------------------
+//
+// Everything above is a number the scope document fixes. What follows is not:
+// it belongs to a feature the document does not describe at all, and it lives
+// here only so that the repository keeps one table of limits rather than two.
+// Changing a number in this section changes a project decision; changing one
+// above it contradicts the thesis document.
+
+/**
+ * **Not from ทก.01.** The smallest withdrawal an instructor may request, in
+ * baht.
+ *
+ * Every payout is reviewed and transferred by hand, so a floor exists to stop
+ * the queue filling with amounts that cost more attention than they move.
+ * There is deliberately no ceiling: what an instructor may withdraw is already
+ * capped by what is in their wallet.
+ */
+export const PAYOUT_MIN_AMOUNT_BAHT = 500;
+
 // --- formatting helpers -----------------------------------------------------
 
 const BYTES_PER_MB = 1024 * 1024;

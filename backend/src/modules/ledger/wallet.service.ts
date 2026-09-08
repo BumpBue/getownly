@@ -3,6 +3,7 @@ import {
   AccountKind,
   CourseStatus,
   EntryDirection,
+  PayoutStatus,
   Prisma,
   TopupStatus,
   TxType,
@@ -19,6 +20,14 @@ import {
   TopupRejectNoteRequiredException,
   TopupRequestNotFoundException,
 } from './ledger.errors';
+import {
+  NotPayoutOwnerException,
+  PayoutAlreadyPendingException,
+  PayoutExceedsBalanceException,
+  PayoutNotPendingException,
+  PayoutRequestNotFoundException,
+} from '@/modules/payouts/payouts.errors';
+import type { PayoutReviewResultDto } from '@/modules/payouts/dto/payout-response.dto';
 import type { PurchaseResultDto, TopupReviewResultDto } from './dto/ledger-response.dto';
 
 /**
@@ -33,6 +42,13 @@ const MONEY_TRANSACTION_OPTIONS = {
 interface LockedTopupRow {
   id: string;
   studentId: string;
+  amount: string;
+  status: string;
+}
+
+interface LockedPayoutRow {
+  id: string;
+  instructorId: string;
   amount: string;
   status: string;
 }
@@ -304,6 +320,282 @@ export class WalletService {
       };
     }, MONEY_TRANSACTION_OPTIONS);
   }
+
+  // -------------------------------------------------------------------------
+  // Payouts
+  //
+  // Three movements, one request. Money leaves the wallet when the instructor
+  // asks, waits in PAYOUT_PAYABLE while somebody looks at it, and then either
+  // leaves the platform or comes back. Nothing is ever edited to undo a step:
+  // the way back is another balanced transaction (CLAUDE.md, ข้อห้าม 5).
+  // -------------------------------------------------------------------------
+
+  /**
+   * The instructor asks to withdraw. The money moves immediately.
+   *
+   * Debiting here rather than at approval is the whole point of the design:
+   * `Account.balance` is then always what the instructor can actually spend or
+   * withdraw, and the same baht can never be both requested and used to buy a
+   * course. It costs a holding account and a reversal on refusal; it buys a
+   * wallet balance that never needs explaining.
+   */
+  async requestPayout(
+    instructorId: string,
+    amount: Prisma.Decimal,
+    bank: { bankName: string; accountName: string; accountNumber: string },
+  ): Promise<PayoutReviewResultDto> {
+    return this.prisma.$transaction(async (tx) => {
+      const [walletAccountId, payableAccountId] = await Promise.all([
+        this.ledger.getWalletAccountId(instructorId, tx),
+        this.ledger.getSystemAccountId(AccountKind.PAYOUT_PAYABLE, tx),
+      ]);
+
+      // Read the balance only from what the lock returned, exactly as
+      // purchaseCourse does: anything read before the lock is a guess.
+      const balances = await this.ledger.lockAccounts(tx, [walletAccountId, payableAccountId]);
+      const balanceBefore = balances.get(walletAccountId) ?? ZERO;
+
+      if (balanceBefore.lessThan(amount)) {
+        throw new PayoutExceedsBalanceException(balanceBefore.toFixed(2), amount.toFixed(2));
+      }
+
+      const request = await createPayoutRequest(tx, { instructorId, amount, ...bank });
+
+      const ledgerTransactionId = await this.ledger.postTransaction(tx, {
+        type: TxType.PAYOUT,
+        idempotencyKey: `payout:${request.id}`,
+        referenceType: 'PayoutRequest',
+        referenceId: request.id,
+        description: `ยื่นขอถอนเงิน ${amount.toFixed(2)} บาท`,
+        entries: [
+          { accountId: walletAccountId, direction: EntryDirection.DEBIT, amount },
+          { accountId: payableAccountId, direction: EntryDirection.CREDIT, amount },
+        ],
+      });
+
+      return {
+        payoutRequestId: request.id,
+        status: PayoutStatus.PENDING,
+        amount: amount.toFixed(2),
+        reviewedById: null,
+        reviewedAt: null,
+        ledgerTransactionId,
+        walletBalance: balanceBefore.minus(amount).toFixed(2),
+      };
+    }, MONEY_TRANSACTION_OPTIONS);
+  }
+
+  /**
+   * An admin has made the transfer and is recording it. The money leaves.
+   *
+   * The wallet is not touched: it was debited when the request was made, so
+   * this moves the held amount out to EXTERNAL_BANK, walking that account back
+   * toward the zero it started at.
+   *
+   * `referenceType` is what tells this transaction apart from the other two a
+   * request can produce, and it is how the reports know that these baht are
+   * settled rather than merely requested.
+   */
+  async approvePayout(payoutRequestId: string, adminId: string): Promise<PayoutReviewResultDto> {
+    return this.prisma.$transaction(async (tx) => {
+      const request = await lockPayoutRequest(tx, payoutRequestId);
+      const amount = new Prisma.Decimal(request.amount);
+
+      const [walletAccountId, payableAccountId, bankAccountId] = await Promise.all([
+        this.ledger.getWalletAccountId(request.instructorId, tx),
+        this.ledger.getSystemAccountId(AccountKind.PAYOUT_PAYABLE, tx),
+        this.ledger.getSystemAccountId(AccountKind.EXTERNAL_BANK, tx),
+      ]);
+
+      const balances = await this.ledger.lockAccounts(tx, [
+        walletAccountId,
+        payableAccountId,
+        bankAccountId,
+      ]);
+
+      const reviewedAt = new Date();
+      await tx.payoutRequest.update({
+        where: { id: payoutRequestId },
+        data: { status: PayoutStatus.APPROVED, reviewedById: adminId, reviewedAt },
+      });
+
+      const ledgerTransactionId = await this.ledger.postTransaction(tx, {
+        type: TxType.PAYOUT,
+        idempotencyKey: `payout-settle:${payoutRequestId}`,
+        referenceType: 'PayoutSettlement',
+        referenceId: payoutRequestId,
+        description: `โอนเงินถอน ${amount.toFixed(2)} บาท ออกจากระบบ`,
+        entries: [
+          { accountId: payableAccountId, direction: EntryDirection.DEBIT, amount },
+          { accountId: bankAccountId, direction: EntryDirection.CREDIT, amount },
+        ],
+      });
+
+      return {
+        payoutRequestId,
+        status: PayoutStatus.APPROVED,
+        amount: amount.toFixed(2),
+        reviewedById: adminId,
+        reviewedAt: reviewedAt.toISOString(),
+        ledgerTransactionId,
+        // Unchanged: this money left the wallet when the request was made.
+        walletBalance: (balances.get(walletAccountId) ?? ZERO).toFixed(2),
+      };
+    }, MONEY_TRANSACTION_OPTIONS);
+  }
+
+  /** An admin refuses the request. The held money goes back to the wallet. */
+  async rejectPayout(
+    payoutRequestId: string,
+    adminId: string,
+    note: string,
+  ): Promise<PayoutReviewResultDto> {
+    return this.releasePayout(payoutRequestId, {
+      status: PayoutStatus.REJECTED,
+      reviewedById: adminId,
+      note,
+      description: 'คืนเงินจากคำขอถอนที่ถูกปฏิเสธ',
+    });
+  }
+
+  /** The instructor changes their mind. Same movement, different reason. */
+  async cancelPayout(
+    payoutRequestId: string,
+    instructorId: string,
+  ): Promise<PayoutReviewResultDto> {
+    return this.releasePayout(payoutRequestId, {
+      status: PayoutStatus.CANCELLED,
+      reviewedById: null,
+      note: null,
+      description: 'คืนเงินจากคำขอถอนที่ยกเลิกเอง',
+      requireOwner: instructorId,
+    });
+  }
+
+  /**
+   * The way back, shared by refusal and cancellation.
+   *
+   * One transaction, one reason to exist: whichever way a pending request
+   * ends without a transfer, the held baht return to the wallet they came
+   * from. Writing it once means the two endings can never drift into moving
+   * different amounts.
+   */
+  private async releasePayout(
+    payoutRequestId: string,
+    options: {
+      status: typeof PayoutStatus.REJECTED | typeof PayoutStatus.CANCELLED;
+      reviewedById: string | null;
+      note: string | null;
+      description: string;
+      /** When set, the row must belong to this user or the caller gets 403. */
+      requireOwner?: string;
+    },
+  ): Promise<PayoutReviewResultDto> {
+    return this.prisma.$transaction(async (tx) => {
+      const request = await lockPayoutRequest(tx, payoutRequestId, options.requireOwner);
+      const amount = new Prisma.Decimal(request.amount);
+
+      const [walletAccountId, payableAccountId] = await Promise.all([
+        this.ledger.getWalletAccountId(request.instructorId, tx),
+        this.ledger.getSystemAccountId(AccountKind.PAYOUT_PAYABLE, tx),
+      ]);
+
+      const balances = await this.ledger.lockAccounts(tx, [walletAccountId, payableAccountId]);
+      const balanceBefore = balances.get(walletAccountId) ?? ZERO;
+
+      const reviewedAt = new Date();
+      await tx.payoutRequest.update({
+        where: { id: payoutRequestId },
+        data: {
+          status: options.status,
+          reviewedById: options.reviewedById,
+          reviewedAt,
+          note: options.note,
+        },
+      });
+
+      const ledgerTransactionId = await this.ledger.postTransaction(tx, {
+        type: TxType.PAYOUT,
+        idempotencyKey: `payout-reversal:${payoutRequestId}`,
+        referenceType: 'PayoutReversal',
+        referenceId: payoutRequestId,
+        description: `${options.description} ${amount.toFixed(2)} บาท`,
+        entries: [
+          { accountId: payableAccountId, direction: EntryDirection.DEBIT, amount },
+          { accountId: walletAccountId, direction: EntryDirection.CREDIT, amount },
+        ],
+      });
+
+      return {
+        payoutRequestId,
+        status: options.status,
+        amount: amount.toFixed(2),
+        reviewedById: options.reviewedById,
+        reviewedAt: reviewedAt.toISOString(),
+        ledgerTransactionId,
+        walletBalance: balanceBefore.plus(amount).toFixed(2),
+      };
+    }, MONEY_TRANSACTION_OPTIONS);
+  }
+}
+
+/**
+ * Creates the request row, translating the partial unique index on pending
+ * requests into the error the instructor would have got had their second
+ * submission arrived a moment later.
+ */
+async function createPayoutRequest(
+  tx: Prisma.TransactionClient,
+  data: {
+    instructorId: string;
+    amount: Prisma.Decimal;
+    bankName: string;
+    accountName: string;
+    accountNumber: string;
+  },
+): Promise<{ id: string }> {
+  try {
+    return await tx.payoutRequest.create({ data, select: { id: true } });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      throw new PayoutAlreadyPendingException(data.amount.toFixed(2));
+    }
+    throw error;
+  }
+}
+
+/**
+ * Locks the request row first, so two admins clicking approve at the same
+ * moment are serialised and the second one sees the status the first wrote.
+ *
+ * `requireOwner` is checked here rather than in the caller because the answer
+ * has to come from the locked row: reading ownership before the lock would be
+ * reading a row that could still change.
+ */
+async function lockPayoutRequest(
+  tx: Prisma.TransactionClient,
+  payoutRequestId: string,
+  requireOwner?: string,
+): Promise<LockedPayoutRow> {
+  const rows = await tx.$queryRaw<LockedPayoutRow[]>`
+    SELECT id, "instructorId", amount::text AS amount, status::text AS status
+    FROM "PayoutRequest"
+    WHERE id = ${payoutRequestId}
+    FOR UPDATE
+  `;
+
+  const request = rows[0];
+  if (!request) {
+    throw new PayoutRequestNotFoundException();
+  }
+  if (requireOwner && request.instructorId !== requireOwner) {
+    throw new NotPayoutOwnerException();
+  }
+  if (request.status !== PayoutStatus.PENDING) {
+    throw new PayoutNotPendingException(request.status);
+  }
+
+  return request;
 }
 
 /**

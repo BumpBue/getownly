@@ -40,7 +40,12 @@ export type ContentReportStatus = (typeof CONTENT_REPORT_STATUSES)[number];
 export const TOPUP_STATUSES = ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'] as const;
 export type TopupStatus = (typeof TOPUP_STATUSES)[number];
 
-export const ACCOUNT_KINDS = ['USER_WALLET', 'PLATFORM_REVENUE', 'EXTERNAL_BANK'] as const;
+export const ACCOUNT_KINDS = [
+  'USER_WALLET',
+  'PLATFORM_REVENUE',
+  'EXTERNAL_BANK',
+  'PAYOUT_PAYABLE',
+] as const;
 export type AccountKind = (typeof ACCOUNT_KINDS)[number];
 
 export const ENTRY_DIRECTIONS = ['DEBIT', 'CREDIT'] as const;

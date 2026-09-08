@@ -516,11 +516,12 @@ describe('ReportsService', () => {
       // Order is Postgres sorting the enum by its declared ordinal, not
       // something this report promises - only that each kind appears once.
       expect([...trial.rows.map((row) => row.kind)].sort()).toEqual(
-        ['EXTERNAL_BANK', 'PLATFORM_REVENUE', 'USER_WALLET'].sort(),
+        ['EXTERNAL_BANK', 'PAYOUT_PAYABLE', 'PLATFORM_REVENUE', 'USER_WALLET'].sort(),
       );
       expect(trial.rows.find((row) => row.kind === 'USER_WALLET')?.accountCount).toBe(4);
       expect(trial.rows.find((row) => row.kind === 'PLATFORM_REVENUE')?.accountCount).toBe(1);
       expect(trial.rows.find((row) => row.kind === 'EXTERNAL_BANK')?.accountCount).toBe(1);
+      expect(trial.rows.find((row) => row.kind === 'PAYOUT_PAYABLE')?.accountCount).toBe(1);
     });
 
     it('shows the external bank account carrying the offsetting negative balance', async () => {

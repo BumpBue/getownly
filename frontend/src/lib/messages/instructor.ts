@@ -9,6 +9,7 @@ export const instructorMessages = {
     qna: 'กล่องคำถาม',
     reports: 'รายงานยอดขาย',
     wallet: 'กระเป๋าเงิน',
+    payouts: 'ถอนเงิน',
     profile: 'โปรไฟล์ของฉัน',
     backToSite: 'กลับไปหน้าเว็บหลัก',
   },

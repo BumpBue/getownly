@@ -122,6 +122,8 @@ const learner = await newActor('student');
 
 const PRICE = '1500';
 const COMMISSION_PERCENT = 25;
+/** Above the 500 floor, and below the 1,125 the instructor will have earned. */
+const PAYOUT_AMOUNT = '1000';
 let courseUrl = null;
 
 try {
@@ -449,6 +451,78 @@ try {
     note(`พบยอดขาย: ${text.includes(money(Number(PRICE)))}`);
     note(`พบส่วนแบ่ง: ${text.includes(money(fee))}`);
   }, admin);
+  // --- 9. the instructor withdraws, the admin pays --------------------------
+  await step('9a. ผู้สอนบันทึกบัญชีธนาคารและยื่นขอถอนเงิน', async () => {
+    await teacher.page.goto(`${BASE}/instructor/payouts`, { waitUntil: 'networkidle' });
+    await teacher.page.waitForTimeout(2000);
+
+    await teacher.page.getByRole('button', { name: /บัญชีธนาคาร/ }).first().click();
+    await teacher.page.waitForSelector('#bank-name', { timeout: 15000 });
+    await teacher.page.fill('#bank-name', 'ธนาคารกสิกรไทย');
+    await teacher.page.fill('#account-name', 'ครูสาธิต ใจดี');
+    await teacher.page.fill('#account-number', '1234567890');
+    await teacher.page.getByRole('button', { name: 'บันทึก', exact: true }).first().click();
+    await teacher.page.waitForTimeout(2500);
+
+    await teacher.page.fill('#payout-amount', PAYOUT_AMOUNT);
+    await teacher.page.getByRole('button', { name: /ยื่นคำขอถอนเงิน/ }).first().click();
+    await teacher.page.waitForTimeout(3000);
+    await capture(teacher.page, 'payout-requested');
+
+    // The design's whole point: the money is gone from the wallet already.
+    const text = await teacher.page.locator('body').innerText();
+    const expected = Number(PAYOUT_AMOUNT).toLocaleString('th-TH', { minimumFractionDigits: 2 });
+    if (!text.includes('รอตรวจสอบ')) {
+      throw new Error(`ยื่นคำขอแล้วแต่ไม่พบสถานะ "รอตรวจสอบ" — ${text.slice(0, 200)}`);
+    }
+    note(`ยื่นขอถอน ${expected} บาท และถูกหักออกจากกระเป๋าทันที`);
+  }, teacher);
+
+  await step('9b. ADMIN เปิดคิว เห็นเลขบัญชีเต็ม แล้วอนุมัติ', async () => {
+    await admin.page.goto(`${BASE}/admin/payouts`, { waitUntil: 'networkidle' });
+    await admin.page.waitForTimeout(2500);
+    await capture(admin.page, 'payout-queue');
+
+    // The queue itself must not carry the number; only the opened row does.
+    const queueText = await admin.page.locator('body').innerText();
+    if (queueText.includes('1234567890')) {
+      throw new Error('เลขบัญชีเต็มหลุดออกมาในหน้าคิว ทั้งที่ควรแสดงเฉพาะตอนเปิดรายการ');
+    }
+
+    await admin.page.getByRole('button', { name: 'ตรวจสอบ', exact: true }).first().click();
+    await admin.page.waitForTimeout(2500);
+    await capture(admin.page, 'payout-review');
+
+    const dialogText = await admin.page.locator('dialog').innerText();
+    if (!dialogText.includes('1234567890')) {
+      throw new Error('เปิดรายการแล้วแต่ไม่พบเลขบัญชีเต็มที่ต้องใช้โอนเงิน');
+    }
+
+    admin.page.once('dialog', (confirmation) => confirmation.accept());
+    await admin.page.getByRole('button', { name: /อนุมัติ/ }).first().click();
+    await admin.page.waitForTimeout(3000);
+    await capture(admin.page, 'payout-approved');
+  }, admin);
+
+  await step('9c. ยอดค้างจ่ายในรายงานลดลงเท่ากับจำนวนที่โอนออก', async () => {
+    await admin.page.goto(`${BASE}/admin/reports`, { waitUntil: 'networkidle' });
+    await admin.page.waitForTimeout(3500);
+    await capture(admin.page, 'admin-reports-after-payout');
+
+    const money = (n) => n.toLocaleString('th-TH', { minimumFractionDigits: 2 });
+    const earned = Number(PRICE) * (1 - COMMISSION_PERCENT / 100);
+    const expected = money(earned - Number(PAYOUT_AMOUNT));
+
+    const text = await admin.page.locator('body').innerText();
+    note(`ผู้สอนเคยได้ ${money(earned)} ถอนออก ${money(Number(PAYOUT_AMOUNT))}`);
+    note(`ยอดค้างจ่ายที่เหลือควรเป็น ${expected}`);
+
+    if (!text.includes(expected)) {
+      throw new Error(`ไม่พบยอดค้างจ่าย ${expected} ในรายงาน หลังอนุมัติการถอนเงิน`);
+    }
+    note(`ตรง: ยอดค้างจ่าย ${expected}`);
+  }, admin);
+
 } catch {
   // The failing step is already recorded; fall through to the summary.
 }

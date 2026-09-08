@@ -6,7 +6,8 @@
  * created through the web app. This exists because two things cannot be:
  * ADMIN is not a self-service role (ทก.01 ข้อ C says one admin account, and
  * POST /auth/register only accepts STUDENT or INSTRUCTOR), and the
- * PLATFORM_REVENUE / EXTERNAL_BANK accounts have no owner to create them.
+ * PLATFORM_REVENUE / EXTERNAL_BANK / PAYOUT_PAYABLE accounts have no owner to
+ * create them.
  *
  * Unlike seed.ts this **adds** and never wipes, so running it against a
  * populated database is harmless — it stops if an admin already exists.
@@ -54,8 +55,12 @@ async function main(): Promise<void> {
     data: { ownerId: admin.id, kind: AccountKind.USER_WALLET },
   });
 
-  // Exactly one of each, and neither has an owner.
-  for (const kind of [AccountKind.PLATFORM_REVENUE, AccountKind.EXTERNAL_BANK]) {
+  // Exactly one of each, and none of them has an owner.
+  for (const kind of [
+    AccountKind.PLATFORM_REVENUE,
+    AccountKind.EXTERNAL_BANK,
+    AccountKind.PAYOUT_PAYABLE,
+  ]) {
     const already = await prisma.account.findFirst({ where: { kind }, select: { id: true } });
     if (!already) {
       await prisma.account.create({ data: { kind } });
@@ -65,7 +70,7 @@ async function main(): Promise<void> {
   console.log('');
   console.log('เตรียมระบบเรียบร้อย');
   console.log(`  ADMIN  ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
-  console.log('  บัญชี PLATFORM_REVENUE และ EXTERNAL_BANK พร้อมใช้งาน');
+  console.log('  บัญชี PLATFORM_REVENUE · EXTERNAL_BANK · PAYOUT_PAYABLE พร้อมใช้งาน');
   console.log('');
   console.log('ที่เหลือสร้างผ่านหน้าเว็บได้ทั้งหมด: หมวดหมู่ ผู้สอน ผู้เรียน คอร์ส');
 

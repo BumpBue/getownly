@@ -26,6 +26,7 @@ import { QnaModule } from './modules/qna/qna.module';
 import { QuizzesModule } from './modules/quizzes/quizzes.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { StatsModule } from './modules/stats/stats.module';
+import { PayoutsModule } from './modules/payouts/payouts.module';
 import { TopupsModule } from './modules/topups/topups.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { UsersModule } from './modules/users/users.module';
@@ -51,6 +52,7 @@ import { UsersModule } from './modules/users/users.module';
     UploadsModule,
     LedgerModule,
     TopupsModule,
+    PayoutsModule,
     EnrollmentsModule,
     LearnModule,
     QuizzesModule,

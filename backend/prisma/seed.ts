@@ -813,7 +813,11 @@ async function main(): Promise<void> {
   });
   // Platform-level accounts have no owner. Exactly one of each must exist.
   await prisma.account.createMany({
-    data: [{ kind: 'PLATFORM_REVENUE' as const }, { kind: 'EXTERNAL_BANK' as const }],
+    data: [
+      { kind: 'PLATFORM_REVENUE' as const },
+      { kind: 'EXTERNAL_BANK' as const },
+      { kind: 'PAYOUT_PAYABLE' as const },
+    ],
   });
 
   const accountCount = await prisma.account.count();

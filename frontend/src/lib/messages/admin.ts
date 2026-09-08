@@ -11,6 +11,7 @@ export const adminMessages = {
     categories: 'หมวดหมู่',
     reports: 'รายงาน',
     contentReports: 'รายการที่ถูกแจ้ง',
+    payouts: 'คำขอถอนเงิน',
   },
 
   dashboard: {
@@ -219,6 +220,7 @@ export const adminMessages = {
       USER_WALLET: 'กระเป๋าเงินผู้ใช้',
       PLATFORM_REVENUE: 'รายได้แพลตฟอร์ม',
       EXTERNAL_BANK: 'เงินจากภายนอกระบบ (ธนาคาร)',
+      PAYOUT_PAYABLE: 'เงินรอโอนคืนผู้สอน (ยื่นขอถอนแล้ว)',
     } as Record<string, string>,
   },
 

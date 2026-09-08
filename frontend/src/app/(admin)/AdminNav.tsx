@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import {
   ArrowRight,
+  Banknote,
   BarChart3,
   BookCheck,
   FolderTree,
@@ -23,6 +24,7 @@ import { walletMessages } from "@/lib/messages/wallet";
 const LINKS = [
   { href: "/admin", icon: LayoutDashboard, label: adminMessages.nav.dashboard },
   { href: "/admin/topups", icon: Receipt, label: adminMessages.nav.topups },
+  { href: "/admin/payouts", icon: Banknote, label: adminMessages.nav.payouts },
   { href: "/admin/courses", icon: BookCheck, label: adminMessages.nav.courses },
   { href: "/admin/users", icon: Users, label: adminMessages.nav.users },
   { href: "/admin/categories", icon: FolderTree, label: adminMessages.nav.categories },

@@ -243,11 +243,21 @@ await check('instructor', 'course-new', '/instructor/courses/new');
 await check('instructor', 'reports', '/instructor/reports');
 await check('instructor', 'qna-inbox', '/instructor/qna');
 await check('instructor', 'wallet', '/wallet');
+await check('instructor', 'payouts', '/instructor/payouts');
+// The bank form is a second state of the same page, and the only place in the
+// application that shows an account number in full - worth its own look.
+await check('instructor', 'payouts-bank-form', '/instructor/payouts', (page) =>
+  page.getByRole('button', { name: /บัญชีธนาคาร/ }).first().click(),
+);
 await check('instructor', 'profile', '/profile');
 
 // --- ผู้ดูแลระบบ -------------------------------------------------------------
 await check('admin', 'dashboard', '/admin');
 await check('admin', 'topups', '/admin/topups');
+await check('admin', 'payouts', '/admin/payouts');
+await check('admin', 'payouts-all', '/admin/payouts', (page) =>
+  page.getByRole('button', { name: 'ทั้งหมด', exact: true }).first().click(),
+);
 await check('admin', 'courses', '/admin/courses');
 await check('admin', 'content-reports', '/admin/content-reports');
 await check('admin', 'users', '/admin/users');

@@ -1,6 +1,7 @@
 import {
   COURSE_MAX_PRICE_BAHT,
   COURSE_MAX_STORAGE_BYTES,
+  PAYOUT_MIN_AMOUNT_BAHT,
   QUIZ_PASS_SCORE_MAX,
   QUIZ_PASS_SCORE_MIN,
   TOPUP_REVIEW_TARGET_HOURS,
@@ -42,6 +43,19 @@ describe('scope limits (ทก.01)', () => {
 
   it('D3: targets a 24 hour top-up review', () => {
     expect(TOPUP_REVIEW_TARGET_HOURS).toBe(24);
+  });
+});
+
+/**
+ * Numbers this project chose, which the scope document does not mention.
+ *
+ * Kept in a describe block of its own so that reading the test output alone
+ * tells an examiner which limits are commitments made in ทก.01 and which are
+ * decisions the implementation is free to revisit.
+ */
+describe('limits beyond ทก.01 (extensions)', () => {
+  it('payouts: will not accept a withdrawal below 500 baht', () => {
+    expect(PAYOUT_MIN_AMOUNT_BAHT).toBe(500);
   });
 });
 

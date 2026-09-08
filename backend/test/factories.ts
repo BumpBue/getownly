@@ -94,11 +94,12 @@ export function asAuthUser(user: TestUser): AuthenticatedUser {
 export interface SystemAccounts {
   platformRevenueId: string;
   externalBankId: string;
+  payoutPayableId: string;
 }
 
-/** The two platform-owned accounts, mirroring what the seed creates. */
+/** The three platform-owned accounts, mirroring what the seed creates. */
 export async function createSystemAccounts(prisma: PrismaService): Promise<SystemAccounts> {
-  const [platformRevenue, externalBank] = await Promise.all([
+  const [platformRevenue, externalBank, payoutPayable] = await Promise.all([
     prisma.account.create({
       data: { kind: AccountKind.PLATFORM_REVENUE },
       select: { id: true },
@@ -107,11 +108,16 @@ export async function createSystemAccounts(prisma: PrismaService): Promise<Syste
       data: { kind: AccountKind.EXTERNAL_BANK },
       select: { id: true },
     }),
+    prisma.account.create({
+      data: { kind: AccountKind.PAYOUT_PAYABLE },
+      select: { id: true },
+    }),
   ]);
 
   return {
     platformRevenueId: platformRevenue.id,
     externalBankId: externalBank.id,
+    payoutPayableId: payoutPayable.id,
   };
 }
 
@@ -312,6 +318,35 @@ export async function fundWallet(
     amount: options.amount,
   });
   await wallet.approveTopup(requestId, options.adminId);
+}
+
+/**
+ * A user's wallet balance as the string the API would print.
+ *
+ * Wanted often enough, and via the owner rather than the account id, that
+ * every test writing the lookup out again would be four lines of noise around
+ * the number it actually cares about.
+ */
+export async function walletBalance(prisma: PrismaService, userId: string): Promise<string> {
+  const account = await prisma.account.findFirstOrThrow({
+    where: { ownerId: userId, kind: AccountKind.USER_WALLET },
+    select: { balance: true },
+  });
+
+  return account.balance.toFixed(2);
+}
+
+/** Balance of one of the platform-owned accounts, same idea. */
+export async function systemBalance(
+  prisma: PrismaService,
+  kind: (typeof AccountKind)[keyof typeof AccountKind],
+): Promise<string> {
+  const account = await prisma.account.findFirstOrThrow({
+    where: { ownerId: null, kind },
+    select: { balance: true },
+  });
+
+  return account.balance.toFixed(2);
 }
 
 export async function accountBalance(

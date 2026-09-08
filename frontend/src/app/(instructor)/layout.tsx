@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  Banknote,
   BarChart3,
   Inbox,
   LayoutDashboard,
@@ -53,6 +54,12 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
               page lives in the (student) route group. */}
           <SidebarLink href="/wallet" icon={<Wallet aria-hidden className="size-4" />}>
             {nav.wallet}
+          </SidebarLink>
+          <SidebarLink
+            href="/instructor/payouts"
+            icon={<Banknote aria-hidden className="size-4" />}
+          >
+            {nav.payouts}
           </SidebarLink>
         </nav>
 
