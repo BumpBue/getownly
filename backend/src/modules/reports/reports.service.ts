@@ -241,36 +241,55 @@ export class ReportsService {
         outstanding: Prisma.Decimal;
       }[]
     >`
+      WITH earned AS (
+        SELECT a."ownerId" AS instructor_id,
+               lt.id AS tx_id,
+               lt."createdAt" AS happened_at,
+               le.amount AS amount
+        FROM "LedgerEntry" le
+        JOIN "LedgerTransaction" lt ON lt.id = le."transactionId"
+        JOIN "Account" a ON a.id = le."accountId"
+        WHERE lt.type = 'PURCHASE'
+          AND le.direction = 'CREDIT'
+          AND a.kind = 'USER_WALLET'
+      ),
+      -- Settlements only, never the other two transactions a withdrawal
+      -- writes. Money waiting in PAYOUT_PAYABLE has left the instructor's
+      -- wallet but not the platform, and the platform still owes it, so it
+      -- stays counted here until the transfer actually happens. The reversal
+      -- of a refused request is skipped for the same reason: it never counted.
+      settled AS (
+        SELECT pr."instructorId" AS instructor_id,
+               SUM(le.amount) AS amount
+        FROM "LedgerEntry" le
+        JOIN "LedgerTransaction" lt ON lt.id = le."transactionId"
+        JOIN "Account" a ON a.id = le."accountId"
+        JOIN "PayoutRequest" pr ON pr.id = lt."referenceId"
+        WHERE lt."referenceType" = 'PayoutSettlement'
+          AND le.direction = 'DEBIT'
+          AND a.kind = 'PAYOUT_PAYABLE'
+        GROUP BY pr."instructorId"
+      )
       SELECT
-        a."ownerId" AS instructor_id,
+        e.instructor_id AS instructor_id,
         u."displayName" AS display_name,
-        COUNT(DISTINCT CASE WHEN lt.type = 'PURCHASE'
-                             AND lt."createdAt" >= ${range.fromUtc}
-                             AND lt."createdAt" < ${range.toUtcExclusive}
-                            THEN lt.id END) AS sales_count,
-        COALESCE(SUM(CASE WHEN lt.type = 'PURCHASE'
-                           AND lt."createdAt" >= ${range.fromUtc}
-                           AND lt."createdAt" < ${range.toUtcExclusive}
-                          THEN le.amount END), 0) AS earnings,
-        -- Earned minus withdrawn. A payout debits the same wallet this sums
-        -- credits into, so subtracting it here is reading one account's own
-        -- history, not reconciling two separate sets of books.
-        COALESCE(SUM(CASE WHEN lt.type = 'PURCHASE' THEN le.amount
-                          ELSE -le.amount END), 0) AS outstanding
-      FROM "LedgerEntry" le
-      JOIN "LedgerTransaction" lt ON lt.id = le."transactionId"
-      JOIN "Account" a ON a.id = le."accountId"
-      JOIN "User" u ON u.id = a."ownerId"
-      WHERE a.kind = 'USER_WALLET'
-        AND (
-          (lt.type = 'PURCHASE' AND le.direction = 'CREDIT')
-          OR (lt.type = 'PAYOUT' AND le.direction = 'DEBIT')
-        )
-      GROUP BY a."ownerId", u."displayName"
-      HAVING COALESCE(SUM(CASE WHEN lt.type = 'PURCHASE'
-                                AND lt."createdAt" >= ${range.fromUtc}
-                                AND lt."createdAt" < ${range.toUtcExclusive}
-                               THEN le.amount END), 0) > 0
+        COUNT(DISTINCT CASE WHEN e.happened_at >= ${range.fromUtc}
+                             AND e.happened_at < ${range.toUtcExclusive}
+                            THEN e.tx_id END) AS sales_count,
+        COALESCE(SUM(CASE WHEN e.happened_at >= ${range.fromUtc}
+                           AND e.happened_at < ${range.toUtcExclusive}
+                          THEN e.amount END), 0) AS earnings,
+        -- Earned across all time, minus what has actually been transferred out.
+        -- MAX over the joined row rather than SUM: the left join repeats that
+        -- single pre-aggregated total once per earning row.
+        COALESCE(SUM(e.amount), 0) - COALESCE(MAX(s.amount), 0) AS outstanding
+      FROM earned e
+      JOIN "User" u ON u.id = e.instructor_id
+      LEFT JOIN settled s ON s.instructor_id = e.instructor_id
+      GROUP BY e.instructor_id, u."displayName"
+      HAVING COALESCE(SUM(CASE WHEN e.happened_at >= ${range.fromUtc}
+                                AND e.happened_at < ${range.toUtcExclusive}
+                               THEN e.amount END), 0) > 0
       ORDER BY earnings DESC
       LIMIT ${TOP_LIST_SIZE}
     `;

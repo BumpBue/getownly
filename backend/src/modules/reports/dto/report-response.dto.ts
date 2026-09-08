@@ -82,7 +82,17 @@ export interface TopInstructorDto {
   salesCount: number;
   /** Earned inside the requested range. */
   earnings: MoneyString;
-  /** Owed in total, across all time. */
+  /**
+   * Owed in total, across all time: everything ever earned minus everything
+   * actually transferred out.
+   *
+   * Not the same as the instructor's wallet balance, and not meant to be. A
+   * withdrawal request takes money out of the wallet the moment it is made,
+   * but the platform still owes those baht until the transfer happens, so they
+   * stay counted here while they wait. The two also differ for a happier
+   * reason: an instructor may top their own wallet up and buy courses like
+   * anybody else, and none of that is money the platform owes them.
+   */
   outstandingAmount: MoneyString;
 }
 

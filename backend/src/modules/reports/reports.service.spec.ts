@@ -6,6 +6,8 @@ import { ReportsService } from './reports.service';
 import { todayInBangkok, shiftDate } from './report-range';
 import {
   accountBalance,
+  systemBalance,
+  walletBalance,
   createCategory,
   createCourse,
   createSystemAccounts,
@@ -33,36 +35,52 @@ async function backdate(prisma: PrismaService, enrollmentId: string, days: numbe
 }
 
 /**
- * Writes one payout transaction straight through the ledger.
+ * Puts an instructor through a real withdrawal, one stage at a time.
  *
- * The reports must be able to read a withdrawal before PayoutsService exists,
- * and what they read is the ledger, so this posts the same two entries that
- * service will: the wallet is debited, EXTERNAL_BANK is credited back toward
- * zero.
+ * Not a hand-written ledger transaction: the reports tell the three stages
+ * apart by `referenceType`, so a test that posted its own entries would be
+ * asserting against a shape only the test knows about. This drives the same
+ * service the application does, and stops wherever the test wants to look.
  */
-async function payOut(
+async function withdraw(
   prisma: PrismaService,
-  ledger: LedgerService,
-  options: { instructorId: string; amount: string },
-): Promise<void> {
-  await prisma.$transaction(async (tx) => {
-    const [walletId, bankId] = await Promise.all([
-      ledger.getWalletAccountId(options.instructorId, tx),
-      ledger.getSystemAccountId('EXTERNAL_BANK', tx),
-    ]);
-
-    await ledger.postTransaction(tx, {
-      type: 'PAYOUT',
-      idempotencyKey: `payout:test:${options.instructorId}:${options.amount}`,
-      referenceType: 'PayoutRequest',
-      referenceId: 'test',
-      description: `ถอนเงิน ${options.amount} บาท`,
-      entries: [
-        { accountId: walletId, direction: 'DEBIT', amount: decimal(options.amount) },
-        { accountId: bankId, direction: 'CREDIT', amount: decimal(options.amount) },
-      ],
-    });
+  wallet: WalletService,
+  options: {
+    instructorId: string;
+    amount: string;
+    /** What happens next: nothing, an approval, or a refusal. */
+    then?: 'approve' | 'reject';
+    adminId?: string;
+  },
+): Promise<string> {
+  await prisma.instructorBankAccount.upsert({
+    where: { instructorId: options.instructorId },
+    create: {
+      instructorId: options.instructorId,
+      bankName: 'ธนาคารทดสอบ',
+      accountName: 'ผู้สอนทดสอบ',
+      accountNumber: '1234567890',
+    },
+    update: {},
   });
+
+  const request = await wallet.requestPayout(options.instructorId, decimal(options.amount), {
+    bankName: 'ธนาคารทดสอบ',
+    accountName: 'ผู้สอนทดสอบ',
+    accountNumber: '1234567890',
+  });
+
+  if (options.then === 'approve') {
+    await wallet.approvePayout(request.payoutRequestId, options.adminId as string);
+  } else if (options.then === 'reject') {
+    await wallet.rejectPayout(
+      request.payoutRequestId,
+      options.adminId as string,
+      'เลขบัญชีไม่ถูกต้อง',
+    );
+  }
+
+  return request.payoutRequestId;
 }
 
 describe('ReportsService', () => {
@@ -328,9 +346,68 @@ describe('ReportsService', () => {
     await assertLedgerInvariants(prisma, ledger);
   });
 
-  it('subtracts a withdrawal from what an instructor is still owed', async () => {
+  /**
+   * The one figure whose meaning had to be chosen rather than derived.
+   *
+   * Money leaves the wallet when the request is made, but the platform still
+   * owes it until somebody transfers it, so "outstanding" follows the debt and
+   * not the wallet. That makes the two numbers differ for as long as a request
+   * is in flight, which is exactly the case this walks through.
+   */
+  it('holds a requested withdrawal against the platform until it is actually transferred', async () => {
     await sellOne({ instructorId: instructor.id, price: '1000.00' });
-    await payOut(prisma, ledger, { instructorId: instructor.id, amount: '500.00' });
+
+    const before = await reports.topInstructors({});
+    expect(before[0]?.outstandingAmount).toBe('700.00');
+    expect(await walletBalance(prisma, instructor.id)).toBe('700.00');
+
+    const requestId = await withdraw(prisma, wallet, {
+      instructorId: instructor.id,
+      amount: '500.00',
+    });
+
+    // The wallet has already parted with the money...
+    expect(await walletBalance(prisma, instructor.id)).toBe('200.00');
+    // ...but nobody has transferred it, so it is still owed.
+    const pending = await reports.topInstructors({});
+    expect(pending[0]?.outstandingAmount).toBe('700.00');
+
+    await wallet.approvePayout(requestId, admin.id);
+
+    // Now it has left the platform, and only now does the debt shrink.
+    const settled = await reports.topInstructors({});
+    expect(settled[0]?.outstandingAmount).toBe('200.00');
+    expect(await walletBalance(prisma, instructor.id)).toBe('200.00');
+
+    await assertLedgerInvariants(prisma, ledger);
+  });
+
+  it('never moves what is owed when a withdrawal is refused', async () => {
+    await sellOne({ instructorId: instructor.id, price: '1000.00' });
+
+    const requestId = await withdraw(prisma, wallet, {
+      instructorId: instructor.id,
+      amount: '500.00',
+    });
+    expect((await reports.topInstructors({}))[0]?.outstandingAmount).toBe('700.00');
+
+    await wallet.rejectPayout(requestId, admin.id, 'เลขบัญชีไม่ถูกต้อง');
+
+    // Owed the whole time, and back in the wallet where it started.
+    expect((await reports.topInstructors({}))[0]?.outstandingAmount).toBe('700.00');
+    expect(await walletBalance(prisma, instructor.id)).toBe('700.00');
+
+    await assertLedgerInvariants(prisma, ledger);
+  });
+
+  it('subtracts a transferred withdrawal from what an instructor is still owed', async () => {
+    await sellOne({ instructorId: instructor.id, price: '1000.00' });
+    await withdraw(prisma, wallet, {
+      instructorId: instructor.id,
+      amount: '500.00',
+      then: 'approve',
+      adminId: admin.id,
+    });
 
     const [overview, top] = await Promise.all([
       reports.adminOverview({}),
@@ -338,7 +415,7 @@ describe('ReportsService', () => {
     ]);
 
     const row = top.find((entry) => entry.instructorId === instructor.id);
-    // Earned 700, withdrew 500, so 200 of it is still inside the platform.
+    // Earned 700, transferred 500, so 200 of it is still inside the platform.
     expect(row?.outstandingAmount).toBe('200.00');
     // ...while what they earned in the window has not changed: a withdrawal
     // moves money that was already earned, it does not un-earn it.
@@ -354,9 +431,14 @@ describe('ReportsService', () => {
     await assertLedgerInvariants(prisma, ledger);
   });
 
-  it('drops an instructor off the list once they have withdrawn everything', async () => {
+  it('owes an instructor nothing once everything has been transferred out', async () => {
     await sellOne({ instructorId: instructor.id, price: '1000.00' });
-    await payOut(prisma, ledger, { instructorId: instructor.id, amount: '700.00' });
+    await withdraw(prisma, wallet, {
+      instructorId: instructor.id,
+      amount: '700.00',
+      then: 'approve',
+      adminId: admin.id,
+    });
 
     const top = await reports.topInstructors({});
     const row = top.find((entry) => entry.instructorId === instructor.id);
@@ -522,6 +604,67 @@ describe('ReportsService', () => {
       expect(trial.rows.find((row) => row.kind === 'PLATFORM_REVENUE')?.accountCount).toBe(1);
       expect(trial.rows.find((row) => row.kind === 'EXTERNAL_BANK')?.accountCount).toBe(1);
       expect(trial.rows.find((row) => row.kind === 'PAYOUT_PAYABLE')?.accountCount).toBe(1);
+    });
+
+    /**
+     * The holding account is only ever a waiting room.
+     *
+     * A balance left in it after nothing is pending would mean money that
+     * belongs to somebody is sitting where nobody can see it or spend it, so
+     * this is checked at each of the three endings a request can have.
+     */
+    it('leaves the payout holding account empty whenever nothing is waiting', async () => {
+      // Priced so that three withdrawals of the 500 minimum fit inside it.
+      await sellOne({ instructorId: instructor.id, price: '5000.00' });
+      expect(await systemBalance(prisma, 'PAYOUT_PAYABLE')).toBe('0.00');
+
+      const approved = await withdraw(prisma, wallet, {
+        instructorId: instructor.id,
+        amount: '500.00',
+      });
+      expect(await systemBalance(prisma, 'PAYOUT_PAYABLE')).toBe('500.00');
+      await wallet.approvePayout(approved, admin.id);
+      expect(await systemBalance(prisma, 'PAYOUT_PAYABLE')).toBe('0.00');
+
+      const rejected = await withdraw(prisma, wallet, {
+        instructorId: instructor.id,
+        amount: '600.00',
+      });
+      await wallet.rejectPayout(rejected, admin.id, 'เลขบัญชีไม่ถูกต้อง');
+      expect(await systemBalance(prisma, 'PAYOUT_PAYABLE')).toBe('0.00');
+
+      const cancelled = await withdraw(prisma, wallet, {
+        instructorId: instructor.id,
+        amount: '700.00',
+      });
+      await wallet.cancelPayout(cancelled, instructor.id);
+      expect(await systemBalance(prisma, 'PAYOUT_PAYABLE')).toBe('0.00');
+
+      await assertLedgerInvariants(prisma, ledger);
+    });
+
+    it('still balances while a withdrawal is waiting, and after it is sent', async () => {
+      await sellOne({ instructorId: instructor.id, price: '1000.00' });
+      const requestId = await withdraw(prisma, wallet, {
+        instructorId: instructor.id,
+        amount: '500.00',
+      });
+
+      const waiting = await reports.trialBalance();
+      expect(waiting.isBalanced).toBe(true);
+      expect(waiting.rows.find((row) => row.kind === 'PAYOUT_PAYABLE')?.netBalance).toBe('500.00');
+      await assertLedgerInvariants(prisma, ledger);
+
+      await wallet.approvePayout(requestId, admin.id);
+
+      const sent = await reports.trialBalance();
+      expect(sent.isBalanced).toBe(true);
+      expect(sent.rows.find((row) => row.kind === 'PAYOUT_PAYABLE')?.netBalance).toBe('0.00');
+      // The 500 left the platform, so the bank account walks back toward zero
+      // by exactly that much: 10,000 funded the buyer, 500 went back out.
+      expect(sent.rows.find((row) => row.kind === 'EXTERNAL_BANK')?.netBalance).toBe('-9500.00');
+
+      await assertLedgerInvariants(prisma, ledger);
     });
 
     it('shows the external bank account carrying the offsetting negative balance', async () => {
