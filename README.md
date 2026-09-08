@@ -174,9 +174,16 @@ pnpm db:generate          # สร้าง Prisma Client ใหม่
 pnpm typecheck            # ตรวจ type ทั้ง 3 แพ็กเกจ
 pnpm lint
 pnpm test                 # Vitest ฝั่ง backend (ต้องยก Docker ขึ้นก่อน)
+pnpm test:responsive      # ตรวจ responsive 375/768/1440 (ต้องมี pnpm dev รันอยู่)
 pnpm build
 pnpm format               # Prettier ทั้ง repo
 ```
+
+> **ห้ามรัน `pnpm build` ขณะที่ `pnpm dev` ทำงานอยู่** ทั้งสองเขียนลง `frontend/.next`
+> ที่เดียวกัน แคชจะเสียหายและทุกหน้าจะขึ้น error 500
+> แก้โดยหยุด dev server ลบโฟลเดอร์ `frontend/.next` แล้วเริ่มใหม่
+>
+> รายละเอียดการตรวจ responsive อยู่ที่ [`frontend/test/README.md`](frontend/test/README.md)
 
 ---
 
