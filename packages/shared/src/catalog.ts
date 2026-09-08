@@ -16,6 +16,13 @@ import type { MoneyString } from './api';
 export const COURSE_SORTS = ['latest', 'popular', 'price_asc', 'price_desc'] as const;
 export type CourseSort = (typeof COURSE_SORTS)[number];
 
+/** One entry of the catalog's instructor filter (ทก.01 B3). Public: no email. */
+export interface CatalogInstructor {
+  id: string;
+  displayName: string;
+  publishedCourseCount: number;
+}
+
 export interface CourseInstructor {
   id: string;
   displayName: string;

@@ -1,5 +1,6 @@
 import { apiRequest } from '@/lib/api-client';
 import type {
+  CatalogInstructor,
   Category,
   CourseDetail,
   InstructorCourse,
@@ -25,6 +26,11 @@ export function listCategories(): Promise<Category[]> {
 
 export function listCourses(query: string): Promise<PaginatedCourses> {
   return apiRequest<PaginatedCourses>(`/courses${query ? `?${query}` : ''}`);
+}
+
+/** ทก.01 B3: the instructor filter's options. Published courses only. */
+export function listCatalogInstructors(): Promise<CatalogInstructor[]> {
+  return apiRequest<CatalogInstructor[]>('/courses/instructors');
 }
 
 export function getCourse(courseId: string): Promise<CourseDetail> {

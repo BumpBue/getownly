@@ -24,6 +24,7 @@ export function CourseSortSelect({ current }: { current: CourseFilterState }) {
 
     if (current.search.trim()) params.set("search", current.search.trim());
     if (current.categoryId) params.set("categoryId", current.categoryId);
+    if (current.instructorId) params.set("instructorId", current.instructorId);
     if (current.freeOnly) {
       params.set("freeOnly", "true");
     } else {

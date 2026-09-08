@@ -8,6 +8,7 @@ import { courseMessages } from "@/lib/messages/courses";
 import { serverFetch } from "@/lib/server-api";
 import {
   COURSE_SORTS,
+  type CatalogInstructor,
   type Category,
   type CourseFilterState,
   type CourseSort,
@@ -37,14 +38,18 @@ export default async function CoursesPage({
   const params = await searchParams;
   const filters = readFilters(params);
 
-  const [coursesResult, categoriesResult] = await Promise.all([
+  const [coursesResult, categoriesResult, instructorsResult] = await Promise.all([
     serverFetch<PaginatedCourses>(`/courses?${buildQuery(filters)}`),
     serverFetch<Category[]>("/categories"),
+    // Only instructors with something published, so a name in the dropdown
+    // always selects at least one course (ทก.01 B3).
+    serverFetch<CatalogInstructor[]>("/courses/instructors"),
   ]);
 
   const { catalog } = courseMessages;
   const courses = coursesResult.data;
   const categories = categoriesResult.data ?? [];
+  const instructors = instructorsResult.data ?? [];
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -52,7 +57,7 @@ export default async function CoursesPage({
 
       <div className="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
         <aside className="lg:sticky lg:top-24 lg:self-start">
-          <CourseFilters categories={categories} current={filters} />
+          <CourseFilters categories={categories} instructors={instructors} current={filters} />
         </aside>
 
         <section>
@@ -111,6 +116,7 @@ function readFilters(params: SearchParams): CourseFilterState {
   return {
     search: single(params.search) ?? "",
     categoryId: single(params.categoryId) ?? "",
+    instructorId: single(params.instructorId) ?? "",
     minPrice: single(params.minPrice) ?? "",
     maxPrice: single(params.maxPrice) ?? "",
     freeOnly: single(params.freeOnly) === "true",
@@ -124,6 +130,7 @@ function buildQuery(filters: CourseFilterState): string {
 
   if (filters.search) params.set("search", filters.search);
   if (filters.categoryId) params.set("categoryId", filters.categoryId);
+  if (filters.instructorId) params.set("instructorId", filters.instructorId);
   if (filters.freeOnly) {
     params.set("freeOnly", "true");
   } else {

@@ -20,6 +20,7 @@ import type {
   UpdateCourseDto,
 } from './dto/course-request.dto';
 import type {
+  CatalogInstructorDto,
   CourseDetailDto,
   CourseListItemDto,
   InstructorCourseDto,
@@ -202,6 +203,31 @@ export class CoursesService {
         updatedAt: row.updatedAt.toISOString(),
       })),
     );
+  }
+
+  /**
+   * The instructors the catalog filter may offer (ทก.01 B3).
+   *
+   * Only those with at least one PUBLISHED course. Listing anyone else would
+   * put a name in a public dropdown that selects nothing — and would leak that
+   * a person has drafts, which is not the catalog's business.
+   */
+  async listCatalogInstructors(): Promise<CatalogInstructorDto[]> {
+    const rows = await this.prisma.user.findMany({
+      where: { courses: { some: { status: CourseStatus.PUBLISHED } } },
+      select: {
+        id: true,
+        displayName: true,
+        _count: { select: { courses: { where: { status: CourseStatus.PUBLISHED } } } },
+      },
+      orderBy: { displayName: 'asc' },
+    });
+
+    return rows.map((row) => ({
+      id: row.id,
+      displayName: row.displayName,
+      publishedCourseCount: row._count.courses,
+    }));
   }
 
   /** The numbers on the instructor dashboard cards. */
@@ -467,14 +493,25 @@ function buildCatalogFilter(query: ListCoursesQueryDto): Prisma.CourseWhereInput
   if (query.search) {
     // Thai has no case, but `insensitive` keeps the English course titles
     // (Maya, Python) matching however the visitor typed them.
+    //
+    // The instructor's name is searched too (ทก.01 B3): someone who remembers
+    // who taught a course but not what it was called is the whole reason a
+    // catalog has a search box.
     where.OR = [
       { title: { contains: query.search, mode: 'insensitive' } },
       { description: { contains: query.search, mode: 'insensitive' } },
+      { instructor: { displayName: { contains: query.search, mode: 'insensitive' } } },
     ];
   }
 
   if (query.categoryId) {
     where.categoryId = query.categoryId;
+  }
+
+  // Combines with everything else: `where` is one AND, so a category, a price
+  // range and an instructor narrow together rather than replacing each other.
+  if (query.instructorId) {
+    where.instructorId = query.instructorId;
   }
 
   // "Free only" is an exact price, so it overrides any range that came with it.

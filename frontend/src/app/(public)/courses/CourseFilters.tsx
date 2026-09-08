@@ -8,7 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { courseMessages } from "@/lib/messages/courses";
-import { type Category, type CourseFilterState } from "@/lib/catalog/types";
+import {
+  type CatalogInstructor,
+  type Category,
+  type CourseFilterState,
+} from "@/lib/catalog/types";
 
 /**
  * The filter sidebar.
@@ -19,9 +23,11 @@ import { type Category, type CourseFilterState } from "@/lib/catalog/types";
  */
 export function CourseFilters({
   categories,
+  instructors,
   current,
 }: {
   categories: Category[];
+  instructors: CatalogInstructor[];
   current: CourseFilterState;
 }) {
   const router = useRouter();
@@ -34,6 +40,7 @@ export function CourseFilters({
 
     if (next.search.trim()) params.set("search", next.search.trim());
     if (next.categoryId) params.set("categoryId", next.categoryId);
+    if (next.instructorId) params.set("instructorId", next.instructorId);
     if (next.freeOnly) {
       params.set("freeOnly", "true");
     } else {
@@ -50,6 +57,7 @@ export function CourseFilters({
   const empty: CourseFilterState = {
     search: "",
     categoryId: "",
+    instructorId: "",
     minPrice: "",
     maxPrice: "",
     freeOnly: false,
@@ -58,7 +66,13 @@ export function CourseFilters({
   };
 
   const hasFilters =
-    Boolean(current.search || current.categoryId || current.minPrice || current.maxPrice) ||
+    Boolean(
+      current.search ||
+        current.categoryId ||
+        current.instructorId ||
+        current.minPrice ||
+        current.maxPrice,
+    ) ||
     current.freeOnly ||
     current.sort !== "latest";
 
@@ -98,6 +112,26 @@ export function CourseFilters({
           ))}
         </Select>
       </div>
+
+      {/* Hidden entirely while nobody has published anything: an empty
+          dropdown is a control that cannot do its job. */}
+      {instructors.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="filter-instructor">{filters.instructor}</Label>
+          <Select
+            id="filter-instructor"
+            value={draft.instructorId}
+            onChange={(event) => setDraft({ ...draft, instructorId: event.target.value })}
+          >
+            <option value="">{filters.allInstructors}</option>
+            {instructors.map((instructor) => (
+              <option key={instructor.id} value={instructor.id}>
+                {instructor.displayName} ({instructor.publishedCourseCount})
+              </option>
+            ))}
+          </Select>
+        </div>
+      )}
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="filter-min-price">{filters.price}</Label>

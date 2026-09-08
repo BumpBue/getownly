@@ -124,6 +124,11 @@ export class ListCoursesQueryDto {
   @IsString()
   categoryId?: string;
 
+  /** ทก.01 B3: narrow the catalog to one instructor. */
+  @IsOptional()
+  @IsString()
+  instructorId?: string;
+
   @IsOptional()
   @IsString()
   @Matches(PRICE_PATTERN, { message: PRICE_MESSAGE })

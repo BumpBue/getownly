@@ -11,6 +11,7 @@ import {
 } from '@/common/exceptions/catalog.exceptions';
 import { PrismaService } from '@/infra/prisma.service';
 import { CourseAccessService } from './course-access.service';
+import type { ListCoursesQueryDto } from './dto/course-request.dto';
 import { CoursesService } from './courses.service';
 import {
   asAuthUser,
@@ -612,6 +613,206 @@ describe('CoursesService', () => {
         pendingCourses: 0,
         totalStudents: 1,
       });
+    });
+  });
+  // --- ทก.01 B3: filtering the catalog by instructor ------------------------
+
+  describe('instructor filter', () => {
+    let alice: TestUser;
+    let bob: TestUser;
+    let categoryId: string;
+    let otherCategoryId: string;
+
+    beforeEach(async () => {
+      alice = await createUser(prisma, { role: 'INSTRUCTOR', displayName: 'อลิสา สอนแอนิเมชัน' });
+      bob = await createUser(prisma, { role: 'INSTRUCTOR', displayName: 'บดินทร์ สอนโมเดล' });
+      categoryId = await createCategory(prisma);
+      otherCategoryId = await createCategory(prisma);
+    });
+
+    it('returns only the named instructor courses', async () => {
+      await createCourse(prisma, {
+        instructorId: alice.id,
+        categoryId,
+        price: '500.00',
+        title: 'คอร์สของอลิสา',
+      });
+      await createCourse(prisma, {
+        instructorId: bob.id,
+        categoryId,
+        price: '500.00',
+        title: 'คอร์สของบดินทร์',
+      });
+
+      const page = await courses.listPublished({ instructorId: alice.id });
+
+      expect(page.items.map((item) => item.title)).toEqual(['คอร์สของอลิสา']);
+      expect(page.total).toBe(1);
+    });
+
+    it('finds a course by searching for who teaches it', async () => {
+      await createCourse(prisma, {
+        instructorId: alice.id,
+        categoryId,
+        price: '500.00',
+        title: 'พื้นฐานการเคลื่อนไหว',
+      });
+      await createCourse(prisma, {
+        instructorId: bob.id,
+        categoryId,
+        price: '500.00',
+        title: 'พื้นฐานการปั้นโมเดล',
+      });
+
+      // Nothing in either title says "อลิสา"; only the instructor's name does.
+      const page = await courses.listPublished({ search: 'อลิสา' });
+
+      expect(page.items.map((item) => item.title)).toEqual(['พื้นฐานการเคลื่อนไหว']);
+    });
+
+    it('narrows together with category and price rather than replacing them', async () => {
+      const wanted = await createCourse(prisma, {
+        instructorId: alice.id,
+        categoryId,
+        price: '500.00',
+        title: 'ตรงทุกเงื่อนไข',
+      });
+      // Same instructor, wrong category.
+      await createCourse(prisma, {
+        instructorId: alice.id,
+        categoryId: otherCategoryId,
+        price: '500.00',
+        title: 'คนละหมวด',
+      });
+      // Same instructor and category, outside the price window.
+      await createCourse(prisma, {
+        instructorId: alice.id,
+        categoryId,
+        price: '9000.00',
+        title: 'แพงเกินช่วงราคา',
+      });
+      // Right category and price, wrong instructor.
+      await createCourse(prisma, {
+        instructorId: bob.id,
+        categoryId,
+        price: '500.00',
+        title: 'คนละผู้สอน',
+      });
+
+      const page = await courses.listPublished({
+        instructorId: alice.id,
+        categoryId,
+        minPrice: '100',
+        maxPrice: '1000',
+      });
+
+      expect(page.items.map((item) => item.id)).toEqual([wanted]);
+    });
+
+    it('hides unpublished courses however the catalog is filtered', async () => {
+      const hidden: string[] = [];
+      for (const status of [
+        'DRAFT',
+        'PENDING_REVIEW',
+        'REJECTED',
+        'UNPUBLISHED',
+        'SUSPENDED',
+      ] as const) {
+        hidden.push(
+          await createCourse(prisma, {
+            instructorId: alice.id,
+            categoryId,
+            price: '500.00',
+            status,
+            title: `คอร์สสถานะ ${status}`,
+          }),
+        );
+      }
+
+      // Every route into the catalog, including the new one.
+      const queries: ListCoursesQueryDto[] = [
+        {},
+        { instructorId: alice.id },
+        { search: 'อลิสา' },
+        { search: 'คอร์สสถานะ' },
+        { categoryId },
+        { instructorId: alice.id, categoryId },
+      ];
+      for (const query of queries) {
+        const page = await courses.listPublished(query);
+        expect(page.items.filter((item) => hidden.includes(item.id))).toEqual([]);
+        expect(page.total).toBe(0);
+      }
+    });
+  });
+
+  describe('catalog instructor list', () => {
+    it('offers only instructors with something published', async () => {
+      const published = await createUser(prisma, {
+        role: 'INSTRUCTOR',
+        displayName: 'ผู้สอนที่เผยแพร่แล้ว',
+      });
+      const draftOnly = await createUser(prisma, {
+        role: 'INSTRUCTOR',
+        displayName: 'ผู้สอนที่มีแต่ฉบับร่าง',
+      });
+      const nothing = await createUser(prisma, {
+        role: 'INSTRUCTOR',
+        displayName: 'ผู้สอนที่ยังไม่มีคอร์ส',
+      });
+      const categoryId = await createCategory(prisma);
+
+      await createCourse(prisma, { instructorId: published.id, categoryId, price: '500.00' });
+      await createCourse(prisma, {
+        instructorId: published.id,
+        categoryId,
+        price: '0.00',
+        status: 'DRAFT',
+      });
+      await createCourse(prisma, {
+        instructorId: draftOnly.id,
+        categoryId,
+        price: '500.00',
+        status: 'DRAFT',
+      });
+
+      const options = await courses.listCatalogInstructors();
+      const ids = options.map((option) => option.id);
+
+      expect(ids).toContain(published.id);
+      // A public dropdown entry that selects nothing, and that leaks the
+      // existence of a draft, is worse than no entry.
+      expect(ids).not.toContain(draftOnly.id);
+      expect(ids).not.toContain(nothing.id);
+
+      // Counts published only, so the number matches what picking it shows.
+      expect(options.find((option) => option.id === published.id)?.publishedCourseCount).toBe(1);
+    });
+
+    it('drops an instructor whose only published course is taken down', async () => {
+      const instructor = await createUser(prisma, { role: 'INSTRUCTOR' });
+      const categoryId = await createCategory(prisma);
+      const courseId = await createCourse(prisma, {
+        instructorId: instructor.id,
+        categoryId,
+        price: '500.00',
+      });
+
+      expect((await courses.listCatalogInstructors()).map((o) => o.id)).toContain(instructor.id);
+
+      await prisma.course.update({ where: { id: courseId }, data: { status: 'SUSPENDED' } });
+
+      expect((await courses.listCatalogInstructors()).map((o) => o.id)).not.toContain(
+        instructor.id,
+      );
+    });
+
+    it('carries no email address', async () => {
+      const instructor = await createUser(prisma, { role: 'INSTRUCTOR' });
+      const categoryId = await createCategory(prisma);
+      await createCourse(prisma, { instructorId: instructor.id, categoryId, price: '500.00' });
+
+      expect(JSON.stringify(await courses.listCatalogInstructors())).not.toContain('@');
     });
   });
 });

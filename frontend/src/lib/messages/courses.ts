@@ -25,6 +25,8 @@ export const courseMessages = {
     price: 'ช่วงราคา',
     minPrice: 'ต่ำสุด',
     maxPrice: 'สูงสุด',
+    instructor: 'ผู้สอน',
+    allInstructors: 'ผู้สอนทุกคน',
     freeOnly: 'แสดงเฉพาะคอร์สฟรี',
     sort: 'เรียงลำดับ',
     apply: 'ใช้ตัวกรอง',

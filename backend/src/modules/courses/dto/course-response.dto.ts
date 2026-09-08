@@ -8,6 +8,13 @@ import type { CourseStatus } from '@prisma/client';
  * along on a public course card.
  */
 
+/** One entry of the catalog's instructor filter. Public, so no email. */
+export interface CatalogInstructorDto {
+  id: string;
+  displayName: string;
+  publishedCourseCount: number;
+}
+
 export interface CourseInstructorDto {
   id: string;
   displayName: string;

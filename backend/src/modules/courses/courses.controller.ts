@@ -19,6 +19,7 @@ import type { AuthenticatedUser } from '@/common/types/authenticated-user';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto, ListCoursesQueryDto, UpdateCourseDto } from './dto/course-request.dto';
 import type {
+  CatalogInstructorDto,
   CourseDetailDto,
   InstructorCourseDto,
   InstructorStatsDto,
@@ -40,6 +41,18 @@ export class CoursesController {
   @Get()
   list(@Query() query: ListCoursesQueryDto): Promise<PaginatedCoursesDto> {
     return this.courses.listPublished(query);
+  }
+
+  /**
+   * The instructor filter's options (ทก.01 B3).
+   *
+   * Declared before `:id` so the literal segment wins the match, the same way
+   * `mine` below does.
+   */
+  @Public()
+  @Get('instructors')
+  listInstructors(): Promise<CatalogInstructorDto[]> {
+    return this.courses.listCatalogInstructors();
   }
 
   @Roles(Role.INSTRUCTOR, Role.ADMIN)

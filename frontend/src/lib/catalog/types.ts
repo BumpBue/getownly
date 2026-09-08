@@ -18,6 +18,7 @@ import {
   UPLOAD_ACCEPT,
   UPLOAD_KINDS,
   UPLOAD_MAX_MB,
+  type CatalogInstructor,
   type Category,
   type CourseCategory,
   type CourseDetail,
@@ -89,6 +90,7 @@ export interface PaginatedCourseStudents {
   quizCount: number;
 }
 export type {
+  CatalogInstructor,
   Category,
   CourseCategory,
   CourseDetail,
@@ -117,6 +119,7 @@ export type {
 export interface CourseFilterState {
   search: string;
   categoryId: string;
+  instructorId: string;
   minPrice: string;
   maxPrice: string;
   freeOnly: boolean;
