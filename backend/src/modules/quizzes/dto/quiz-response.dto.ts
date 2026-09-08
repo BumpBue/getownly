@@ -113,8 +113,13 @@ export interface QuizAttemptHistoryDto {
   quizTitle: string;
   passScore: number;
   questionCount: number;
-  /** Highest score across every attempt — the one that decides pass or fail. */
+  /** Highest score across every attempt. */
   bestScore: number | null;
+  /**
+   * Whether any attempt cleared the bar that applied to it — "has ever
+   * passed", not "would the best score pass today". Once the pass mark can be
+   * changed the two stop agreeing; see common/quiz-scoring.ts.
+   */
   hasPassed: boolean;
   attemptCount: number;
   /** Newest first. */

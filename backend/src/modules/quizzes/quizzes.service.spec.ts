@@ -340,6 +340,23 @@ describe('QuizzesService', () => {
       expect(history.attempts.map((attempt) => attempt.passed)).toEqual([false, true]);
     });
 
+    it('quotes the bar a recorded result was judged against, not the new one', async () => {
+      const quiz = await sitOnce();
+      await quizzes.update(quiz.id, asAuthUser(instructor), { passScore: 100 });
+
+      const history = await quizzes.listMyAttempts(quiz.id, student.id);
+
+      // The review page prints `passed` beside `passScore`; if that second
+      // number were the quiz's current mark, the page would read "ผ่าน" next
+      // to a bar the score never cleared.
+      expect(history.latestResult?.passed).toBe(true);
+      expect(history.latestResult?.passScore).toBe(quizInput.passScore);
+      expect(history.attempts[0].passScore).toBe(quizInput.passScore);
+
+      // The header still advertises the bar the next attempt will face.
+      expect(history.passScore).toBe(100);
+    });
+
     it('(ฏ) never re-derives a stored verdict from the quiz current pass mark', async () => {
       const quiz = await sitOnce();
       await quizzes.update(quiz.id, asAuthUser(instructor), { passScore: 100 });

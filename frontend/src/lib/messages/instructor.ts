@@ -153,8 +153,12 @@ export const instructorMessages = {
     quizPassScore: 'เกณฑ์ผ่าน',
     quizAttempts: 'ทำไปแล้ว',
     quizAttemptsUnit: 'ครั้ง',
-    quizPassed: 'ผ่าน',
-    quizFailed: 'ไม่ผ่าน',
+    // "เคยผ่าน" rather than "ผ่าน": the API answers whether any attempt ever
+    // cleared the bar it was sat under, which a best score of 65 beside a
+    // current bar of 70 would otherwise contradict.
+    quizPassed: 'เคยผ่าน',
+    quizFailed: 'ยังไม่ผ่าน',
+    quizBarMoved: 'เกณฑ์ผ่านถูกแก้ภายหลัง ผลเดิมตัดสินด้วยเกณฑ์ ณ ตอนที่ทำ',
     previous: 'ก่อนหน้า',
     next: 'ถัดไป',
     pageStatus: 'หน้า {page} จาก {totalPages}',

@@ -304,13 +304,24 @@ function QuizBreakdown({ quizzes }: { quizzes: CourseStudentQuiz[] }) {
           {quiz.bestScore === null ? (
             <Badge tone="neutral">{messages.quizNotAttempted}</Badge>
           ) : (
-            <div className="flex items-center gap-2">
-              <span className="tabular text-sm font-medium text-foreground">
-                {quiz.bestScore}%
-              </span>
-              <Badge tone={quiz.hasPassed ? "success" : "destructive"}>
-                {quiz.hasPassed ? messages.quizPassed : messages.quizFailed}
-              </Badge>
+            <div className="flex flex-col items-start gap-1 sm:items-end">
+              <div className="flex items-center gap-2">
+                <span className="tabular text-sm font-medium text-foreground">
+                  {quiz.bestScore}%
+                </span>
+                <Badge tone={quiz.hasPassed ? "success" : "destructive"}>
+                  {quiz.hasPassed ? messages.quizPassed : messages.quizFailed}
+                </Badge>
+              </div>
+
+              {/* The one case where the two numbers appear to disagree: they
+                  cleared an older, lower bar. Said here, beside the figures,
+                  rather than hidden behind a tooltip. */}
+              {quiz.hasPassed && quiz.bestScore < quiz.passScore && (
+                <p className="max-w-56 text-right text-xs text-subtle">
+                  {messages.quizBarMoved}
+                </p>
+              )}
             </div>
           )}
         </li>

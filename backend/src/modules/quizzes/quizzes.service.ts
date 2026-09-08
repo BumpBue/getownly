@@ -252,6 +252,7 @@ export class QuizzesService {
       attemptedAt: attempt.attemptedAt,
       score,
       passed,
+      passScoreSnapshot,
       correctCount,
       selections,
     });
@@ -298,6 +299,9 @@ export class QuizzesService {
         attemptNo: attemptCount - index,
         score: attempt.score,
         passed: attempt.passed,
+        // Carried per row so a history spanning a change of pass mark can
+        // show why two equal scores were judged differently.
+        passScore: attempt.passScoreSnapshot,
         attemptedAt: attempt.attemptedAt.toISOString(),
       })),
       latestResult: latest
@@ -306,6 +310,7 @@ export class QuizzesService {
             attemptedAt: latest.attemptedAt,
             score: latest.score,
             passed: latest.passed,
+            passScoreSnapshot: latest.passScoreSnapshot,
             correctCount: countCorrect(quiz, latest.answers),
             selections: new Map(latest.answers.map((a) => [a.questionId, a.choiceId])),
           })
@@ -483,6 +488,8 @@ function buildResult(
     attemptedAt: Date;
     score: number;
     passed: boolean;
+    /** The bar this attempt was judged against, not the quiz's current one. */
+    passScoreSnapshot: number;
     correctCount: number;
     selections: Map<string, string>;
   },
@@ -493,7 +500,9 @@ function buildResult(
     lessonId: quiz.lessonId,
     courseId: quiz.lesson.courseId,
     quizTitle: quiz.title,
-    passScore: quiz.passScore,
+    // The mark that decided `passed` below. Quoting the quiz's current mark
+    // here would let the page say "ผ่าน" beside a bar the score never cleared.
+    passScore: attempt.passScoreSnapshot,
     score: attempt.score,
     passed: attempt.passed,
     correctCount: attempt.correctCount,

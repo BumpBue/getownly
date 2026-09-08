@@ -168,6 +168,15 @@ export function QuizResultView({ courseId, quizId }: { courseId: string; quizId:
                 <span className="text-muted">
                   {messages.attemptPrefix} {attempt.attemptNo} ·{" "}
                   {formatDateTime(attempt.attemptedAt)}
+                  {/* Silent while the bar has never moved; the moment it has,
+                      two equal scores can be judged differently and the row
+                      has to say why. */}
+                  {attempt.passScore !== history.passScore && (
+                    <span className="ml-1 text-subtle">
+                      ({learnMessages.quiz.passScorePrefix} {attempt.passScore}
+                      {learnMessages.quiz.percentSuffix})
+                    </span>
+                  )}
                 </span>
                 <span
                   className={cn(

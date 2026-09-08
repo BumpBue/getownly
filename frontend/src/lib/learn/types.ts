@@ -136,6 +136,7 @@ export interface QuizResult {
   lessonId: string;
   courseId: string;
   quizTitle: string;
+  /** The bar *this attempt* was judged against, not the quiz's current one. */
   passScore: number;
   score: number;
   passed: boolean;
@@ -150,6 +151,8 @@ export interface QuizAttemptSummary {
   attemptNo: number;
   score: number;
   passed: boolean;
+  /** The bar this attempt faced, which the instructor may have changed since. */
+  passScore: number;
   attemptedAt: string;
 }
 
@@ -158,9 +161,11 @@ export interface QuizAttemptHistory {
   lessonId: string;
   courseId: string;
   quizTitle: string;
+  /** The bar the *next* attempt will face. */
   passScore: number;
   questionCount: number;
   bestScore: number | null;
+  /** Whether any attempt ever cleared the bar that applied to it. */
   hasPassed: boolean;
   attemptCount: number;
   attempts: QuizAttemptSummary[];
