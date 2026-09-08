@@ -87,6 +87,11 @@ export interface QuizResultDto {
   lessonId: string;
   courseId: string;
   quizTitle: string;
+  /**
+   * The pass mark **this attempt** was judged against, which is not
+   * necessarily the quiz's current one — an instructor may raise or lower it
+   * afterwards, and this shape describes a result already recorded.
+   */
   passScore: number;
   /** Percentage, 0-100. */
   score: number;
@@ -103,6 +108,8 @@ export interface QuizAttemptSummaryDto {
   attemptNo: number;
   score: number;
   passed: boolean;
+  /** The bar this attempt faced. Rows differ once the mark is changed. */
+  passScore: number;
   attemptedAt: string;
 }
 

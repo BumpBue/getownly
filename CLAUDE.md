@@ -434,6 +434,29 @@ URL ที่ใช้ตอน dev
 - **เทสต์: `reports.service.spec.ts` เพิ่ม 12 ข้อ และ `test/instructor-earnings.e2e.spec.ts` ใหม่ 6 ข้อ**
   (ยิง HTTP จริงผ่าน `createHarness()` ผู้สอน A ต้องไม่เห็นของผู้สอน B) รวมทั้งชุด **352 ข้อ**
 
+### CHECK constraint ที่ Prisma ไม่รู้จัก (migration `20260908093000_...`)
+
+ฐานข้อมูลบังคับเพดานของ ทก.01 เองอีกชั้น นอกเหนือจาก DTO:
+
+| constraint | ตาราง | กติกา |
+|---|---|---|
+| `Course_price_within_scope` | `Course` | `price >= 0 AND price <= 10000` (A4) |
+| `Quiz_passScore_within_scope` | `Quiz` | `passScore >= 60 AND passScore <= 100` (A7) |
+
+**`QuizAttempt.passScoreSnapshot` ไม่มี constraint โดยตั้งใจ** เพราะเป็น**ประวัติ ไม่ใช่นโยบาย**
+ถ้าวันหนึ่งช่วงที่อนุญาตเปลี่ยน ค่าเดิมต้องเก็บไว้ได้เหมือนเดิม — ใส่ constraint ตรงนั้นจะแปลว่า
+การแก้กติกาต้องไปเขียนอดีตใหม่ ซึ่งตรงข้ามกับเหตุผลที่ snapshot มีอยู่ (มีเทสต์ยืนยันว่าเก็บค่า 50 ได้)
+
+**⚠️ กัน schema drift — สำคัญ** Prisma ไม่ได้ model CHECK constraint จึงมองไม่เห็นใน `schema.prisma`
+- `prisma migrate dev` จะคิดว่าฐานข้อมูล **drift** และ**เสนอ reset ฐานข้อมูลทิ้ง** ถ้าเผลอกด yes ข้อมูล dev หายหมด
+- ปฏิบัติ: สร้าง migration ใหม่ด้วย `prisma migrate dev --create-only` แล้วแก้ SQL เอง หรือใช้
+  `prisma migrate deploy` เมื่อแค่ต้องการ apply
+- **ห้ามลบโฟลเดอร์ migration ใบนี้** และห้าม `prisma db push` กับฐานข้อมูลที่มี constraint นี้อยู่
+- ตรวจว่ายังอยู่ครบ: `\d+ "Course"` และ `\d+ "Quiz"` ใน psql · หรือรัน `test/scope-check-constraints.spec.ts`
+  ซึ่งยิง raw SQL ค่าเกินเข้าไปตรงๆ แล้วต้องได้ SQLSTATE `23514` ทั้งสองตัว
+- ก่อนสร้าง constraint ได้ query ข้อมูลจริงทั้ง `getownly` และ `getownly_test` แล้ว ไม่มีแถวละเมิดเลย
+  (คอร์ส 8 ใบ 0–2,890 บาท · แบบทดสอบ 7 ชุด เกณฑ์ 70–75)
+
 ### ค่าคงที่ของขอบเขต (ทก.01) — `packages/shared/src/limits.ts`
 
 **ตัวเลขทุกตัวที่เอกสาร ทก.01 กำหนดไว้ อยู่ในไฟล์นี้ไฟล์เดียว** ห้ามประกาศซ้ำที่อื่นเด็ดขาด
