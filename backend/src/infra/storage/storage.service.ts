@@ -4,6 +4,12 @@ import { Client as MinioClient } from 'minio';
 import type { Readable } from 'node:stream';
 import { envFlag } from '@/config/env.validation';
 
+/**
+ * The region MinIO reports when nobody has configured one. Only a starting
+ * point — onModuleInit replaces it with whatever the bucket actually says.
+ */
+const DEFAULT_REGION = 'us-east-1';
+
 /** What MinIO knows about a stored object. */
 export interface StoredObjectInfo {
   sizeBytes: number;
@@ -34,13 +40,22 @@ export interface StoredObjectInfo {
  * produced uploads that failed with ERR_NAME_NOT_RESOLVED while every page
  * still rendered — which is why both are required configuration rather than
  * one defaulting to the other.
+ *
+ * The signing client is also pinned to a region. Region is part of an S3
+ * signature, and a client without one asks the server for it before signing —
+ * a call the signing client cannot make, because the address it holds is the
+ * browser's, not the API's. So it is told the region instead, and onModuleInit
+ * corrects the guess from the bucket itself while the reachable client is
+ * already talking to MinIO anyway.
  */
 @Injectable()
 export class StorageService implements OnModuleInit {
   private readonly logger = new Logger(StorageService.name);
   private readonly client: MinioClient;
   /** Same bucket, but addressed the way the browser will address it. */
-  private readonly signingClient: MinioClient;
+  private signingClient: MinioClient;
+  /** Kept so the signing client can be rebuilt once the region is known. */
+  private readonly signingOptions: ConstructorParameters<typeof MinioClient>[0];
   private readonly bucket: string;
   private readonly downloadExpirySeconds: number;
   private readonly uploadExpirySeconds: number;
@@ -69,13 +84,15 @@ export class StorageService implements OnModuleInit {
     // does not break anything until somebody uploads a file, which on demo
     // day is the worst possible moment to discover it. Missing configuration
     // stops the process at boot instead.
-    this.signingClient = new MinioClient({
+    this.signingOptions = {
       endPoint: this.config.getOrThrow<string>('MINIO_PUBLIC_ENDPOINT'),
       port: Number(this.config.getOrThrow<string | number>('MINIO_PUBLIC_PORT')),
       useSSL: envFlag(this.config.get<string>('MINIO_PUBLIC_USE_SSL')),
       accessKey,
       secretKey,
-    });
+      region: DEFAULT_REGION,
+    };
+    this.signingClient = new MinioClient(this.signingOptions);
   }
 
   /**
@@ -87,6 +104,14 @@ export class StorageService implements OnModuleInit {
       if (!(await this.client.bucketExists(this.bucket))) {
         await this.client.makeBucket(this.bucket);
         this.logger.log(`สร้าง bucket "${this.bucket}" ใน MinIO แล้ว`);
+      }
+
+      // Ask once, here, where a failure is only a log line. Signing time is
+      // too late: the signing client cannot reach MinIO to ask.
+      const region = await this.client.getBucketRegionAsync(this.bucket);
+      if (region && region !== this.signingOptions.region) {
+        this.signingClient = new MinioClient({ ...this.signingOptions, region });
+        this.logger.log(`ใช้ region "${region}" ในการเซ็นลิงก์ไฟล์`);
       }
     } catch (error) {
       // Not fatal: the API still serves every route that does not touch files,
