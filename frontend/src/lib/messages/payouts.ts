@@ -17,7 +17,6 @@ export const payoutMessages = {
   instructor: {
     title: "ถอนเงิน",
     subtitle: "โอนรายได้ในกระเป๋าเงินออกไปยังบัญชีธนาคารของคุณ",
-    navLabel: "ถอนเงิน",
 
     balanceLabel: "ยอดคงเหลือในกระเป๋า",
     withdrawableLabel: "ยอดที่ถอนได้",
@@ -74,7 +73,6 @@ export const payoutMessages = {
   admin: {
     title: "คิวคำขอถอนเงินของผู้สอน",
     subtitle: "ตรวจสอบบัญชีปลายทาง โอนเงินจริง แล้วจึงกดอนุมัติเพื่อบันทึกรายการ",
-    navLabel: "คำขอถอนเงิน",
 
     pendingBadgePrefix: "รอตรวจสอบ",
     pendingBadgeSuffix: "รายการ",

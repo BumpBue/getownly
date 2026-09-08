@@ -46,7 +46,6 @@ export const qnaMessages = {
     replyCountPrefix: "ตอบแล้ว",
     replyCountSuffix: "ครั้ง",
     noReplies: "ยังไม่มีคำตอบ",
-    lastReplyPrefix: "ตอบล่าสุด",
     fromLesson: "จากบทเรียน",
   },
 

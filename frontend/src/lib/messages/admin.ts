@@ -66,7 +66,6 @@ export const adminMessages = {
     save: 'บันทึก',
     saving: 'กำลังบันทึก...',
     cancel: 'ยกเลิก',
-    onlyInstructors: 'ตั้งได้เฉพาะบัญชีผู้สอน',
   },
 
   courses: {
@@ -109,7 +108,6 @@ export const adminMessages = {
     pendingCount: 'รายการรอตรวจสอบ',
     reportedAt: 'แจ้งเมื่อ',
     reporterLabel: 'ผู้แจ้ง',
-    targetTypeLabel: 'ประเภทเนื้อหา',
     targetType: {
       COURSE: 'คอร์ส',
       QNA_THREAD: 'กระทู้ถาม-ตอบ',

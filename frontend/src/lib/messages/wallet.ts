@@ -95,7 +95,6 @@ export const walletMessages = {
     cancelRequest: "ยกเลิกคำขอ",
     cancelling: "กำลังยกเลิก...",
     cancelConfirm: "ยืนยันยกเลิกคำขอเติมเงินนี้ใช่หรือไม่",
-    cancelSuccess: "ยกเลิกคำขอเติมเงินแล้ว",
   },
 
   pager: {
@@ -183,7 +182,6 @@ export const walletMessages = {
       slipHeading: "สลิปการโอน",
       slipMissing: "ไม่สามารถโหลดรูปสลิปได้ในขณะนี้",
       slipOpenFull: "เปิดรูปเต็มในแท็บใหม่",
-      payerHeading: "ข้อมูลผู้โอน",
       payerName: "ชื่อที่แสดง",
       payerUsername: "ชื่อผู้ใช้",
       payerEmail: "อีเมล",

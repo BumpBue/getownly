@@ -51,7 +51,6 @@ export const instructorMessages = {
   },
 
   editor: {
-    backToDashboard: 'กลับไปหน้าภาพรวม',
     loading: 'กำลังโหลดคอร์ส...',
     errorTitle: 'โหลดคอร์สไม่สำเร็จ',
     tabs: {
@@ -130,7 +129,6 @@ export const instructorMessages = {
     removeMaterial: 'ลบไฟล์',
     removeLesson: 'ลบบทเรียน',
     removeLessonConfirm: 'ยืนยันการลบบทเรียนนี้ วิดีโอและเอกสารที่แนบไว้จะถูกลบไปด้วย',
-    saveLesson: 'บันทึก',
     duration: 'ความยาว (วินาที)',
     reorderFailed: 'บันทึกลำดับใหม่ไม่สำเร็จ ระบบคืนค่าลำดับเดิมแล้ว',
   },
@@ -214,7 +212,6 @@ export const instructorMessages = {
       minChoicesReached: 'แต่ละข้อต้องมีตัวเลือกอย่างน้อย {min} ตัวเลือก',
     },
 
-    lockedTitle: 'แก้ไขคำถามไม่ได้แล้ว',
     lockedBody:
       'มีผู้เรียนทำแบบทดสอบชุดนี้แล้ว {count} ครั้ง จึงแก้ไขคำถามและเฉลยไม่ได้ เพื่อรักษาความถูกต้องของคะแนนที่บันทึกไว้ — ยังแก้ชื่อชุดและเกณฑ์ผ่านได้',
     lockedDeleteTooltip:

@@ -47,7 +47,6 @@ export const courseMessages = {
   },
 
   detail: {
-    metaTitle: 'รายละเอียดคอร์ส',
     backToCatalog: 'กลับไปหน้ารวมคอร์ส',
     aboutHeading: 'เกี่ยวกับคอร์สนี้',
     curriculumHeading: 'เนื้อหาบทเรียน',
@@ -65,7 +64,6 @@ export const courseMessages = {
     previewForbidden: 'บทเรียนนี้ไม่ได้เปิดให้ดูตัวอย่าง',
     previewSessionExpired: 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่แล้วลองอีกครั้ง',
     previewFailed: 'เล่นวิดีโอตัวอย่างไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
-    lockedLesson: 'ซื้อคอร์สนี้เพื่อเข้าเรียนบทนี้',
     materialsSuffix: 'ไฟล์แนบ',
     emptyCurriculum: 'ผู้สอนยังไม่ได้เพิ่มบทเรียนในคอร์สนี้',
     alreadyOwned: 'คุณมีคอร์สนี้แล้ว',
