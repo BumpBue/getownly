@@ -243,7 +243,7 @@ export function GeneralTab({
               ) : (
                 <div className="flex h-full flex-col items-center justify-center gap-2 text-subtle">
                   <ImageOff aria-hidden className="size-6" />
-                  <span className="text-xs">{instructorMessages.curriculum.noVideo}</span>
+                  <span className="text-xs">{general.noCover}</span>
                 </div>
               )}
             </div>
