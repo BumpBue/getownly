@@ -96,6 +96,8 @@ export interface PaginatedAdminTopups {
   total: number;
   totalPages: number;
   pendingTotal: number;
+  /** Of those, how many have waited past the service target (ทก.01 D3). */
+  overdueTotal: number;
 }
 
 export interface TopupReviewResult {

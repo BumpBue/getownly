@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowRight, Check, QrCode, Send, ServerCrash } from "lucide-react";
+import { ArrowRight, Check, Clock, QrCode, Send, ServerCrash } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/shared/SectionHeading";
@@ -146,6 +146,11 @@ export function TopupForm({ initialAmount }: { initialAmount: string | null }) {
         </Link>
 
         <SectionHeading as="h1" title={topup.title} subtitle={topup.subtitle} className="mt-4" />
+
+        <p className="mt-2 flex items-center gap-1.5 text-sm text-muted">
+          <Clock aria-hidden className="size-4 shrink-0 text-pending" />
+          {topup.reviewTarget}
+        </p>
       </div>
 
       {submitted && (

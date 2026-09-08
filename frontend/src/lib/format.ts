@@ -102,6 +102,32 @@ export function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
+/**
+ * How long ago an instant was, in whole hours, as "3 ชม." or "2 วัน 5 ชม.".
+ *
+ * The API sends an ISO instant and the browser subtracts it from its own
+ * clock, so nothing here has to know or assume a timezone.
+ */
+export function formatElapsedSince(isoDate: string): string {
+  const totalHours = Math.max(0, Math.floor((Date.now() - new Date(isoDate).getTime()) / 3_600_000));
+
+  if (totalHours < 1) {
+    return 'น้อยกว่า 1 ชม.';
+  }
+  if (totalHours < 24) {
+    return `${totalHours} ชม.`;
+  }
+
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+  return hours > 0 ? `${days} วัน ${hours} ชม.` : `${days} วัน`;
+}
+
+/** Whole hours since an ISO instant, for comparing against a service target. */
+export function hoursSince(isoDate: string): number {
+  return Math.max(0, (Date.now() - new Date(isoDate).getTime()) / 3_600_000);
+}
+
 /** "11 ส.ค. 2569" — Thai Buddhist calendar, which th-TH gives by default. */
 export function formatDate(isoDate: string | null): string {
   if (!isoDate) {

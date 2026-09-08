@@ -10,6 +10,7 @@ import {
   TopupRequestNotFoundException,
 } from '@/modules/ledger/ledger.errors';
 import { WalletService } from '@/modules/ledger/wallet.service';
+import { TOPUP_REVIEW_TARGET_HOURS } from '@getownly/shared';
 import { maxMbFor, parseObjectKey } from '@/modules/uploads/upload-rules';
 import { PromptPayService } from './promptpay.service';
 import type {
@@ -213,9 +214,21 @@ export class TopupsService {
     const limit = query.limit ?? DEFAULT_PAGE_SIZE;
     const where: Prisma.TopupRequestWhereInput = query.status ? { status: query.status } : {};
 
-    const [total, pendingTotal, rows] = await Promise.all([
+    // The service target is a promise to the student (ทก.01 D3), so the queue
+    // has to show when it is being missed. Both pending figures come back from
+    // one statement — an extra COUNT would be a second round trip for a number
+    // that lives right beside the first.
+    const overdueSince = new Date(Date.now() - TOPUP_REVIEW_TARGET_HOURS * 60 * 60 * 1000);
+
+    const [total, pendingCounts, rows] = await Promise.all([
       this.prisma.topupRequest.count({ where }),
-      this.prisma.topupRequest.count({ where: { status: TopupStatus.PENDING } }),
+      this.prisma.$queryRaw<{ pending: bigint; overdue: bigint }[]>`
+        SELECT
+          COUNT(*) AS pending,
+          COUNT(*) FILTER (WHERE "createdAt" < ${overdueSince}) AS overdue
+        FROM "TopupRequest"
+        WHERE status = 'PENDING'
+      `,
       this.prisma.topupRequest.findMany({
         where,
         select: adminRequestSelect,
@@ -232,7 +245,8 @@ export class TopupsService {
       limit,
       total,
       totalPages: Math.max(1, Math.ceil(total / limit)),
-      pendingTotal,
+      pendingTotal: Number(pendingCounts[0]?.pending ?? 0),
+      overdueTotal: Number(pendingCounts[0]?.overdue ?? 0),
     };
   }
 

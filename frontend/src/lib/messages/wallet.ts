@@ -70,7 +70,10 @@ export const walletMessages = {
     submit: "แจ้งการโอนเงิน",
     submitting: "กำลังส่งคำขอ...",
     submitted:
-      "ส่งคำขอเติมเงินเรียบร้อยแล้ว ผู้ดูแลระบบจะตรวจสอบสลิปและอนุมัติให้โดยเร็วที่สุด",
+      "ส่งคำขอเติมเงินเรียบร้อยแล้ว ผู้ดูแลระบบจะตรวจสอบสลิปและอนุมัติให้ภายใน 24 ชั่วโมง",
+    // ทก.01 D3 states this as a condition of service, so it is shown before
+    // the student transfers anything, not only after they have.
+    reviewTarget: "ผู้ดูแลระบบจะตรวจสอบสลิปและเติมเงินเข้ากระเป๋าให้ภายใน 24 ชั่วโมง",
     needSlip: "กรุณาแนบสลิปการโอนก่อนส่งคำขอ",
     needQr: "กรุณาสร้าง QR และโอนเงินก่อนแนบสลิป",
     invalidAmount: "กรุณาระบุจำนวนเงินเป็นตัวเลข ทศนิยมไม่เกิน 2 ตำแหน่ง",
@@ -155,9 +158,13 @@ export const walletMessages = {
       subtitle: "ตรวจสลิปเทียบกับจำนวนเงินที่ผู้ใช้แจ้ง แล้วอนุมัติหรือปฏิเสธ",
       pendingBadgePrefix: "รอตรวจสอบ",
       pendingBadgeSuffix: "รายการ",
+      overdueBadgePrefix: "เกิน",
+      overdueBadgeMiddle: "ชม.",
+      overdueBadgeSuffix: "รายการ",
       filterAll: "ทั้งหมด",
       columns: {
         requestedAt: "วันที่แจ้ง",
+        waitedFor: "รอมาแล้ว",
         student: "ผู้โอน",
         amount: "จำนวนเงิน",
         status: "สถานะ",

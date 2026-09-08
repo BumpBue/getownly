@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { ConfigService } from '@nestjs/config';
 import { TopupStatus } from '@prisma/client';
+import { TOPUP_REVIEW_TARGET_HOURS } from '@getownly/shared';
 import { PrismaService } from '@/infra/prisma.service';
 import { LedgerService } from '@/modules/ledger/ledger.service';
 import { WalletService } from '@/modules/ledger/wallet.service';
@@ -19,6 +20,7 @@ import {
   accountBalance,
   asAuthUser,
   createSystemAccounts,
+  createTopupRequest,
   createUser,
   resetDatabase,
   type SystemAccounts,
@@ -435,6 +437,77 @@ describe('TopupsService', () => {
 
       expect(page.total).toBe(1);
       expect(page.items[0].note).toBe('สลิปซ้ำ');
+    });
+  });
+  // --- ทก.01 D3: the 24 hour review target ---------------------------------
+
+  describe('overdue counting', () => {
+    it('counts only pending requests that passed the target', async () => {
+      const fresh = await createTopupRequest(prisma, { studentId: student.id, amount: '100.00' });
+      const stale = await createTopupRequest(prisma, { studentId: student.id, amount: '200.00' });
+      const justInside = await createTopupRequest(prisma, {
+        studentId: student.id,
+        amount: '300.00',
+      });
+
+      const hoursAgo = (hours: number) => new Date(Date.now() - hours * 60 * 60 * 1000);
+      await prisma.topupRequest.update({
+        where: { id: stale },
+        data: { createdAt: hoursAgo(TOPUP_REVIEW_TARGET_HOURS + 1) },
+      });
+      await prisma.topupRequest.update({
+        where: { id: justInside },
+        data: { createdAt: hoursAgo(TOPUP_REVIEW_TARGET_HOURS - 1) },
+      });
+
+      const page = await topups.listForAdmin({});
+
+      expect(page.pendingTotal).toBe(3);
+      // Only the one past the target, not the one an hour short of it.
+      expect(page.overdueTotal).toBe(1);
+      expect([fresh, justInside]).toHaveLength(2);
+    });
+
+    it('leaves reviewed requests out of both figures', async () => {
+      const approved = await createTopupRequest(prisma, {
+        studentId: student.id,
+        amount: '100.00',
+      });
+      await prisma.topupRequest.update({
+        where: { id: approved },
+        data: {
+          status: 'APPROVED',
+          createdAt: new Date(Date.now() - 72 * 60 * 60 * 1000),
+        },
+      });
+
+      const page = await topups.listForAdmin({});
+
+      // Waiting three days does not make an already-answered request overdue.
+      expect(page.pendingTotal).toBe(0);
+      expect(page.overdueTotal).toBe(0);
+    });
+
+    it('reports zero on both when the queue is empty', async () => {
+      const page = await topups.listForAdmin({});
+
+      expect(page.pendingTotal).toBe(0);
+      expect(page.overdueTotal).toBe(0);
+    });
+
+    it('counts across the whole queue, not just the page being shown', async () => {
+      for (let index = 0; index < 3; index += 1) {
+        const id = await createTopupRequest(prisma, { studentId: student.id, amount: '100.00' });
+        await prisma.topupRequest.update({
+          where: { id },
+          data: { createdAt: new Date(Date.now() - 48 * 60 * 60 * 1000) },
+        });
+      }
+
+      const page = await topups.listForAdmin({ limit: 1 });
+
+      expect(page.items).toHaveLength(1);
+      expect(page.overdueTotal).toBe(3);
     });
   });
 });

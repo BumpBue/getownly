@@ -70,4 +70,10 @@ export interface PaginatedAdminTopupsDto {
   totalPages: number;
   /** Badge on the queue tab: how many are still waiting, whatever the filter. */
   pendingTotal: number;
+  /**
+   * Of those, how many have been waiting longer than the service target
+   * (ทก.01 D3, TOPUP_REVIEW_TARGET_HOURS). Counted alongside `pendingTotal` in
+   * the same statement rather than by a second round trip.
+   */
+  overdueTotal: number;
 }

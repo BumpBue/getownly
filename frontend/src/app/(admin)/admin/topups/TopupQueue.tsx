@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { TOPUP_REVIEW_TARGET_HOURS } from "@getownly/shared";
 import { Inbox, ServerCrash } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { SectionHeading } from "@/components/shared/SectionHeading";
 import { TopupStatusBadge } from "@/components/shared/TopupStatusBadge";
 import { useToast } from "@/hooks/use-toast";
 import { ApiError } from "@/lib/api-client";
-import { formatBaht, formatDateTime } from "@/lib/format";
+import { formatBaht, formatDateTime, formatElapsedSince, hoursSince } from "@/lib/format";
 import { authMessages } from "@/lib/messages/auth";
 import { courseMessages } from "@/lib/messages/courses";
 import { walletMessages } from "@/lib/messages/wallet";
@@ -88,9 +89,20 @@ export function TopupQueue() {
         action={
           data &&
           data.pendingTotal > 0 && (
-            <Badge tone="pending">
-              {labels.pendingBadgePrefix} {data.pendingTotal} {labels.pendingBadgeSuffix}
-            </Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone="pending">
+                {labels.pendingBadgePrefix} {data.pendingTotal} {labels.pendingBadgeSuffix}
+              </Badge>
+              {/* ทก.01 D3 promises a review inside 24 hours; the queue says
+                  when that promise is being missed rather than leaving an
+                  admin to work it out row by row. */}
+              {data.overdueTotal > 0 && (
+                <Badge tone="destructive">
+                  {labels.overdueBadgePrefix} {TOPUP_REVIEW_TARGET_HOURS}{" "}
+                  {labels.overdueBadgeMiddle} {data.overdueTotal} {labels.overdueBadgeSuffix}
+                </Badge>
+              )}
+            </div>
           )
         }
       />
@@ -196,6 +208,9 @@ function QueueTable({
               {columns.requestedAt}
             </th>
             <th scope="col" className="px-5 py-3 font-medium">
+              {columns.waitedFor}
+            </th>
+            <th scope="col" className="px-5 py-3 font-medium">
               {columns.student}
             </th>
             <th scope="col" className="px-5 py-3 text-right font-medium">
@@ -216,6 +231,21 @@ function QueueTable({
             <tr key={item.id} className="transition-colors duration-150 hover:bg-background">
               <td className="tabular whitespace-nowrap px-5 py-3.5 text-muted">
                 {formatDateTime(item.createdAt)}
+              </td>
+              <td className="tabular whitespace-nowrap px-5 py-3.5">
+                {item.status === "PENDING" ? (
+                  <span
+                    className={cn(
+                      hoursSince(item.createdAt) > TOPUP_REVIEW_TARGET_HOURS
+                        ? "font-medium text-destructive"
+                        : "text-muted",
+                    )}
+                  >
+                    {formatElapsedSince(item.createdAt)}
+                  </span>
+                ) : (
+                  <span className="text-subtle">—</span>
+                )}
               </td>
               <td className="px-5 py-3.5">
                 <span className="block font-medium text-foreground">
