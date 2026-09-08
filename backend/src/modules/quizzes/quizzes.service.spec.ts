@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { QUIZ_PASS_SCORE_MIN } from '@getownly/shared';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { PrismaService } from '@/infra/prisma.service';
@@ -92,7 +93,9 @@ describe('QuizzesService', () => {
   it('creates a quiz with its questions numbered from one', async () => {
     const quiz = await quizzes.create(lessonId, asAuthUser(instructor), {
       title: 'แบบทดสอบสองข้อ',
-      passScore: 50,
+      // 50 was legal under the previous scope; the CHECK constraint added in
+      // 20260908093000 refuses it at the database now, as it should.
+      passScore: QUIZ_PASS_SCORE_MIN,
       questions: [
         {
           questionText: 'คำถามข้อแรกของแบบทดสอบ',
