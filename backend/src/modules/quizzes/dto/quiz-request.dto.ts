@@ -1,4 +1,5 @@
 import { QUIZ_PASS_SCORE_MAX, QUIZ_PASS_SCORE_MIN } from '@getownly/shared';
+import { Trim } from '@/common/transforms';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -29,6 +30,9 @@ const MAX_CHOICES = 6;
 const PASS_SCORE_MESSAGE = `เกณฑ์ผ่านต้องอยู่ระหว่าง ${QUIZ_PASS_SCORE_MIN}-${QUIZ_PASS_SCORE_MAX}`;
 
 export class QuizChoiceInputDto {
+  // Trimmed before it is measured, so a field holding only spaces is empty
+  // rather than four characters long.
+  @Trim()
   @IsString()
   @MinLength(1, { message: 'ตัวเลือกต้องไม่เป็นค่าว่าง' })
   @MaxLength(300, { message: 'ตัวเลือกต้องยาวไม่เกิน 300 ตัวอักษร' })
@@ -40,6 +44,7 @@ export class QuizChoiceInputDto {
 }
 
 export class QuizQuestionInputDto {
+  @Trim()
   @IsString()
   @MinLength(5, { message: 'คำถามต้องยาวอย่างน้อย 5 ตัวอักษร' })
   @MaxLength(500, { message: 'คำถามต้องยาวไม่เกิน 500 ตัวอักษร' })
@@ -54,6 +59,7 @@ export class QuizQuestionInputDto {
 }
 
 export class CreateQuizDto {
+  @Trim()
   @IsString()
   @MinLength(3, { message: 'ชื่อแบบทดสอบต้องยาวอย่างน้อย 3 ตัวอักษร' })
   @MaxLength(150, { message: 'ชื่อแบบทดสอบต้องยาวไม่เกิน 150 ตัวอักษร' })
@@ -76,6 +82,7 @@ export class CreateQuizDto {
 
 export class UpdateQuizDto {
   @IsOptional()
+  @Trim()
   @IsString()
   @MinLength(3, { message: 'ชื่อแบบทดสอบต้องยาวอย่างน้อย 3 ตัวอักษร' })
   @MaxLength(150, { message: 'ชื่อแบบทดสอบต้องยาวไม่เกิน 150 ตัวอักษร' })

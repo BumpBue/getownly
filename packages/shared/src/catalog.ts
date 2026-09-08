@@ -122,7 +122,67 @@ export interface Lesson {
   isPreview: boolean;
   hasVideo: boolean;
   materials: Material[];
+  /** At most one quiz per lesson, ever. Null when it has none yet. */
+  quiz: LessonQuizSummary | null;
   createdAt: string;
+}
+
+/** Enough to list a lesson's quiz and know what may still be changed on it. */
+export interface LessonQuizSummary {
+  id: string;
+  title: string;
+  passScore: number;
+  questionCount: number;
+  /** Above zero, the questions are frozen — see ทก.01 A7. */
+  attemptCount: number;
+}
+
+// ---------------------------------------------------------------------------
+// Quiz authoring (ทก.01 A7)
+// ---------------------------------------------------------------------------
+
+export interface QuizChoice {
+  id: string;
+  choiceText: string;
+  orderIndex: number;
+  isCorrect: boolean;
+}
+
+export interface QuizQuestion {
+  id: string;
+  questionText: string;
+  orderIndex: number;
+  choices: QuizChoice[];
+}
+
+/** The quiz as its author sees it, answer key included. */
+export interface Quiz {
+  id: string;
+  lessonId: string;
+  courseId: string;
+  title: string;
+  passScore: number;
+  questionCount: number;
+  attemptCount: number;
+  createdAt: string;
+  questions: QuizQuestion[];
+}
+
+/** What the authoring form sends. Ids are the server's business, not its. */
+export interface QuizChoiceInput {
+  choiceText: string;
+  isCorrect: boolean;
+}
+
+export interface QuizQuestionInput {
+  questionText: string;
+  choices: QuizChoiceInput[];
+}
+
+export interface QuizInput {
+  title: string;
+  passScore: number;
+  questions: QuizQuestionInput[];
 }
 
 // ---------------------------------------------------------------------------

@@ -47,6 +47,14 @@ const lessonSelect = {
     },
     orderBy: { createdAt: 'asc' },
   },
+  quiz: {
+    select: {
+      id: true,
+      title: true,
+      passScore: true,
+      _count: { select: { questions: true, attempts: true } },
+    },
+  },
 } satisfies Prisma.LessonSelect;
 
 type LessonRow = Prisma.LessonGetPayload<{ select: typeof lessonSelect }>;
@@ -367,6 +375,15 @@ function toLessonDto(lesson: LessonRow): LessonDto {
     durationSec: lesson.durationSec,
     isPreview: lesson.isPreview,
     hasVideo: lesson.videoKey !== null,
+    quiz: lesson.quiz
+      ? {
+          id: lesson.quiz.id,
+          title: lesson.quiz.title,
+          passScore: lesson.quiz.passScore,
+          questionCount: lesson.quiz._count.questions,
+          attemptCount: lesson.quiz._count.attempts,
+        }
+      : null,
     createdAt: lesson.createdAt.toISOString(),
     materials: lesson.materials.map((material) => ({
       id: material.id,

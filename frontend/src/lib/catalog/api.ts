@@ -8,6 +8,8 @@ import type {
   Material,
   PaginatedCourses,
   PaginatedCourseStudents,
+  Quiz,
+  QuizInput,
   PresignUploadResponse,
   SignedUrlResponse,
   UploadKind,
@@ -30,6 +32,30 @@ export function getCourse(courseId: string): Promise<CourseDetail> {
 }
 
 // --- instructor: courses ---------------------------------------------------
+
+// --- instructor: quizzes (ทก.01 A7) ----------------------------------------
+
+/** The quiz with its answer key, for the instructor who wrote it. */
+export function getQuiz(quizId: string): Promise<Quiz> {
+  return apiRequest<Quiz>(`/quizzes/${quizId}`);
+}
+
+export function createQuiz(lessonId: string, input: QuizInput): Promise<Quiz> {
+  return apiRequest<Quiz>(`/lessons/${lessonId}/quiz`, { method: 'POST', body: input });
+}
+
+/**
+ * Sending `questions` rewrites the whole paper, which the API refuses once
+ * anybody has sat it. Omitting them edits only the title and the pass mark,
+ * which stays allowed forever.
+ */
+export function updateQuiz(quizId: string, input: Partial<QuizInput>): Promise<Quiz> {
+  return apiRequest<Quiz>(`/quizzes/${quizId}`, { method: 'PATCH', body: input });
+}
+
+export function deleteQuiz(quizId: string): Promise<{ message: string }> {
+  return apiRequest<{ message: string }>(`/quizzes/${quizId}`, { method: 'DELETE' });
+}
 
 /**
  * ทก.01 A9: who is enrolled in one of my courses, and how they are doing.

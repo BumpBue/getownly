@@ -136,6 +136,16 @@ export class QuizzesService {
     return this.readForOwner(quiz.id);
   }
 
+  /**
+   * The quiz as its author sees it: every question, every choice, and the
+   * answer key. Nothing about this shape reaches a student — that is
+   * {@link take}, which is built from a type with no `isCorrect` on it.
+   */
+  async findOneForOwner(quizId: string, user: AuthenticatedUser): Promise<QuizDto> {
+    await this.loadOwned(quizId, user);
+    return this.readForOwner(quizId);
+  }
+
   async remove(quizId: string, user: AuthenticatedUser): Promise<{ message: string }> {
     const { quiz, attemptCount } = await this.loadOwned(quizId, user);
 
@@ -410,8 +420,19 @@ export class QuizzesService {
  */
 function assertOneCorrectChoicePerQuestion(questions: QuizQuestionInputDto[]): void {
   questions.forEach((question, index) => {
-    if (question.choices.filter((choice) => choice.isCorrect).length !== 1) {
-      throw new QuizQuestionInvalidException(index);
+    const correctCount = question.choices.filter((choice) => choice.isCorrect).length;
+    if (correctCount === 0) {
+      throw new QuizQuestionInvalidException(index, 'NO_CORRECT_CHOICE');
+    }
+    if (correctCount > 1) {
+      throw new QuizQuestionInvalidException(index, 'MANY_CORRECT_CHOICES');
+    }
+
+    // Two identical options are not a choice: whichever the student picks,
+    // one of the two identical answers is arbitrarily wrong.
+    const seen = new Set(question.choices.map((choice) => choice.choiceText.trim()));
+    if (seen.size !== question.choices.length) {
+      throw new QuizQuestionInvalidException(index, 'DUPLICATE_CHOICE');
     }
   });
 }

@@ -57,6 +57,13 @@ export class QuizzesController {
     return this.quizzes.remove(quizId, user);
   }
 
+  /** The quiz with its answer key, for the instructor who wrote it. */
+  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Get('quizzes/:id')
+  findOne(@Param('id') quizId: string, @CurrentUser() user: AuthenticatedUser): Promise<QuizDto> {
+    return this.quizzes.findOneForOwner(quizId, user);
+  }
+
   // --- student -------------------------------------------------------------
 
   /** The paper. Contains no answer key — see QuizTakeDto. */

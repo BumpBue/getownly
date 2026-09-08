@@ -12,7 +12,25 @@ export interface LessonDto {
   isPreview: boolean;
   hasVideo: boolean;
   materials: MaterialDto[];
+  /** The quiz on this lesson, if it has one. At most one, ever. */
+  quiz: LessonQuizSummaryDto | null;
   createdAt: string;
+}
+
+/**
+ * Enough for the authoring screen to list a lesson's quiz and decide what may
+ * still be changed about it, without loading every question.
+ */
+export interface LessonQuizSummaryDto {
+  id: string;
+  title: string;
+  passScore: number;
+  questionCount: number;
+  /**
+   * How many times it has been sat. Above zero the questions freeze, so the
+   * form needs this to explain why rather than just disabling fields.
+   */
+  attemptCount: number;
 }
 
 export interface MaterialDto {

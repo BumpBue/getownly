@@ -83,13 +83,29 @@ export class LessonQuizHasAttemptsException extends BusinessException {
 }
 
 /** Every question needs exactly one right answer for the score to mean anything. */
+export type QuizQuestionProblem = 'NO_CORRECT_CHOICE' | 'MANY_CORRECT_CHOICES' | 'DUPLICATE_CHOICE';
+
+const QUIZ_QUESTION_PROBLEM_MESSAGE: Record<QuizQuestionProblem, string> = {
+  NO_CORRECT_CHOICE: 'ยังไม่ได้เลือกว่าตัวเลือกใดเป็นคำตอบที่ถูก',
+  MANY_CORRECT_CHOICES: 'เลือกคำตอบที่ถูกไว้มากกว่าหนึ่งตัวเลือก',
+  DUPLICATE_CHOICE: 'มีตัวเลือกที่ข้อความซ้ำกัน',
+};
+
+/**
+ * Something is wrong with one specific question.
+ *
+ * The message names the question by its position, because a form with ten
+ * questions on it and an error reading "ข้อมูลไม่ถูกต้อง" tells the instructor
+ * nothing they can act on. `questionIndex` travels in `details` so the web app
+ * can scroll to and highlight the offending card.
+ */
 export class QuizQuestionInvalidException extends BusinessException {
-  constructor(questionIndex: number) {
+  constructor(questionIndex: number, problem: QuizQuestionProblem) {
     super(
       HttpStatus.UNPROCESSABLE_ENTITY,
       'QUIZ_QUESTION_INVALID',
-      'ทุกข้อต้องมีตัวเลือกที่ถูกต้องเพียงหนึ่งตัวเลือกเท่านั้น',
-      { questionIndex },
+      `ข้อที่ ${questionIndex + 1}: ${QUIZ_QUESTION_PROBLEM_MESSAGE[problem]}`,
+      { questionIndex, problem },
     );
   }
 }

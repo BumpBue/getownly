@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { ClipboardList, ExternalLink, EyeOff, ServerCrash, Send, Trash2 } from "lucide-react";
+import { ExternalLink, EyeOff, ServerCrash, Send, Trash2 } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +19,7 @@ import { instructorMessages } from "@/lib/messages/instructor";
 import { cn } from "@/lib/utils";
 import { CurriculumTab } from "./CurriculumTab";
 import { GeneralTab } from "./GeneralTab";
+import { QuizzesTab } from "./QuizzesTab";
 import { StudentsTab } from "./StudentsTab";
 
 const TAB_IDS = ["general", "curriculum", "quizzes", "students"] as const;
@@ -246,13 +247,9 @@ export default function CourseEditorPage() {
         <GeneralTab course={course} readOnly={readOnly} onSaved={setCourse} />
       )}
       {tab === "curriculum" && <CurriculumTab courseId={course.id} readOnly={readOnly} />}
-      {tab === "quizzes" && (
-        <EmptyState
-          icon={ClipboardList}
-          title={instructorMessages.quizzes.comingSoonTitle}
-          body={instructorMessages.quizzes.comingSoonBody}
-        />
-      )}
+      {/* ทก.01 A7 — the authoring form replaced the placeholder that used to
+          sit here; there is no second screen for it. */}
+      {tab === "quizzes" && <QuizzesTab courseId={course.id} readOnly={readOnly} />}
       {/* ทก.01 A9 — the roster lives beside the course it is about, because
           this URL is already the only instructor screen scoped to one course. */}
       {tab === "students" && <StudentsTab courseId={course.id} />}
