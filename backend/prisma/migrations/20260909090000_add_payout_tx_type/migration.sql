@@ -1,0 +1,12 @@
+-- A fourth kind of money movement: baht leaving the platform back to an
+-- instructor's bank account.
+--
+-- Added on its own, ahead of the tables that produce these transactions, so
+-- the reporting queries can start subtracting payouts from what instructors
+-- are still owed. Until a PayoutRequest exists no row carries this value, and
+-- every report therefore returns exactly what it returned before.
+--
+-- No new "AccountKind" is needed: a payout is the mirror of a top-up.
+-- A top-up debits EXTERNAL_BANK and credits a wallet; a payout debits the
+-- wallet and credits EXTERNAL_BANK, walking that account back toward zero.
+ALTER TYPE "TxType" ADD VALUE IF NOT EXISTS 'PAYOUT';

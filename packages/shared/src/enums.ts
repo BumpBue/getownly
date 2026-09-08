@@ -46,5 +46,5 @@ export type AccountKind = (typeof ACCOUNT_KINDS)[number];
 export const ENTRY_DIRECTIONS = ['DEBIT', 'CREDIT'] as const;
 export type EntryDirection = (typeof ENTRY_DIRECTIONS)[number];
 
-export const TX_TYPES = ['TOPUP', 'PURCHASE'] as const;
+export const TX_TYPES = ['TOPUP', 'PURCHASE', 'PAYOUT'] as const;
 export type TxType = (typeof TX_TYPES)[number];

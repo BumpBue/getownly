@@ -79,6 +79,10 @@ enum EntryDirection {
 enum TxType {
   TOPUP
   PURCHASE
+  /// Money leaving the platform: an instructor's earnings transferred out to
+  /// their bank account. The mirror of TOPUP, using the same EXTERNAL_BANK
+  /// account in the opposite direction.
+  PAYOUT
 }
 
 // ---------------------------------------------------------------------------

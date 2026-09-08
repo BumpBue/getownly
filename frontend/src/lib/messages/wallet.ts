@@ -29,6 +29,7 @@ export const walletMessages = {
     typeLabels: {
       TOPUP: "เติมเงิน",
       PURCHASE: "ซื้อคอร์ส",
+      PAYOUT: "ถอนเงิน",
     },
     emptyTitle: "ยังไม่มีรายการเคลื่อนไหว",
     emptyBody: "เมื่อคุณเติมเงินหรือซื้อคอร์ส รายการจะแสดงที่นี่",

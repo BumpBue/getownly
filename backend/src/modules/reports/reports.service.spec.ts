@@ -32,6 +32,39 @@ async function backdate(prisma: PrismaService, enrollmentId: string, days: numbe
   `;
 }
 
+/**
+ * Writes one payout transaction straight through the ledger.
+ *
+ * The reports must be able to read a withdrawal before PayoutsService exists,
+ * and what they read is the ledger, so this posts the same two entries that
+ * service will: the wallet is debited, EXTERNAL_BANK is credited back toward
+ * zero.
+ */
+async function payOut(
+  prisma: PrismaService,
+  ledger: LedgerService,
+  options: { instructorId: string; amount: string },
+): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const [walletId, bankId] = await Promise.all([
+      ledger.getWalletAccountId(options.instructorId, tx),
+      ledger.getSystemAccountId('EXTERNAL_BANK', tx),
+    ]);
+
+    await ledger.postTransaction(tx, {
+      type: 'PAYOUT',
+      idempotencyKey: `payout:test:${options.instructorId}:${options.amount}`,
+      referenceType: 'PayoutRequest',
+      referenceId: 'test',
+      description: `ถอนเงิน ${options.amount} บาท`,
+      entries: [
+        { accountId: walletId, direction: 'DEBIT', amount: decimal(options.amount) },
+        { accountId: bankId, direction: 'CREDIT', amount: decimal(options.amount) },
+      ],
+    });
+  });
+}
+
 describe('ReportsService', () => {
   let prisma: PrismaService;
   let ledger: LedgerService;
@@ -250,6 +283,89 @@ describe('ReportsService', () => {
     expect(top[1]?.earnings).toBe('700.00');
     // Nothing has been paid out, so everything earned is still outstanding.
     expect(top[1]?.outstandingAmount).toBe('700.00');
+  });
+
+  /**
+   * The guard on the payout extension.
+   *
+   * Teaching the reports about withdrawals meant rewriting the SQL behind
+   * `topInstructors`, which is code the ทก.01 audit already signed off. Every
+   * figure below is the value that code produced *before* payouts existed,
+   * written out by hand rather than derived, so a database with no payout in
+   * it can never quietly start reporting something else.
+   *
+   * If this test fails, the extension has changed the meaning of an existing
+   * number — which is the one thing it is not allowed to do.
+   */
+  it('reports exactly the same figures as before payouts existed, on a database with none', async () => {
+    // 1,000 at 30% -> 300 / 700, and 1,000 at 20% -> 200 / 800.
+    await sellOne({ instructorId: instructor.id, price: '1000.00' });
+    await sellOne({ instructorId: otherInstructor.id, price: '1000.00' });
+
+    const [overview, top, payoutCount] = await Promise.all([
+      reports.adminOverview({}),
+      reports.topInstructors({}),
+      prisma.ledgerTransaction.count({ where: { type: 'PAYOUT' } }),
+    ]);
+
+    expect(payoutCount).toBe(0);
+
+    expect(overview.grossSales.value).toBe('2000.00');
+    expect(overview.platformRevenue.value).toBe('500.00');
+    expect(overview.instructorPayable.value).toBe('1500.00');
+    expect(overview.salesCount.value).toBe('2');
+
+    expect(top).toHaveLength(2);
+    expect(top[0]?.displayName).toBe('ครูคนที่สอง');
+    expect(top[0]?.salesCount).toBe(1);
+    expect(top[0]?.earnings).toBe('800.00');
+    expect(top[0]?.outstandingAmount).toBe('800.00');
+    expect(top[1]?.displayName).toBe('ครูคนแรก');
+    expect(top[1]?.salesCount).toBe(1);
+    expect(top[1]?.earnings).toBe('700.00');
+    expect(top[1]?.outstandingAmount).toBe('700.00');
+
+    await assertLedgerInvariants(prisma, ledger);
+  });
+
+  it('subtracts a withdrawal from what an instructor is still owed', async () => {
+    await sellOne({ instructorId: instructor.id, price: '1000.00' });
+    await payOut(prisma, ledger, { instructorId: instructor.id, amount: '500.00' });
+
+    const [overview, top] = await Promise.all([
+      reports.adminOverview({}),
+      reports.topInstructors({}),
+    ]);
+
+    const row = top.find((entry) => entry.instructorId === instructor.id);
+    // Earned 700, withdrew 500, so 200 of it is still inside the platform.
+    expect(row?.outstandingAmount).toBe('200.00');
+    // ...while what they earned in the window has not changed: a withdrawal
+    // moves money that was already earned, it does not un-earn it.
+    expect(row?.earnings).toBe('700.00');
+    expect(row?.salesCount).toBe(1);
+
+    // The headline figures describe trading, so a withdrawal leaves them be.
+    expect(overview.grossSales.value).toBe('1000.00');
+    expect(overview.platformRevenue.value).toBe('300.00');
+    expect(overview.instructorPayable.value).toBe('700.00');
+    expect(overview.salesCount.value).toBe('1');
+
+    await assertLedgerInvariants(prisma, ledger);
+  });
+
+  it('drops an instructor off the list once they have withdrawn everything', async () => {
+    await sellOne({ instructorId: instructor.id, price: '1000.00' });
+    await payOut(prisma, ledger, { instructorId: instructor.id, amount: '700.00' });
+
+    const top = await reports.topInstructors({});
+    const row = top.find((entry) => entry.instructorId === instructor.id);
+
+    // Still listed: they sold inside the window. Owed nothing, though.
+    expect(row?.earnings).toBe('700.00');
+    expect(row?.outstandingAmount).toBe('0.00');
+
+    await assertLedgerInvariants(prisma, ledger);
   });
 
   it('leaves an instructor who sold nothing in the window off the list', async () => {

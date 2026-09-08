@@ -183,7 +183,7 @@ export const adminMessages = {
     noComparison: 'ไม่มีข้อมูลช่วงก่อนหน้าให้เทียบ',
     grossSales: 'ยอดขายรวม',
     platformRevenue: 'ส่วนแบ่งแพลตฟอร์ม',
-    instructorPayable: 'ยอดค้างจ่ายผู้สอน',
+    instructorPayable: 'รายได้ผู้สอน (สะสมในช่วง)',
     newUsers: 'สมาชิกใหม่',
     salesCount: 'จำนวนการซื้อ',
     peopleSuffix: 'คน',
@@ -201,7 +201,7 @@ export const adminMessages = {
     columnGross: 'ยอดขาย',
     columnEarnings: 'รายได้',
     columnOutstanding: 'ยอดค้างจ่าย',
-    payableNote: 'ยอดค้างจ่ายคือเงินที่บันทึกเข้ากระเป๋าผู้สอนแล้วแต่ยังไม่ได้ถอนออกจากระบบ',
+    payableNote: 'ยอดค้างจ่ายคือรายได้สะสมของผู้สอนหักด้วยจำนวนที่ถอนออกจากระบบไปแล้ว',
 
     trialBalanceTitle: 'งบทดลอง',
     trialBalanceSubtitle: 'ยอดรวมทั้งหมดตั้งแต่เปิดระบบ อ่านตรงจากบัญชีคู่ ไม่ผูกกับช่วงเวลาด้านบน',

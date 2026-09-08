@@ -244,24 +244,31 @@ export class ReportsService {
       SELECT
         a."ownerId" AS instructor_id,
         u."displayName" AS display_name,
-        COUNT(DISTINCT CASE WHEN lt."createdAt" >= ${range.fromUtc}
+        COUNT(DISTINCT CASE WHEN lt.type = 'PURCHASE'
+                             AND lt."createdAt" >= ${range.fromUtc}
                              AND lt."createdAt" < ${range.toUtcExclusive}
                             THEN lt.id END) AS sales_count,
-        COALESCE(SUM(CASE WHEN lt."createdAt" >= ${range.fromUtc}
+        COALESCE(SUM(CASE WHEN lt.type = 'PURCHASE'
+                           AND lt."createdAt" >= ${range.fromUtc}
                            AND lt."createdAt" < ${range.toUtcExclusive}
                           THEN le.amount END), 0) AS earnings,
-        -- No PAYOUT transaction type exists yet, so everything ever credited
-        -- to an instructor is still owed to them.
-        COALESCE(SUM(le.amount), 0) AS outstanding
+        -- Earned minus withdrawn. A payout debits the same wallet this sums
+        -- credits into, so subtracting it here is reading one account's own
+        -- history, not reconciling two separate sets of books.
+        COALESCE(SUM(CASE WHEN lt.type = 'PURCHASE' THEN le.amount
+                          ELSE -le.amount END), 0) AS outstanding
       FROM "LedgerEntry" le
       JOIN "LedgerTransaction" lt ON lt.id = le."transactionId"
       JOIN "Account" a ON a.id = le."accountId"
       JOIN "User" u ON u.id = a."ownerId"
-      WHERE lt.type = 'PURCHASE'
-        AND le.direction = 'CREDIT'
-        AND a.kind = 'USER_WALLET'
+      WHERE a.kind = 'USER_WALLET'
+        AND (
+          (lt.type = 'PURCHASE' AND le.direction = 'CREDIT')
+          OR (lt.type = 'PAYOUT' AND le.direction = 'DEBIT')
+        )
       GROUP BY a."ownerId", u."displayName"
-      HAVING COALESCE(SUM(CASE WHEN lt."createdAt" >= ${range.fromUtc}
+      HAVING COALESCE(SUM(CASE WHEN lt.type = 'PURCHASE'
+                                AND lt."createdAt" >= ${range.fromUtc}
                                 AND lt."createdAt" < ${range.toUtcExclusive}
                                THEN le.amount END), 0) > 0
       ORDER BY earnings DESC

@@ -39,10 +39,14 @@ export interface AdminOverviewDto {
   /** The platform's cut, i.e. what was credited to PLATFORM_REVENUE. */
   platformRevenue: MetricDto;
   /**
-   * What instructors earned and have not been paid.
+   * What instructors earned from sales **inside this range** — accrued, not
+   * outstanding. Withdrawals are deliberately not subtracted: this figure and
+   * `grossSales` describe the same window of trading, and
+   * `platformRevenue + instructorPayable` must keep adding back up to
+   * `grossSales` for any range.
    *
-   * Accrued and outstanding are the same number today because no PAYOUT
-   * transaction type exists yet. When payouts arrive this must subtract them.
+   * How much instructors are still owed overall is a different question, and
+   * `topInstructors[].outstandingAmount` is where it is answered.
    */
   instructorPayable: MetricDto;
   newUsers: MetricDto;
