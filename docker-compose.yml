@@ -166,6 +166,11 @@ services:
       MINIO_ENDPOINT: minio
       MINIO_PORT: '9000'
       MINIO_USE_SSL: 'false'
+      # The browser cannot resolve `minio`, so presigned URLs are signed for
+      # the address it can reach: the port this compose file publishes.
+      MINIO_PUBLIC_ENDPOINT: localhost
+      MINIO_PUBLIC_PORT: '9000'
+      MINIO_PUBLIC_USE_SSL: 'false'
       MINIO_ACCESS_KEY: getownly
       MINIO_SECRET_KEY: getownly_dev_password
       MINIO_BUCKET: getownly-media

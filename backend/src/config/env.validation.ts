@@ -133,6 +133,29 @@ export class EnvironmentVariables {
   @IsNotEmpty()
   MINIO_BUCKET!: string;
 
+  /**
+   * Where the **browser** reaches MinIO, which is not always where the API
+   * does. Presigned URLs are signed over this host, so it has to be an
+   * address a person's browser can actually open.
+   *
+   * On a developer machine these three match the MINIO_* values above. Under
+   * `docker compose --profile full` the API talks to `minio` while the browser
+   * talks to `localhost`. Required rather than defaulted: a wrong value here
+   * breaks nothing until the first upload.
+   */
+  @IsString()
+  @IsNotEmpty()
+  MINIO_PUBLIC_ENDPOINT!: string;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(65535)
+  MINIO_PUBLIC_PORT!: number;
+
+  @IsIn(['true', 'false'])
+  MINIO_PUBLIC_USE_SSL!: string;
+
   /** Lifetime of a presigned GET handed to the browser. */
   @Type(() => Number)
   @IsInt()

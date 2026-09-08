@@ -19,11 +19,28 @@ export interface StoredObjectInfo {
  *     Used for covers, avatars, attachments and slips.
  *   - openRange streams bytes back through the API. Used for lesson videos,
  *     which must never leave as a shareable URL (CLAUDE.md, ข้อห้าม 10).
+ *
+ * There are also two *clients*, and the difference matters the moment the API
+ * stops sharing a network with the browser:
+ *
+ *   - `client` reaches MinIO from wherever the API happens to run. In Docker
+ *     that is `minio:9000`, a name only the compose network resolves.
+ *   - `signingClient` builds URLs the **browser** will open. Those must name a
+ *     host the browser can reach — `localhost:9000` — and the signature is
+ *     computed over that host, so it cannot simply be rewritten afterwards.
+ *
+ * On a developer machine both are `localhost` and the two collapse into one.
+ * Under `docker compose --profile full` they differ, and getting this wrong
+ * produced uploads that failed with ERR_NAME_NOT_RESOLVED while every page
+ * still rendered — which is why both are required configuration rather than
+ * one defaulting to the other.
  */
 @Injectable()
 export class StorageService implements OnModuleInit {
   private readonly logger = new Logger(StorageService.name);
   private readonly client: MinioClient;
+  /** Same bucket, but addressed the way the browser will address it. */
+  private readonly signingClient: MinioClient;
   private readonly bucket: string;
   private readonly downloadExpirySeconds: number;
   private readonly uploadExpirySeconds: number;
@@ -37,12 +54,27 @@ export class StorageService implements OnModuleInit {
       this.config.getOrThrow<string | number>('MINIO_PRESIGN_UPLOAD_EXPIRY_SECONDS'),
     );
 
+    const accessKey = this.config.getOrThrow<string>('MINIO_ACCESS_KEY');
+    const secretKey = this.config.getOrThrow<string>('MINIO_SECRET_KEY');
+
     this.client = new MinioClient({
       endPoint: this.config.getOrThrow<string>('MINIO_ENDPOINT'),
       port: Number(this.config.getOrThrow<string | number>('MINIO_PORT')),
       useSSL: envFlag(this.config.get<string>('MINIO_USE_SSL')),
-      accessKey: this.config.getOrThrow<string>('MINIO_ACCESS_KEY'),
-      secretKey: this.config.getOrThrow<string>('MINIO_SECRET_KEY'),
+      accessKey,
+      secretKey,
+    });
+
+    // getOrThrow, not a fallback to MINIO_ENDPOINT: a wrong public address
+    // does not break anything until somebody uploads a file, which on demo
+    // day is the worst possible moment to discover it. Missing configuration
+    // stops the process at boot instead.
+    this.signingClient = new MinioClient({
+      endPoint: this.config.getOrThrow<string>('MINIO_PUBLIC_ENDPOINT'),
+      port: Number(this.config.getOrThrow<string | number>('MINIO_PUBLIC_PORT')),
+      useSSL: envFlag(this.config.get<string>('MINIO_PUBLIC_USE_SSL')),
+      accessKey,
+      secretKey,
     });
   }
 
@@ -68,7 +100,7 @@ export class StorageService implements OnModuleInit {
 
   /** Temporary URL the browser PUTs the file to, bypassing this API entirely. */
   presignPut(objectKey: string): Promise<string> {
-    return this.client.presignedPutObject(this.bucket, objectKey, this.uploadExpirySeconds);
+    return this.signingClient.presignedPutObject(this.bucket, objectKey, this.uploadExpirySeconds);
   }
 
   /** Temporary URL the browser reads the file from. Never used for lesson video. */
@@ -80,7 +112,7 @@ export class StorageService implements OnModuleInit {
         }
       : undefined;
 
-    return this.client.presignedGetObject(
+    return this.signingClient.presignedGetObject(
       this.bucket,
       objectKey,
       this.downloadExpirySeconds,
