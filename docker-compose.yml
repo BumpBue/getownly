@@ -1,7 +1,20 @@
-## getownly - local development services.
-## Application code (NestJS / Next.js) runs on the host, not in Docker.
+## getownly - Docker services.
 ##
-##   pnpm docker:up      start everything
+## Two ways to run, on purpose:
+##
+##   pnpm docker:up                    infrastructure only (postgres, minio,
+##                                     mailhog) with the app on the host. This
+##                                     is the day-to-day loop: hot reload, no
+##                                     rebuild between edits.
+##
+##   docker compose --profile full up  the whole system in containers,
+##                                     including the API and the web app
+##                                     (ทก.01 ข้อ 2.7.4). Slower to start,
+##                                     but one command on a clean machine.
+##
+## The `full` profile only adds containers; it changes nothing about the three
+## below, so the two modes cannot interfere with each other.
+##
 ##   pnpm docker:down    stop, keep data
 ##   pnpm docker:reset   stop, DELETE all data, start fresh
 
@@ -75,6 +88,91 @@ services:
       - '8025:8025' # web UI - http://localhost:8025
     logging:
       driver: none
+
+  # --- the application itself, only under `--profile full` -----------------
+
+  api:
+    profiles: ['full']
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: getownly-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      API_PREFIX: api
+      # Inside the compose network the database is `postgres:5432`, not the
+      # host's published 5433.
+      DATABASE_URL: postgresql://getownly:getownly_dev_password@postgres:5432/getownly?schema=public
+      JWT_ACCESS_SECRET: docker_demo_access_secret_change_me_before_production
+      JWT_REFRESH_SECRET: docker_demo_refresh_secret_change_me_before_production
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      COOKIE_SECURE: 'false'
+      COOKIE_SAME_SITE: lax
+      BCRYPT_COST: '12'
+      PASSWORD_RESET_EXPIRES_MINUTES: '60'
+      RATE_LIMIT_LOGIN_LIMIT: '5'
+      RATE_LIMIT_LOGIN_TTL_SECONDS: '60'
+      RATE_LIMIT_FORGOT_PASSWORD_LIMIT: '3'
+      RATE_LIMIT_FORGOT_PASSWORD_TTL_SECONDS: '3600'
+      # The browser talks to the web app on localhost:3000, so that is the
+      # origin the API must accept cookies from.
+      FRONTEND_ORIGIN: http://localhost:3000
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: '9000'
+      MINIO_USE_SSL: 'false'
+      MINIO_ACCESS_KEY: getownly
+      MINIO_SECRET_KEY: getownly_dev_password
+      MINIO_BUCKET: getownly-media
+      MINIO_PRESIGN_EXPIRY_SECONDS: '3600'
+      MINIO_PRESIGN_UPLOAD_EXPIRY_SECONDS: '900'
+      MAIL_HOST: mailhog
+      MAIL_PORT: '1025'
+      MAIL_SECURE: 'false'
+      MAIL_FROM_NAME: getownly
+      MAIL_FROM_ADDRESS: no-reply@getownly.local
+      PLATFORM_DEFAULT_COMMISSION_RATE: '0.30'
+      # Zeroes on purpose. See the warning in backend/.env.example.
+      PROMPTPAY_ID: '0000000000'
+      PROMPTPAY_DISPLAY_NAME: GETOWNLY PLATFORM (สาธิต)
+      DEMO_MODE: 'true'
+      TOPUP_MIN_AMOUNT: '20'
+      TOPUP_MAX_AMOUNT: '50000'
+      TOPUP_QUOTE_EXPIRY_MINUTES: '15'
+    ports:
+      - '4000:4000'
+
+  web:
+    profiles: ['full']
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        # Read by the browser, so they are baked in at build time and must be
+        # the addresses a person's browser can reach — not container names.
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:4000/api
+        NEXT_PUBLIC_SITE_URL: http://localhost:3000
+        NEXT_PUBLIC_MINIO_ENDPOINT: localhost
+        NEXT_PUBLIC_MINIO_PORT: '9000'
+        NEXT_PUBLIC_MINIO_USE_SSL: 'false'
+    container_name: getownly-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      NODE_ENV: production
+      # Server Components call the API from inside the network, where it is
+      # `api:4000`. The browser still uses localhost, from the build arg above.
+      API_BASE_URL: http://api:4000/api
+    ports:
+      - '3000:3000'
 
 volumes:
   postgres-data:

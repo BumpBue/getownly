@@ -1,0 +1,44 @@
+# Never send these to the build context: they are large, machine-specific, or
+# secret. node_modules in particular is a pnpm symlink farm that would be
+# meaningless (and enormous) inside the image.
+node_modules
+**/node_modules
+.pnpm-store
+
+# Build output — the image builds its own.
+dist
+build
+.next
+**/dist
+**/.next
+*.tsbuildinfo
+
+# Real secrets. Only the .example files travel.
+#
+# The globs are anchored with **/ deliberately: a bare `.env` matches the
+# repository root only, which would let backend/.env — the file holding the
+# real JWT secrets and PromptPay id — be copied straight into the image.
+**/.env
+**/.env.*
+!**/.env.example
+
+# Test and tooling artefacts
+coverage
+test-results
+playwright-report
+**/test/responsive-output
+
+# Repository and editor metadata
+.git
+.github
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Documentation and design references: none of it is needed to run the app.
+*.md
+!README.md
+design-reference
+docker-data
+*.log

@@ -434,6 +434,37 @@ URL ที่ใช้ตอน dev
 - **เทสต์: `reports.service.spec.ts` เพิ่ม 12 ข้อ และ `test/instructor-earnings.e2e.spec.ts` ใหม่ 6 ข้อ**
   (ยิง HTTP จริงผ่าน `createHarness()` ผู้สอน A ต้องไม่เห็นของผู้สอน B) รวมทั้งชุด **352 ข้อ**
 
+### Docker profile `full` และสคริปต์ตรวจ responsive ที่รันซ้ำได้
+
+- **`docker compose --profile full up` ยกทั้งระบบรวมแอป** (ทก.01 ข้อ 2.7.4) ส่วน `pnpm docker:up` เดิม
+  ยังยกเฉพาะ postgres/minio/mailhog เหมือนเดิม · profile **เพิ่มคอนเทนเนอร์เท่านั้น ไม่แก้ของเดิม**
+  สองโหมดจึงไม่กวนกัน (แต่ใช้พอร์ตชุดเดียวกัน จึงรันพร้อมกันไม่ได้)
+- **Dockerfile ต้อง build จาก root ของ workspace** ไม่ใช่จากโฟลเดอร์ของแต่ละแพ็กเกจ
+  เพราะทั้งสองแพ็กเกจพึ่ง `@getownly/shared` ที่ resolve ผ่าน `pnpm-workspace.yaml`
+  · ใช้ `node:22-slim` ไม่ใช่ alpine เพราะ bcrypt เป็น native module และ Prisma ต้องการ OpenSSL
+- **runtime stage คัดลอก `/app` ทั้งก้อน ไม่ตัดทิ้ง** เพราะ node_modules ของ pnpm เป็น symlink farm
+  ชี้เข้า `.pnpm` การคัดลอกทีละส่วนได้ image ที่ติดตั้งดูเหมือนสำเร็จแล้ว resolve ไม่ได้ตอนรัน
+  ยอมให้ image ใหญ่แลกกับ image ที่สตาร์ตได้จริง
+- **ไม่เปิด corepack ใน runtime stage** ถ้าเปิด คอนเทนเนอร์จะดาวน์โหลด pnpm ตอนสตาร์ตครั้งแรก
+  ซึ่งจะพังถ้าเครื่องไม่มีเน็ตในวันสอบ · เรียก binary ตรงๆ ที่ `node_modules/.bin/` แทน
+  · **`prisma` อยู่ที่ `backend/node_modules/` ไม่ใช่ root** (เป็น devDependency ของ backend)
+- **`prisma migrate deploy` รันตอน API สตาร์ต** `--profile full` กับฐานข้อมูลว่างจึงใช้ได้เลย
+  ไม่ต้องมีขั้นตอนที่สอง · `db seed` ใน container ต้องเรียก `node_modules/.bin/tsx prisma/seed.ts` ตรงๆ
+  เพราะ `prisma db seed` จะ spawn `tsx` จาก PATH ซึ่งไม่มีในคอนเทนเนอร์
+- **⚠️ บั๊กความปลอดภัยที่เจอตอนทำ: `.env` จริงของเครื่องหลุดเข้า image**
+  `.dockerignore` เขียน `.env` เฉยๆ ซึ่งจับแค่ระดับ root **ไม่จับ `backend/.env`**
+  ไฟล์ที่มี JWT secret และเลขพร้อมเพย์จริงจึงถูกคัดลอกเข้าไปด้วย
+  แก้เป็น `**/.env` และ `**/.env.*` พร้อม `!**/.env.example` · ยืนยันแล้วว่าหายไปจาก image
+- **ค่าที่ขึ้นต้น `NEXT_PUBLIC_` ต้องส่งเป็น build arg ไม่ใช่ environment ตอนรัน** เพราะ Next ฝังลง bundle
+  ตอน build · ส่วน `API_BASE_URL` (ไม่มี prefix) เป็น runtime env เพราะ Server Component เรียกผ่าน
+  เครือข่ายภายใน (`api:4000`) ขณะที่เบราว์เซอร์ยังเรียก `localhost:4000`
+- **พิสูจน์ด้วยการยกจริงแล้ว** ไม่ได้ดูแค่ build ผ่าน: migration 12 ใบรันเอง · seed ผ่าน container ได้ ·
+  เปิดเว็บผ่าน container แล้วล็อกอิน เข้าหน้าผู้สอน และหน้ารายงานได้ ไม่มี error ใน console
+- **`pnpm test:responsive`** (`frontend/test/responsive.mjs`) เก็บเข้า repo แล้ว
+  · `playwright-core` **ไม่ดาวน์โหลดเบราว์เซอร์** แต่ไปหา Chromium/Edge/Chrome ที่เครื่องมีอยู่
+  · **แยกความรุนแรง**: `OVERFLOW`/`OFFSCREEN`/`TABLE` ทำให้ exit 1 ส่วน `SMALL` เป็นแค่คำเตือน
+  เพราะลิงก์ข้อความย่อมเตี้ยกว่าปุ่มเสมอ ถ้าให้ตกด้วยสคริปต์จะแดงตลอดจนไม่มีใครสนใจ
+
 ### ตรวจ Responsive จริง (ทก.01 D8) และเอกสารปิด audit
 
 - **`SCOPE_COMPLIANCE.md` ที่ root** เทียบ ทก.01 ทุกข้อ (A1–D9 รวม 37 ข้อ) กับสิ่งที่ระบบทำได้

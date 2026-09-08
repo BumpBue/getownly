@@ -156,9 +156,12 @@ pnpm dev:be               # backend อย่างเดียว (:4000)
 pnpm dev:fe               # frontend อย่างเดียว (:3000)
 
 # Docker
-pnpm docker:up            # ยกบริการทั้งหมด
+pnpm docker:up            # ยกบริการเบื้องหลัง (postgres, minio, mailhog)
 pnpm docker:down          # หยุด แต่เก็บข้อมูลไว้
 pnpm docker:reset         # หยุด ลบ volume ทั้งหมด แล้วยกใหม่
+
+docker compose --profile full up --build   # ยกทั้งระบบรวมแอปในคอนเทนเนอร์
+docker compose --profile full down         # หยุดโหมดนี้
 
 # ฐานข้อมูล
 pnpm db:migrate           # สร้าง/ปรับ migration ตาม schema.prisma
@@ -184,6 +187,53 @@ pnpm format               # Prettier ทั้ง repo
 > แก้โดยหยุด dev server ลบโฟลเดอร์ `frontend/.next` แล้วเริ่มใหม่
 >
 > รายละเอียดการตรวจ responsive อยู่ที่ [`frontend/test/README.md`](frontend/test/README.md)
+
+---
+
+## รันทั้งระบบด้วย Docker (ทก.01 ข้อ 2.7.4)
+
+มีสองโหมด เลือกตามงานที่ทำ
+
+| โหมด | คำสั่ง | เหมาะกับ |
+|---|---|---|
+| **เบื้องหลังอย่างเดียว** (ค่าเริ่มต้น) | `pnpm docker:up` แล้ว `pnpm dev` | การพัฒนาประจำวัน — แก้โค้ดแล้วเห็นผลทันที ไม่ต้อง build ใหม่ |
+| **ทั้งระบบในคอนเทนเนอร์** | `docker compose --profile full up --build` | ยกทั้งระบบบนเครื่องเปล่าด้วยคำสั่งเดียว เช่นวันสาธิตหรือวันสอบ |
+
+โหมดที่สองยกครบทั้ง PostgreSQL, MinIO, Mailhog, API และเว็บ
+**migration จะรันให้อัตโนมัติตอน API เริ่มทำงาน** จึงใช้กับฐานข้อมูลว่างเปล่าได้เลย
+
+```bash
+docker compose --profile full up --build     # ครั้งแรกใช้เวลาสัก 3-5 นาที
+```
+
+จากนั้นเปิด http://localhost:3000
+
+ใส่ข้อมูลตัวอย่างเข้าไป (คอนเทนเนอร์ต้องรันอยู่):
+
+```bash
+# ข้อมูลพื้นฐาน: ผู้ใช้ หมวดหมู่ คอร์ส บทเรียน แบบทดสอบ
+docker compose exec api sh -c "cd /app/backend && node_modules/.bin/tsx prisma/seed.ts"
+
+# ข้อมูลสาธิตเพิ่มเติม: การซื้อ ความคืบหน้า ผลสอบ กระทู้ (ใช้ก่อนวันนำเสนอ)
+docker compose exec api sh -c "cd /app/backend && node_modules/.bin/tsx prisma/demo-seed.ts"
+```
+
+หยุดเมื่อเสร็จ:
+
+```bash
+docker compose --profile full down
+```
+
+**สิ่งที่ควรรู้**
+
+- โหมด `full` **เพิ่มคอนเทนเนอร์เข้าไปเท่านั้น** ไม่ได้แก้อะไรของสามตัวเดิม สองโหมดจึงไม่กวนกัน
+- แต่ทั้งสองโหมดใช้พอร์ต 3000 และ 4000 เหมือนกัน **อย่ารันพร้อมกับ `pnpm dev`**
+- ค่าที่ขึ้นต้นด้วย `NEXT_PUBLIC_` ถูกฝังลงใน bundle **ตอน build** ไม่ใช่ตอนรัน
+  ถ้าจะเปลี่ยน (เช่นย้ายไปโดเมนจริง) ต้อง build image ใหม่ ไม่ใช่แค่แก้ตัวแปรสภาพแวดล้อม
+- ไฟล์ `.env` ของเครื่องคุณ **ไม่ถูกคัดลอกเข้า image** (กันไว้ใน `.dockerignore`)
+  ค่าที่คอนเทนเนอร์ใช้มาจาก `docker-compose.yml` ทั้งหมด
+- `JWT_*_SECRET` และรหัสผ่านใน `docker-compose.yml` เป็นค่าสำหรับสาธิตเท่านั้น
+  ต้องเปลี่ยนก่อนนำขึ้นใช้งานจริงทุกครั้ง
 
 ---
 
@@ -256,7 +306,7 @@ getownly/
 │  ├─ src/lib/                  api client, type, ข้อความไทยรวมศูนย์, กราฟ
 │  └─ src/middleware.ts         กันเส้นทางตามบทบาท
 ├─ packages/shared/             enum และ type ที่ FE/BE ใช้ร่วมกัน
-├─ docker-compose.yml           postgres + minio + mailhog
+├─ docker-compose.yml           postgres + minio + mailhog (+ api/web ใน profile `full`)
 ├─ CLAUDE.md                    กติกาการพัฒนา
 └─ PLAN.md                      ขอบเขตและแผนงาน 8 เฟส
 ```
