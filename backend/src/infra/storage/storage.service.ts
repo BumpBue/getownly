@@ -32,8 +32,9 @@ export interface StoredObjectInfo {
  *   - `client` reaches MinIO from wherever the API happens to run. In Docker
  *     that is `minio:9000`, a name only the compose network resolves.
  *   - `signingClient` builds URLs the **browser** will open. Those must name a
- *     host the browser can reach — `localhost:9000` — and the signature is
- *     computed over that host, so it cannot simply be rewritten afterwards.
+ *     host the browser can reach — `localhost` on the port compose publishes,
+ *     which is not the port MinIO listens on inside the network — and the
+ *     signature is computed over that host, so it cannot be rewritten after.
  *
  * On a developer machine both are `localhost` and the two collapse into one.
  * Under `docker compose --profile full` they differ, and getting this wrong

@@ -132,7 +132,7 @@ pnpm demo:reset
 |---|---|---|
 | เว็บ (Next.js) | <http://localhost:3000> | |
 | API (NestJS) | <http://localhost:4000/api> | |
-| MinIO Console | <http://localhost:9001> | ผู้ใช้ `getownly` รหัส `getownly_dev_password` |
+| MinIO Console | <http://localhost:9101> | ผู้ใช้ `getownly` รหัส `getownly_dev_password` |
 | Mailhog | <http://localhost:8025> | อีเมลทุกฉบับที่ระบบส่งจะมาโผล่ที่นี่ |
 | Prisma Studio | <http://localhost:5555> | เปิดด้วย `pnpm db:studio` |
 | PostgreSQL | `localhost:5433` | ฐานข้อมูล `getownly` ผู้ใช้ `getownly` |
@@ -470,7 +470,8 @@ pnpm test
 | `P1000: Authentication failed` ตอน `pnpm db:migrate` | มี PostgreSQL ตัวอื่นบนเครื่องครองพอร์ตอยู่ ตรวจด้วย `Get-NetTCPConnection -LocalPort 5433 -State Listen` และดูว่า `docker compose ps` ขึ้น `0.0.0.0:5433->5432/tcp` จริง |
 | `Cannot find module '@prisma/client'` หรือ type ของ Prisma หายไป | รัน `pnpm db:generate` (ปกติ `pnpm install` จะ generate ให้เองผ่าน postinstall ของ backend) |
 | `ESLint couldn't find the plugin ...` ในฝั่ง frontend | ลบ `node_modules` แล้ว `pnpm install` ใหม่ ค่า `public-hoist-pattern` ใน `.npmrc` ต้องถูกใช้งานตอนติดตั้ง |
-| `port is already allocated` ตอน `pnpm docker:up` | มีบริการอื่นใช้พอร์ต 9000/9001/1025/8025 อยู่ ปิดบริการนั้นหรือแก้พอร์ตใน `docker-compose.yml` |
+| `port is already allocated` ตอน `pnpm docker:up` | มีบริการอื่นใช้พอร์ต 9100/9101/1025/8025 อยู่ ปิดบริการนั้นหรือแก้พอร์ตใน `docker-compose.yml` |
+| `ports are not available ... forbidden by its access permissions` (Windows) | **ไม่ได้แปลว่ามีใครใช้พอร์ตอยู่** แต่ Windows จองช่วงพอร์ตนั้นไว้เอง ดูด้วย `netsh interface ipv4 show excludedportrange protocol=tcp` · แก้ด้วยการรีสตาร์ต WinNAT ใน PowerShell แบบผู้ดูแล: `net stop winnat` แล้ว `net start winnat` |
 | `EADDRINUSE :4000` ตอน `pnpm dev` | มี backend ค้างอยู่จากรอบก่อน ปิดด้วย `Get-NetTCPConnection -LocalPort 4000 -State Listen` แล้ว `Stop-Process` |
 | ข้อมูลเพี้ยนหรืออยากเริ่มใหม่ทั้งหมด | `pnpm docker:reset` แล้วตามด้วย `pnpm db:migrate` และ `pnpm db:seed` |
 | `pnpm test` ล้มตั้งแต่ยังไม่เริ่มเทสต์ | ยังไม่ได้ยก Docker ขึ้น รัน `pnpm docker:up` ก่อน เทสต์ต้องต่อฐานข้อมูลจริง |

@@ -53,9 +53,12 @@ services:
     environment:
       MINIO_ROOT_USER: getownly
       MINIO_ROOT_PASSWORD: getownly_dev_password
+    # Published high, listening standard. Inside the compose network MinIO is
+    # still minio:9000 — only the host side moves, because the host side is
+    # where Windows keeps taking the port away (CLAUDE.md, "พอร์ตของ MinIO").
     ports:
-      - '9000:9000' # S3 API
-      - '9001:9001' # web console
+      - '9100:9000' # S3 API
+      - '9101:9001' # web console
     volumes:
       - minio-data:/data
     healthcheck:
@@ -167,9 +170,10 @@ services:
       MINIO_PORT: '9000'
       MINIO_USE_SSL: 'false'
       # The browser cannot resolve `minio`, so presigned URLs are signed for
-      # the address it can reach: the port this compose file publishes.
+      # the address it can reach: the port this compose file publishes above,
+      # which is deliberately not the one MinIO listens on inside the network.
       MINIO_PUBLIC_ENDPOINT: localhost
-      MINIO_PUBLIC_PORT: '9000'
+      MINIO_PUBLIC_PORT: '9100'
       MINIO_PUBLIC_USE_SSL: 'false'
       MINIO_ACCESS_KEY: getownly
       MINIO_SECRET_KEY: getownly_dev_password
