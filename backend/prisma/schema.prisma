@@ -519,7 +519,11 @@ model InstructorBankAccount {
   /// One per instructor, so the user id is the primary key.
   instructorId String @id
 
-  bankName      String
+  /// Bank of Thailand three-digit code, validated against the list in
+  /// packages/shared/src/banks.ts. The name is looked up from there rather
+  /// than stored: a second copy of a fact the code already knows is a copy
+  /// that goes stale when a bank is renamed.
+  bankCode      String
   accountName   String
   /// Stored in full, because a transfer needs it. Everything that reads this
   /// back outside the owner's own form and the admin's review screen goes
@@ -551,6 +555,14 @@ model PayoutRequest {
   /// Snapshot of the bank details as they stood when the request was made.
   /// An instructor may correct their account afterwards, and a transfer that
   /// already happened has to keep saying where it actually went.
+  bankCode      String
+  /// The bank's name at the time, kept beside the code on purpose.
+  ///
+  /// The code is enough to render a bank that is still in the list, and it is
+  /// what the screens use. This is the safety net for the day one is not:
+  /// a bank leaves the list, or the project's own list changes, and a request
+  /// from three years ago still has to read correctly. History, not policy —
+  /// the same reasoning as QuizAttempt.passScoreSnapshot.
   bankName      String
   accountName   String
   accountNumber String

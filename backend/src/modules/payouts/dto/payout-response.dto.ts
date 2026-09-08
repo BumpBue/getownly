@@ -9,7 +9,7 @@ type MoneyString = string;
  * number in full to its owner.
  */
 export interface BankAccountDto {
-  bankName: string;
+  bankCode: string;
   accountName: string;
   accountNumber: string;
   updatedAt: string;
@@ -17,6 +17,14 @@ export interface BankAccountDto {
 
 /** The same details, everywhere else. */
 export interface MaskedBankAccountDto {
+  bankCode: string;
+  /**
+   * The bank's name as the API resolved it.
+   *
+   * Sent rather than left for the browser to look up, so that a code which has
+   * since left the shared list still arrives with something readable attached —
+   * for a payout request, the name snapshotted when it was made.
+   */
   bankName: string;
   accountName: string;
   /** Masked to the last four digits by maskAccountNumber(). */
@@ -78,6 +86,8 @@ export interface AdminPayoutListItemDto {
     /** Wallet balance right now, so a reviewer sees the money is set aside. */
     walletBalance: MoneyString;
   };
+  bankCode: string;
+  /** Resolved from the code, falling back to the request's own snapshot. */
   bankName: string;
   accountName: string;
   accountNumberMasked: string;

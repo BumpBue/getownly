@@ -8,6 +8,8 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BankLogo } from "@/components/shared/BankLogo";
+import { BankSelect } from "@/components/shared/BankSelect";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PayoutStatusBadge } from "@/components/shared/PayoutStatusBadge";
 import { SectionHeading } from "@/components/shared/SectionHeading";
@@ -279,7 +281,7 @@ function BankAccountCard({
   const labels = payoutMessages.instructor;
   const toast = useToast();
 
-  const [form, setForm] = useState({ bankName: "", accountName: "", accountNumber: "" });
+  const [form, setForm] = useState({ bankCode: "", accountName: "", accountNumber: "" });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [loadingExisting, setLoadingExisting] = useState(false);
@@ -292,17 +294,22 @@ function BankAccountCard({
       .then((existing: BankAccount | null) => {
         if (existing) {
           setForm({
-            bankName: existing.bankName,
+            bankCode: existing.bankCode,
             accountName: existing.accountName,
             accountNumber: existing.accountNumber,
           });
         }
       })
-      .catch(() => setForm({ bankName: "", accountName: "", accountNumber: "" }))
+      .catch(() => setForm({ bankCode: "", accountName: "", accountNumber: "" }))
       .finally(() => setLoadingExisting(false));
   }, [editing]);
 
   const save = useCallback(async () => {
+    if (form.bankCode.length === 0) {
+      setError(labels.bankSelectPlaceholder);
+      return;
+    }
+
     setBusy(true);
     setError(null);
 
@@ -315,7 +322,7 @@ function BankAccountCard({
     } finally {
       setBusy(false);
     }
-  }, [form, labels.bankSaved, onDone, toast]);
+  }, [form, labels.bankSaved, labels.bankSelectPlaceholder, onDone, toast]);
 
   return (
     <Card>
@@ -338,10 +345,10 @@ function BankAccountCard({
               {error ? <Alert tone="error">{error}</Alert> : null}
 
               <Field label={labels.bankNameLabel} id="bank-name">
-                <Input
+                <BankSelect
                   id="bank-name"
-                  value={form.bankName}
-                  onChange={(event) => setForm({ ...form, bankName: event.target.value })}
+                  value={form.bankCode}
+                  onChange={(bankCode) => setForm({ ...form, bankCode })}
                 />
               </Field>
               <Field label={labels.accountNameLabel} id="account-name">
@@ -381,7 +388,10 @@ function BankAccountCard({
           <dl className="grid gap-3 sm:grid-cols-3">
             <div>
               <dt className="text-xs text-muted">{labels.bankNameLabel}</dt>
-              <dd className="text-sm text-foreground">{account.bankName}</dd>
+              <dd className="flex items-center gap-2 text-sm text-foreground">
+                <BankLogo code={account.bankCode} size="sm" />
+                {account.bankName}
+              </dd>
             </div>
             <div>
               <dt className="text-xs text-muted">{labels.accountNameLabel}</dt>
@@ -441,7 +451,8 @@ function PayoutHistory({ history }: { history: PaginatedPayouts | null }) {
                 <PayoutStatusBadge status={item.status} />
               </div>
               <span className="text-xs text-muted">{formatDateTime(item.createdAt)}</span>
-              <span className="text-xs tabular-nums text-muted">
+              <span className="flex items-center gap-2 text-xs tabular-nums text-muted">
+                <BankLogo code={item.bankAccount.bankCode} size="sm" />
                 {item.bankAccount.bankName} · {item.bankAccount.accountNumberMasked}
               </span>
               {item.note ? <span className="text-xs text-destructive">{item.note}</span> : null}
@@ -467,8 +478,11 @@ function PayoutHistory({ history }: { history: PaginatedPayouts | null }) {
                   <td className="px-5 py-3 font-medium tabular-nums text-foreground">
                     {formatBaht(item.amount)}
                   </td>
-                  <td className="px-5 py-3 tabular-nums text-muted">
-                    {item.bankAccount.bankName} · {item.bankAccount.accountNumberMasked}
+                  <td className="px-5 py-3 text-muted">
+                    <span className="flex items-center gap-2 tabular-nums">
+                      <BankLogo code={item.bankAccount.bankCode} size="sm" />
+                      {item.bankAccount.bankName} · {item.bankAccount.accountNumberMasked}
+                    </span>
                   </td>
                   <td className="px-5 py-3">
                     <PayoutStatusBadge status={item.status} />

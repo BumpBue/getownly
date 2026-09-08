@@ -342,7 +342,7 @@ export class WalletService {
   async requestPayout(
     instructorId: string,
     amount: Prisma.Decimal,
-    bank: { bankName: string; accountName: string; accountNumber: string },
+    bank: { bankCode: string; bankName: string; accountName: string; accountNumber: string },
   ): Promise<PayoutReviewResultDto> {
     return this.prisma.$transaction(async (tx) => {
       const [walletAccountId, payableAccountId] = await Promise.all([
@@ -549,6 +549,7 @@ async function createPayoutRequest(
   data: {
     instructorId: string;
     amount: Prisma.Decimal;
+    bankCode: string;
     bankName: string;
     accountName: string;
     accountNumber: string;

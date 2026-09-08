@@ -28,7 +28,7 @@ export function getBankAccount(): Promise<BankAccount | null> {
 }
 
 export function saveBankAccount(body: {
-  bankName: string;
+  bankCode: string;
   accountName: string;
   accountNumber: string;
 }): Promise<BankAccount> {

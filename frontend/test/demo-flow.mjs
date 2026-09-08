@@ -458,7 +458,13 @@ try {
 
     await teacher.page.getByRole('button', { name: /บัญชีธนาคาร/ }).first().click();
     await teacher.page.waitForSelector('#bank-name', { timeout: 15000 });
-    await teacher.page.fill('#bank-name', 'ธนาคารกสิกรไทย');
+
+    // The bank is chosen from a list now, not typed. Searching for it is the
+    // path a person actually takes with sixteen options on a phone.
+    await teacher.page.click('#bank-name');
+    await teacher.page.getByPlaceholder(/พิมพ์ชื่อธนาคาร/).fill('กสิกร');
+    await teacher.page.getByRole('option', { name: /ธนาคารกสิกรไทย/ }).first().click();
+
     await teacher.page.fill('#account-name', 'ครูสาธิต ใจดี');
     await teacher.page.fill('#account-number', '1234567890');
     await teacher.page.getByRole('button', { name: 'บันทึก', exact: true }).first().click();

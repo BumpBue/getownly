@@ -57,7 +57,7 @@ async function withdraw(
     where: { instructorId: options.instructorId },
     create: {
       instructorId: options.instructorId,
-      bankName: 'ธนาคารทดสอบ',
+      bankCode: '004',
       accountName: 'ผู้สอนทดสอบ',
       accountNumber: '1234567890',
     },
@@ -65,7 +65,8 @@ async function withdraw(
   });
 
   const request = await wallet.requestPayout(options.instructorId, decimal(options.amount), {
-    bankName: 'ธนาคารทดสอบ',
+    bankCode: '004',
+    bankName: 'ธนาคารกสิกรไทย',
     accountName: 'ผู้สอนทดสอบ',
     accountNumber: '1234567890',
   });

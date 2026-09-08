@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { BankLogo } from "@/components/shared/BankLogo";
 import { PayoutStatusBadge } from "@/components/shared/PayoutStatusBadge";
 import { ApiError } from "@/lib/api-client";
 import { formatBaht, formatDateTime } from "@/lib/format";
@@ -134,12 +135,19 @@ export function ReviewPayoutDialog({
 
             <div className="rounded-control border border-border bg-background px-4 py-3">
               <p className="text-xs text-muted">{labels.dialogAccountHeading}</p>
-              <p className="mt-1 text-sm text-foreground">{request.bankName}</p>
-              <p className="text-sm text-foreground">{request.accountName}</p>
-              <p className="text-lg font-semibold tabular-nums text-foreground">
-                {request.accountNumber}
-              </p>
-              <p className="mt-1 text-xs text-subtle">{labels.dialogAccountNotice}</p>
+              {/* Logo large here, because this is the one screen where getting
+                  the bank wrong sends real money to the wrong place. */}
+              <div className="mt-2 flex items-center gap-3">
+                <BankLogo code={request.bankCode} size="lg" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">{request.bankName}</p>
+                  <p className="text-sm text-foreground">{request.accountName}</p>
+                  <p className="text-lg font-semibold tabular-nums text-foreground">
+                    {request.accountNumber}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-subtle">{labels.dialogAccountNotice}</p>
             </div>
 
             {pending ? (

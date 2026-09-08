@@ -19,10 +19,13 @@ import {
 import { assertLedgerInvariants } from '../../../test/invariants';
 
 const BANK = {
-  bankName: 'ธนาคารกสิกรไทย',
+  bankCode: '004',
   accountName: 'ครูสาธิต ใจดี',
   accountNumber: '1234567890',
 };
+
+/** What code '004' should render as, everywhere it is shown. */
+const BANK_NAME = 'ธนาคารกสิกรไทย';
 
 describe('PayoutsService', () => {
   let prisma: PrismaService;
@@ -234,7 +237,12 @@ describe('PayoutsService', () => {
     // defence is real: a partial unique index on PENDING rows.
     await expect(
       prisma.payoutRequest.create({
-        data: { instructorId: instructor.id, amount: '1000.00', ...BANK },
+        data: {
+          instructorId: instructor.id,
+          amount: '1000.00',
+          bankName: BANK_NAME,
+          ...BANK,
+        },
       }),
     ).rejects.toMatchObject({ code: 'P2002' });
 
@@ -377,13 +385,14 @@ describe('PayoutsService', () => {
     const request = await payouts.create(instructor.id, { amount: '1000.00' });
 
     await payouts.saveBankAccount(instructor.id, {
-      bankName: 'ธนาคารไทยพาณิชย์',
+      bankCode: '014',
       accountName: 'ครูสาธิต ใจดี',
       accountNumber: '9876543210',
     });
 
     const row = await payouts.readForAdmin(request.payoutRequestId);
-    expect(row.bankName).toBe('ธนาคารกสิกรไทย');
+    expect(row.bankCode).toBe('004');
+    expect(row.bankName).toBe(BANK_NAME);
     expect(row.accountNumber).toBe('1234567890');
   });
 
@@ -400,6 +409,47 @@ describe('PayoutsService', () => {
     expect(queue.pendingAmountTotal).toBe('1000.00');
     expect(queue.items[0]?.instructor.walletBalance).toBe('4000.00');
     expect(queue.items[0]?.instructor.id).toBe(instructor.id);
+  });
+
+  /**
+   * The snapshot is what makes an old request readable, and this is the case
+   * it exists for: a code the shared list no longer knows about. Written
+   * straight into the table, because there is no way to reach this state
+   * through the API — which is the point.
+   */
+  it('still names the bank on a request whose code has left the list', async () => {
+    await fund(instructor.id, '5000.00');
+    await saveBank();
+    const request = await payouts.create(instructor.id, { amount: '1000.00' });
+
+    await prisma.payoutRequest.update({
+      where: { id: request.payoutRequestId },
+      data: { bankCode: '065', bankName: 'ธนาคารธนชาต' },
+    });
+
+    const [mine, forAdmin] = await Promise.all([
+      payouts.listMine(instructor.id, {}),
+      payouts.readForAdmin(request.payoutRequestId),
+    ]);
+
+    expect(mine.items[0]?.bankAccount.bankName).toBe('ธนาคารธนชาต');
+    expect(forAdmin.bankName).toBe('ธนาคารธนชาต');
+  });
+
+  it('names the bank from the shared list, not from anything it stored', async () => {
+    await fund(instructor.id, '5000.00');
+    await saveBank();
+
+    const [overview, request] = await Promise.all([
+      payouts.overview(instructor.id),
+      payouts.create(instructor.id, { amount: '1000.00' }),
+    ]);
+
+    expect(overview.bankAccount?.bankCode).toBe('004');
+    expect(overview.bankAccount?.bankName).toBe(BANK_NAME);
+
+    const row = await payouts.readForAdmin(request.payoutRequestId);
+    expect(row.bankName).toBe(BANK_NAME);
   });
 
   it('refuses to let an admin review a request of their own', async () => {

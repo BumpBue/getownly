@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 import { PayoutStatus } from '@prisma/client';
+import { BANK_CODES } from '@getownly/shared';
 import { Trim } from '@/common/transforms';
 
 /**
@@ -13,11 +14,15 @@ const AMOUNT_PATTERN = /^\d{1,8}(\.\d{1,2})?$/;
 const AMOUNT_MESSAGE = 'จำนวนเงินต้องเป็นตัวเลขไม่ติดลบ ทศนิยมไม่เกิน 2 ตำแหน่ง';
 
 export class SaveBankAccountDto {
-  @Trim()
+  /**
+   * A Bank of Thailand code from the shared list, not a name.
+   *
+   * Checked here against that list rather than trusted from the browser: the
+   * dropdown exists to help somebody choose, not to decide what is valid.
+   */
   @IsString()
-  @MaxLength(100, { message: 'ชื่อธนาคารต้องยาวไม่เกิน 100 ตัวอักษร' })
-  @Matches(/\S/, { message: 'กรุณาระบุชื่อธนาคาร' })
-  bankName!: string;
+  @IsIn(BANK_CODES, { message: 'กรุณาเลือกธนาคารจากรายการ' })
+  bankCode!: string;
 
   @Trim()
   @IsString()

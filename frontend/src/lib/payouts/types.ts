@@ -16,6 +16,12 @@ export type PayoutStatus = (typeof PAYOUT_STATUSES)[number];
  * form: the number is already masked, and there is no unmasked field to leak.
  */
 export interface MaskedBankAccount {
+  /** Bank of Thailand three-digit code; the value the API stores. */
+  bankCode: string;
+  /**
+   * The name the API resolved from that code, or the one snapshotted onto the
+   * request if the code is no longer in the shared list.
+   */
   bankName: string;
   accountName: string;
   accountNumberMasked: string;
@@ -23,7 +29,7 @@ export interface MaskedBankAccount {
 
 /** The owner's own details, for the form where they are edited. */
 export interface BankAccount {
-  bankName: string;
+  bankCode: string;
   accountName: string;
   accountNumber: string;
   updatedAt: string;
@@ -72,6 +78,7 @@ export interface AdminPayoutListItem {
     displayName: string;
     walletBalance: string;
   };
+  bankCode: string;
   bankName: string;
   accountName: string;
   accountNumberMasked: string;

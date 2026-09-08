@@ -249,6 +249,12 @@ await check('instructor', 'payouts', '/instructor/payouts');
 await check('instructor', 'payouts-bank-form', '/instructor/payouts', (page) =>
   page.getByRole('button', { name: /บัญชีธนาคาร/ }).first().click(),
 );
+// The bank list open: sixteen rows and a search box, on a screen 375px wide.
+await check('instructor', 'payouts-bank-list', '/instructor/payouts', async (page) => {
+  await page.getByRole('button', { name: /บัญชีธนาคาร/ }).first().click();
+  await page.waitForSelector('#bank-name', { timeout: 15000 });
+  await page.click('#bank-name');
+});
 await check('instructor', 'profile', '/profile');
 
 // --- ผู้ดูแลระบบ -------------------------------------------------------------

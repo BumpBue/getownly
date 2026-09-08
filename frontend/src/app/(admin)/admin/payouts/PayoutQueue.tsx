@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BankLogo } from "@/components/shared/BankLogo";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Pager } from "@/components/shared/Pager";
 import { PayoutStatusBadge } from "@/components/shared/PayoutStatusBadge";
@@ -237,7 +238,8 @@ function QueueRows({
               </div>
               <div className="col-span-2">
                 <dt className="text-muted">{labels.columnAccount}</dt>
-                <dd className="tabular-nums text-muted">
+                <dd className="flex items-center gap-2 tabular-nums text-muted">
+                  <BankLogo code={item.bankCode} size="sm" />
                   {item.bankName} · {item.accountNumberMasked}
                 </dd>
               </div>
@@ -278,8 +280,11 @@ function QueueRows({
                 <td className="px-5 py-3 tabular-nums text-muted">
                   {formatBaht(item.instructor.walletBalance)}
                 </td>
-                <td className="px-5 py-3 tabular-nums text-muted">
-                  {item.bankName} · {item.accountNumberMasked}
+                <td className="px-5 py-3 text-muted">
+                  <span className="flex items-center gap-2 tabular-nums">
+                    <BankLogo code={item.bankCode} size="sm" />
+                    {item.bankName} · {item.accountNumberMasked}
+                  </span>
                 </td>
                 <td className="px-5 py-3 text-muted">{formatDateTime(item.createdAt)}</td>
                 <td className="px-5 py-3">

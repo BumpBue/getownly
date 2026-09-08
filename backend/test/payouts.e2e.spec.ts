@@ -9,10 +9,12 @@ import { createHarness, cookieHeader, cookiesFrom, type Harness } from './app-ha
 import { createSystemAccounts, createTopupRequest, resetDatabase } from './factories';
 
 const BANK = {
-  bankName: 'ธนาคารกสิกรไทย',
+  bankCode: '004',
   accountName: 'ครูสาธิต ใจดี',
   accountNumber: '1234567890',
 };
+
+const BANK_NAME = 'ธนาคารกสิกรไทย';
 
 /**
  * A run of digits long enough to be a bank account.
@@ -331,6 +333,46 @@ describe('Instructor payouts (e2e)', () => {
 
     const untouched = await prisma.payoutRequest.findUniqueOrThrow({ where: { id } });
     expect(untouched.status).toBe('PENDING');
+  });
+
+  it('refuses a bank code that is not on the list', async () => {
+    const instructor = await signUp({ role: Role.INSTRUCTOR });
+
+    for (const bankCode of ['999', '65', 'KBANK', '', 'ธนาคารกสิกรไทย']) {
+      await request(harness.server)
+        .put('/api/payouts/bank-account')
+        .set('Cookie', instructor.cookie)
+        .send({ ...BANK, bankCode })
+        .expect(400);
+    }
+
+    // 065 was a real code once, and is not on this list.
+    await request(harness.server)
+      .put('/api/payouts/bank-account')
+      .set('Cookie', instructor.cookie)
+      .send({ ...BANK, bankCode: '065' })
+      .expect(400);
+
+    const saved = await prisma.instructorBankAccount.count();
+    expect(saved).toBe(0);
+  });
+
+  it('names the bank from its code, on both sides of the review', async () => {
+    const instructor = await readyInstructor();
+    const id = await submit(instructor, '1000.00');
+
+    const [mine, forAdmin] = await Promise.all([
+      request(harness.server).get('/api/payouts/mine').set('Cookie', instructor.cookie).expect(200),
+      request(harness.server)
+        .get(`/api/admin/payouts/${id}`)
+        .set('Cookie', admin.cookie)
+        .expect(200),
+    ]);
+
+    expect(mine.body.items[0].bankAccount.bankCode).toBe('004');
+    expect(mine.body.items[0].bankAccount.bankName).toBe(BANK_NAME);
+    expect(forAdmin.body.bankCode).toBe('004');
+    expect(forAdmin.body.bankName).toBe(BANK_NAME);
   });
 
   it('refuses an account number that is not a plausible one', async () => {

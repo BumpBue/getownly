@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AccountKind, PayoutStatus, Prisma } from '@prisma/client';
-import { PAYOUT_MIN_AMOUNT_BAHT } from '@getownly/shared';
+import { PAYOUT_MIN_AMOUNT_BAHT, bankDisplayName } from '@getownly/shared';
 import { maskAccountNumber } from '@/common/bank-account';
 import { PrismaService } from '@/infra/prisma.service';
 import { WalletService } from '@/modules/ledger/wallet.service';
@@ -34,6 +34,7 @@ const requestSelect = {
   id: true,
   amount: true,
   status: true,
+  bankCode: true,
   bankName: true,
   accountName: true,
   accountNumber: true,
@@ -99,7 +100,7 @@ export class PayoutsService {
   async readBankAccount(instructorId: string): Promise<BankAccountDto | null> {
     const account = await this.prisma.instructorBankAccount.findUnique({
       where: { instructorId },
-      select: { bankName: true, accountName: true, accountNumber: true, updatedAt: true },
+      select: { bankCode: true, accountName: true, accountNumber: true, updatedAt: true },
     });
 
     if (!account) {
@@ -107,7 +108,7 @@ export class PayoutsService {
     }
 
     return {
-      bankName: account.bankName,
+      bankCode: account.bankCode,
       accountName: account.accountName,
       accountNumber: account.accountNumber,
       updatedAt: account.updatedAt.toISOString(),
@@ -123,11 +124,11 @@ export class PayoutsService {
       where: { instructorId },
       create: { instructorId, ...dto },
       update: dto,
-      select: { bankName: true, accountName: true, accountNumber: true, updatedAt: true },
+      select: { bankCode: true, accountName: true, accountNumber: true, updatedAt: true },
     });
 
     return {
-      bankName: account.bankName,
+      bankCode: account.bankCode,
       accountName: account.accountName,
       accountNumber: account.accountNumber,
       updatedAt: account.updatedAt.toISOString(),
@@ -147,7 +148,7 @@ export class PayoutsService {
       }),
       this.prisma.instructorBankAccount.findUnique({
         where: { instructorId },
-        select: { bankName: true, accountName: true, accountNumber: true },
+        select: { bankCode: true, accountName: true, accountNumber: true },
       }),
       this.prisma.payoutRequest.findFirst({
         where: { instructorId, status: PayoutStatus.PENDING },
@@ -187,7 +188,7 @@ export class PayoutsService {
 
     const bank = await this.prisma.instructorBankAccount.findUnique({
       where: { instructorId },
-      select: { bankName: true, accountName: true, accountNumber: true },
+      select: { bankCode: true, accountName: true, accountNumber: true },
     });
 
     if (!bank) {
@@ -195,8 +196,13 @@ export class PayoutsService {
     }
 
     // Snapshotted onto the request, because the instructor may correct their
-    // account afterwards and a transfer has to keep saying where it went.
-    return this.wallet.requestPayout(instructorId, amount, bank);
+    // account afterwards and a transfer has to keep saying where it went. The
+    // name is resolved once, here, and frozen with it: the code renders the
+    // bank while it is still in the list, and this is what is left if it goes.
+    return this.wallet.requestPayout(instructorId, amount, {
+      ...bank,
+      bankName: bankDisplayName(bank.bankCode),
+    });
   }
 
   /** The instructor's own history, newest first. */
@@ -320,12 +326,15 @@ export class PayoutsService {
 }
 
 function toMaskedBankAccount(bank: {
-  bankName: string;
+  bankCode: string;
+  /** Present on a payout request, absent on a saved bank account. */
+  bankName?: string;
   accountName: string;
   accountNumber: string;
 }): MaskedBankAccountDto {
   return {
-    bankName: bank.bankName,
+    bankCode: bank.bankCode,
+    bankName: bankDisplayName(bank.bankCode, bank.bankName),
     accountName: bank.accountName,
     accountNumberMasked: maskAccountNumber(bank.accountNumber),
   };
@@ -383,7 +392,8 @@ function adminRowBody(row: AdminRequestRow): Omit<AdminPayoutRequestDto, 'accoun
       displayName: row.instructor.displayName,
       walletBalance: (row.instructor.accounts[0]?.balance ?? new Prisma.Decimal(0)).toFixed(2),
     },
-    bankName: row.bankName,
+    bankCode: row.bankCode,
+    bankName: bankDisplayName(row.bankCode, row.bankName),
     accountName: row.accountName,
     note: row.note,
     reviewedBy: row.reviewedBy
