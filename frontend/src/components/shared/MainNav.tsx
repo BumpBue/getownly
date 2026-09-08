@@ -6,7 +6,6 @@ import { useCallback, useEffect, useState } from "react";
 import { Menu, Wallet, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CourseSearchBox } from "./CourseSearchBox";
-import { NotificationBell } from "./NotificationBell";
 import { UserMenu } from "./UserMenu";
 import { me } from "@/lib/auth/api";
 import type { UserProfile } from "@/lib/auth/types";
@@ -138,7 +137,6 @@ export function MainNav() {
 
           {user && (
             <div className="hidden items-center gap-2 md:flex">
-              <NotificationBell />
               <WalletPill balance={balance} />
               <UserMenu user={user} />
             </div>
@@ -174,12 +172,7 @@ export function MainNav() {
         <div className="flex flex-col gap-3 border-t border-border px-4 py-4 md:hidden">
           <CourseSearchBox className="relative w-full" />
 
-          {user && (
-            <div className="flex items-center gap-2">
-              <NotificationBell />
-              <WalletPill balance={balance} />
-            </div>
-          )}
+          {user && <WalletPill balance={balance} />}
 
           {isGuest && (
             <Button asChild variant="outline" block>

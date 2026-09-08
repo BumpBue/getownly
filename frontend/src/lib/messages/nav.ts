@@ -13,13 +13,6 @@ export const navMessages = {
     viewAllPrefix: "ดูผลการค้นหาทั้งหมดสำหรับ",
   },
 
-  notifications: {
-    ariaLabel: "การแจ้งเตือน",
-    title: "การแจ้งเตือน",
-    empty: "ยังไม่มีการแจ้งเตือน",
-    comingSoon: "ระบบแจ้งเตือนจะเปิดใช้งานในเวอร์ชันถัดไป",
-  },
-
   userMenu: {
     ariaLabel: "เมนูผู้ใช้",
     instructorDashboard: "แดชบอร์ดผู้สอน",
