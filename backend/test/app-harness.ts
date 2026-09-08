@@ -7,6 +7,8 @@ import type { Response } from 'supertest';
 import { AppModule } from '@/app.module';
 import { configureApp } from '@/app.setup';
 import { PrismaService } from '@/infra/prisma.service';
+import { StorageService } from '@/infra/storage/storage.service';
+import { FakeStorage } from './fake-storage';
 
 export interface Harness {
   app: NestExpressApplication;
@@ -14,14 +16,27 @@ export interface Harness {
   server: ReturnType<INestApplication['getHttpServer']>;
   /** Empties the in-memory rate limit counters between tests. */
   resetRateLimits: () => void;
+  /** Present only when the harness was asked for fake storage. */
+  storage?: FakeStorage;
 }
 
 /**
  * Boots the real AppModule with the same global pipes, filters and guards that
  * `main.ts` installs, so an e2e test cannot pass because of a setup difference.
  */
-export async function createHarness(): Promise<Harness> {
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+export async function createHarness(options: { fakeStorage?: boolean } = {}): Promise<Harness> {
+  const builder = Test.createTestingModule({ imports: [AppModule] });
+
+  // A Map stands in for MinIO when a test needs to prove which bytes came back
+  // — the same trade the service tests make (CLAUDE.md, เฟส 3): the database
+  // has to be real because locks and transactions are the thing under test,
+  // while object storage only has to answer "which key" and "which bytes".
+  const fakeStorage = options.fakeStorage ? new FakeStorage() : undefined;
+  if (fakeStorage) {
+    builder.overrideProvider(StorageService).useValue(fakeStorage);
+  }
+
+  const moduleRef = await builder.compile();
 
   const app = moduleRef.createNestApplication<NestExpressApplication>();
   configureApp(app, app.get(ConfigService));
@@ -33,6 +48,7 @@ export async function createHarness(): Promise<Harness> {
     app,
     prisma: app.get(PrismaService),
     server: app.getHttpServer(),
+    storage: fakeStorage,
     resetRateLimits: () => {
       const backing = (storage as unknown as { _storage?: unknown })._storage;
       if (backing instanceof Map) {

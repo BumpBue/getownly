@@ -218,6 +218,14 @@ await check('student', 'home', '/home');
 await check('student', 'catalog', '/courses');
 await check('student', 'catalog-filtered', '/courses?search=Maya&sort=price_asc');
 await check('student', 'course-detail', publicCoursePath);
+// The preview player open, which is nearly the whole screen at 375px.
+await check('student', 'course-preview-dialog', publicCoursePath, async (page) => {
+  const preview = page.getByRole('button', { name: /ดูตัวอย่าง:/ });
+  if ((await preview.count()) > 0) {
+    await preview.first().click();
+    await page.locator('dialog[open]').waitFor({ timeout: 15000 });
+  }
+});
 await check('student', 'my-courses', '/my-courses');
 await check('student', 'wallet', '/wallet');
 await check('student', 'topup', '/wallet/topup');

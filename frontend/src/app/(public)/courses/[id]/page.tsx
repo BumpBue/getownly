@@ -7,10 +7,7 @@ import {
   BookOpen,
   Check,
   Clock,
-  FileText,
   ImageOff,
-  Lock,
-  PlayCircle,
   Users,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -19,11 +16,12 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { CourseStatusBadge } from "@/components/shared/CourseStatusBadge";
 import { ReportContentButton } from "@/components/shared/ReportContentButton";
 import { StickyPanel } from "@/components/shared/StickyPanel";
-import { formatBaht, formatClock, formatCount, formatDuration, isFree } from "@/lib/format";
+import { formatBaht, formatCount, formatDuration, isFree } from "@/lib/format";
 import { courseMessages } from "@/lib/messages/courses";
 import { walletMessages } from "@/lib/messages/wallet";
 import { serverFetch } from "@/lib/server-api";
 import type { CourseDetail } from "@/lib/catalog/types";
+import { CurriculumList } from "./CurriculumList";
 import { PurchasePanel } from "./PurchasePanel";
 
 /**
@@ -169,44 +167,14 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
                 <p className="py-6 text-center text-sm text-subtle">{detail.emptyCurriculum}</p>
               </CardBody>
             ) : (
-              <ul className="divide-y divide-border">
-                {course.lessons.map((lesson) => (
-                  <li
-                    key={lesson.id}
-                    className="group/lesson flex items-center gap-3 px-5 py-3.5 transition-colors duration-150 hover:bg-background"
-                  >
-                    {lesson.isPreview ? (
-                      <PlayCircle
-                        aria-hidden
-                        className="size-4 shrink-0 text-primary transition-colors duration-150 group-hover/lesson:text-secondary"
-                      />
-                    ) : (
-                      <Lock aria-hidden className="size-4 shrink-0 text-subtle" />
-                    )}
-
-                    <span className="tabular w-7 shrink-0 text-xs text-subtle">
-                      {lesson.orderIndex}
-                    </span>
-
-                    <span className="flex-1 text-sm text-foreground">{lesson.title}</span>
-
-                    {lesson.materialCount > 0 && (
-                      <span className="flex items-center gap-1 text-xs text-subtle">
-                        <FileText aria-hidden className="size-3.5" />
-                        <span className="tabular">
-                          {lesson.materialCount} {detail.materialsSuffix}
-                        </span>
-                      </span>
-                    )}
-
-                    {lesson.isPreview && <Badge tone="accent">{detail.previewBadge}</Badge>}
-
-                    <span className="tabular w-12 shrink-0 text-right text-xs text-muted">
-                      {formatClock(lesson.durationSec)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <CurriculumList
+                courseId={course.id}
+                lessons={course.lessons}
+                // A wallet exists for every account and for nobody else, so a
+                // null balance is the page's only signal that the visitor is
+                // not signed in — the same one the purchase panel reads.
+                isSignedIn={balance !== null}
+              />
             )}
           </Card>
 

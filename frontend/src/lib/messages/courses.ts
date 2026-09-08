@@ -53,6 +53,19 @@ export const courseMessages = {
     curriculumHeading: 'เนื้อหาบทเรียน',
     instructorHeading: 'ผู้สอน',
     previewBadge: 'ดูตัวอย่างได้',
+    previewOpen: 'ดูตัวอย่าง',
+    previewDialogTitle: 'ดูตัวอย่างบทเรียน',
+    previewClose: 'ปิด',
+    previewLoading: 'กำลังเตรียมวิดีโอ...',
+    previewSignInPrompt: 'เข้าสู่ระบบเพื่อดูตัวอย่างบทเรียนนี้',
+    // Each failure says which one it was: "ลองใหม่" alone leaves a viewer
+    // retrying something that will never work, such as a lesson whose video
+    // the instructor has not uploaded.
+    previewNoVideo: 'ผู้สอนยังไม่ได้อัปโหลดวิดีโอของบทเรียนนี้ จึงยังดูตัวอย่างไม่ได้',
+    previewForbidden: 'บทเรียนนี้ไม่ได้เปิดให้ดูตัวอย่าง',
+    previewSessionExpired: 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่แล้วลองอีกครั้ง',
+    previewFailed: 'เล่นวิดีโอตัวอย่างไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
+    lockedLesson: 'ซื้อคอร์สนี้เพื่อเข้าเรียนบทนี้',
     materialsSuffix: 'ไฟล์แนบ',
     emptyCurriculum: 'ผู้สอนยังไม่ได้เพิ่มบทเรียนในคอร์สนี้',
     alreadyOwned: 'คุณมีคอร์สนี้แล้ว',

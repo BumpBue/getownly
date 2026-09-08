@@ -215,6 +215,24 @@ try {
       .setInputFiles({ name: 'worksheet.pdf', mimeType: 'application/pdf', buffer: PDF });
     await teacher.page.waitForTimeout(7000);
 
+    // Opened as a free preview, so step 3c can watch it without buying.
+    //
+    // The checkbox is disabled while the row is saving, and the row was just
+    // saving two uploads, so this waits for it to settle rather than assuming
+    // the timeouts above were long enough.
+    const previewToggle = teacher.page.getByLabel(/เปิดให้ดูตัวอย่างฟรี/).first();
+    await previewToggle.waitFor({ timeout: 20000 });
+    for (let attempt = 0; attempt < 10 && !(await previewToggle.isChecked()); attempt += 1) {
+      if (await previewToggle.isEnabled()) {
+        await previewToggle.click({ force: true }).catch(() => {});
+      }
+      await teacher.page.waitForTimeout(1500);
+    }
+    if (!(await previewToggle.isChecked())) {
+      throw new Error('ติ๊ก "เปิดให้ดูตัวอย่างฟรี" ไม่สำเร็จ');
+    }
+    await teacher.page.waitForTimeout(1500);
+
     await capture(teacher.page, 'lesson-with-files');
   }, teacher);
 
@@ -305,7 +323,60 @@ try {
     await capture(learner.page, 'filtered-by-instructor');
   }, learner);
 
-  await step('3c. ผู้เรียนเติมเงินและแนบสลิป', async () => {
+  await step('3c. ผู้เรียนดูตัวอย่างบทเรียนก่อนซื้อ', async () => {
+    // courseUrl is /instructor/courses/<id>; the public page is /courses/<id>.
+    const publicCourseUrl = `${BASE}/courses/${courseUrl.split('/').pop()}`;
+    await learner.page.goto(publicCourseUrl, { waitUntil: 'networkidle' });
+    await learner.page.waitForTimeout(2000);
+
+    // The preview row is a real button, so it is found the way a screen reader
+    // would find it rather than by clicking a styled <li>.
+    const previewButton = learner.page.getByRole('button', { name: /ดูตัวอย่าง:/ });
+    await previewButton.first().click();
+
+    const dialog = learner.page.locator('dialog[open]');
+    await dialog.waitFor({ timeout: 15000 });
+    await learner.page.waitForTimeout(3000);
+    await capture(learner.page, 'lesson-preview');
+
+    // The fixture MP4 has a header and no frames, so it will not decode — but
+    // the bytes are real, and reaching the player at all is what this proves.
+    const played = await learner.page.evaluate(() => {
+      const video = document.querySelector('dialog[open] video');
+      return video === null ? null : new URL(video.src).pathname;
+    });
+    if (played === null) {
+      const shown = await dialog.innerText();
+      throw new Error(`เปิดหน้าต่างดูตัวอย่างแล้วแต่ไม่มี <video> — ${shown.slice(0, 160)}`);
+    }
+    note(`เล่นตัวอย่างจาก ${played}`);
+
+    // Only preview lessons carry a control at all; the rest are inert markup.
+    // That locked lessons are also refused by the API is proved separately, in
+    // backend/test/lesson-preview.e2e.spec.ts, where it can be asked directly.
+    const openable = await learner.page.getByRole('button', { name: /ดูตัวอย่าง:/ }).count();
+    note(`บทเรียนที่กดดูตัวอย่างได้: ${openable} บท (บทที่ไม่ใช่ตัวอย่างไม่มีปุ่ม)`);
+
+    // Escape closes it, and the video stops rather than playing on unseen.
+    await learner.page.keyboard.press('Escape');
+    await learner.page.waitForTimeout(1200);
+    const stillOpen = await learner.page.locator('dialog[open]').count();
+    if (stillOpen > 0) {
+      throw new Error('กด Escape แล้วหน้าต่างดูตัวอย่างไม่ปิด');
+    }
+
+    // Still not enrolled: a preview is not a purchase. The call to action is
+    // a link when it points at the top-up page and a button when it buys, so
+    // both roles count.
+    const canBuy =
+      (await learner.page.getByRole('button', { name: /ซื้อคอร์ส|เติมเงิน/ }).count()) +
+      (await learner.page.getByRole('link', { name: /ซื้อคอร์ส|เติมเงิน/ }).count());
+    if (canBuy === 0) {
+      throw new Error('ดูตัวอย่างแล้วปุ่มซื้อหายไป ทั้งที่ยังไม่ได้ซื้อ');
+    }
+  }, learner);
+
+  await step('3d. ผู้เรียนเติมเงินและแนบสลิป', async () => {
     await learner.page.goto(`${BASE}/wallet/topup`, { waitUntil: 'networkidle' });
     await learner.page.fill('#topup-amount', '2000');
     await learner.page.getByRole('button', { name: /สร้าง QR/ }).click();

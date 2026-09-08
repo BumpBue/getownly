@@ -14,6 +14,12 @@ export class FakeStorage {
   readonly objects = new Map<string, StoredObjectInfo & { body: Buffer }>();
   readonly removed: string[] = [];
 
+  /** Forgets every object, so one test's uploads are not another's. */
+  clear(): void {
+    this.objects.clear();
+    this.removed.length = 0;
+  }
+
   put(objectKey: string, body: string | Buffer, mimeType = 'application/pdf'): void {
     const buffer = typeof body === 'string' ? Buffer.from(body) : body;
     this.objects.set(objectKey, { body: buffer, sizeBytes: buffer.length, mimeType });
