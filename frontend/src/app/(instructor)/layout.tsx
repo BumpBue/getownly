@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { ArrowRight, BarChart3, Inbox, LayoutDashboard, Plus, UserRound } from "lucide-react";
+import {
+  ArrowRight,
+  BarChart3,
+  Inbox,
+  LayoutDashboard,
+  Plus,
+  UserRound,
+  Wallet,
+} from "lucide-react";
 import { Footer } from "@/components/shared/Footer";
 import { SidebarLink } from "@/components/shared/SidebarLink";
 import { instructorMessages } from "@/lib/messages/instructor";
@@ -39,6 +47,12 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
             icon={<BarChart3 aria-hidden className="size-4" />}
           >
             {nav.reports}
+          </SidebarLink>
+          {/* Earnings land in the instructor's own wallet, so the ledger of
+              movements is theirs to read — but nothing linked to it, and the
+              page lives in the (student) route group. */}
+          <SidebarLink href="/wallet" icon={<Wallet aria-hidden className="size-4" />}>
+            {nav.wallet}
           </SidebarLink>
         </nav>
 
