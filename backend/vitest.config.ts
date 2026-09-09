@@ -18,6 +18,15 @@ export default defineConfig({
     // Row locks mean a test can legitimately wait on another transaction.
     testTimeout: 30_000,
     hookTimeout: 30_000,
+    // Keep every run on disk as well as on screen.
+    //
+    // A single failure once went past in a scrollback and left nothing to
+    // examine; ten clean re-runs afterwards could not bring it back. The JSON
+    // reporter is built in and records the test name and the whole failure
+    // message, so the next occurrence is diagnosable from the file alone.
+    // Overwritten each run, and gitignored via `test-results/`.
+    reporters: ['default', 'json'],
+    outputFile: { json: './test-results/last-run.json' },
   },
   resolve: {
     alias: {
