@@ -27,6 +27,7 @@
 - [ข้อมูลสำหรับวันสาธิต](#ข้อมูลสำหรับวันสาธิต)
 - [URL ตอนพัฒนา](#url-ตอนพัฒนา)
 - [คำสั่งที่ใช้บ่อย](#คำสั่งที่ใช้บ่อย)
+- [Deploy ออนไลน์ (ช่องทางเสริม)](#deploy-ออนไลน์-ช่องทางเสริม)
 - [สถาปัตยกรรม](#สถาปัตยกรรม)
 - [แผนผังข้อมูล](#แผนผังข้อมูล)
 - [ระบบบัญชีคู่](#ระบบบัญชีคู่)
@@ -242,6 +243,94 @@ docker compose --profile full down
   ค่าที่คอนเทนเนอร์ใช้มาจาก `docker-compose.yml` ทั้งหมด
 - `JWT_*_SECRET` และรหัสผ่านใน `docker-compose.yml` เป็นค่าสำหรับสาธิตเท่านั้น
   ต้องเปลี่ยนก่อนนำขึ้นใช้งานจริงทุกครั้ง
+
+---
+
+## Deploy ออนไลน์ (ช่องทางเสริม)
+
+> **Docker บนเครื่อง (หัวข้อก่อนหน้า) ยังเป็นช่องทางหลักและช่องทางทางการตาม ทก.01 ข้อ 2.7.4
+> ใช้ในวันสอบจริงเสมอ** หัวข้อนี้เป็นช่องทางเสริมให้กรรมการเข้าดูระบบได้ผ่านอินเทอร์เน็ต
+> **ก่อน**วันสอบ ไม่ได้มาแทนที่ Docker — ถ้าอินเทอร์เน็ตวันสอบมีปัญหาหรือบริการฟรีที่ใช้ล่ม
+> Docker local ยังใช้งานได้เหมือนเดิมทุกประการ เพราะสองช่องทางนี้แยกอิสระจากกันสิ้นเชิง
+> (ดูหัวข้อ "ทำไมเลือก Cloudflare R2" ใน [CLAUDE.md](CLAUDE.md) สำหรับเหตุผลเชิงสถาปัตยกรรม)
+
+### สถาปัตยกรรม
+
+```
+Vercel (Next.js)  →  Render (NestJS, Docker image เดียวกับที่ใช้ local)  →  Supabase (PostgreSQL)
+                                        ↓
+                              Cloudflare R2 (S3-compatible)
+```
+
+- **Backend และไฟล์ `backend/Dockerfile` เป็นไฟล์เดียวกับที่ `docker compose --profile full` ใช้อยู่แล้ว**
+  ไม่มี Dockerfile แยกสำหรับ Render — `render.yaml` ที่ root ของ repo สั่ง Render ให้ build
+  จากไฟล์นี้โดยตรง (`dockerContext` เป็น root ของ repo เหมือนตอน build local แม้ `rootDir` จะชี้ที่
+  `backend` — ดูคอมเมนต์ใน `render.yaml`) migration จึงรันอัตโนมัติตอนคอนเทนเนอร์เริ่มด้วยคำสั่งเดิม
+  ทุกประการ (`prisma migrate deploy && node dist/main` — ดูบรรทัด `CMD` ท้ายไฟล์) **ไม่ต้องตั้งค่า
+  build/start command เพิ่มบน Render เลย เพราะ `runtime: docker` ให้ Dockerfile เป็นคนกำหนดทั้งสองขั้นตอน**
+- **Storage เปลี่ยนจาก MinIO เป็น Cloudflare R2 ผ่านการตั้งค่า env เท่านั้น** `StorageService`
+  ใช้ AWS S3 SDK (`@aws-sdk/client-s3`) มาตั้งแต่รอบนี้ ไม่ใช่ SDK เฉพาะของ MinIO อีกต่อไป
+  จึงคุยกับ MinIO local และ R2 ด้วยโค้ดชุดเดียวกัน ต่างกันแค่ endpoint/key ใน env
+- **Frontend deploy บน Vercel ด้วยค่าเริ่มต้นได้เลย ไม่ต้องมี `vercel.json`** ตั้ง Root Directory
+  เป็น `frontend` ในหน้าตั้งค่าโปรเจกต์ของ Vercel เท่านั้น (Vercel รู้จัก pnpm workspace เองจาก
+  `pnpm-workspace.yaml` ที่ root และ build `@getownly/shared` ให้ก่อนโดยอัตโนมัติ)
+
+### ขั้นตอน
+
+**1. Supabase** — สร้างโปรเจกต์ คัดลอก connection string (Settings → Database) ไปใส่ `DATABASE_URL` บน Render
+
+**2. Cloudflare R2** — สร้าง bucket หนึ่งใบ แล้วสร้าง S3 API token (R2 → Manage R2 API Tokens)
+จะได้ Access Key / Secret Key / Account ID มา ประกอบ endpoint เป็น
+`https://<account-id>.r2.cloudflarestorage.com`
+
+> ⚠️ **ต้องตั้ง CORS policy บน bucket ของ R2 เองด้วย** แยกจาก CORS ของ backend (`FRONTEND_ORIGIN`)
+> เพราะการอัปโหลดปก/วิดีโอ/เอกสาร/สลิปเป็นการยิง presigned PUT **ตรงจากเบราว์เซอร์เข้า R2**
+> ไม่ผ่าน backend เลย ถ้าไม่ตั้ง CORS ไว้ เบราว์เซอร์จะปฏิเสธคำขอ PUT ทันทีโดยไม่ขึ้น error
+> ที่เข้าใจง่าย (MinIO local ไม่ต้องทำแบบนี้เพราะค่าเริ่มต้นของมันเปิดกว้างอยู่แล้ว) ตั้งค่าอนุญาต
+> origin ของ Vercel, method `GET`/`PUT`, header ทั้งหมด ผ่านหน้า bucket settings หรือ `wrangler`
+
+**3. Render** — New → Blueprint → เชื่อม repo นี้ (Render อ่าน `render.yaml` ที่ root เอง เห็น
+`runtime: docker` แล้ว build จาก `backend/Dockerfile` ให้ทันที) ตัวแปรที่เป็นค่าคงที่ (`NODE_ENV`,
+`COOKIE_SECURE` ฯลฯ) มากับ blueprint อยู่แล้ว ที่เหลือ (ทำเครื่องหมาย `sync: false` ใน `render.yaml`)
+กรอกในแท็บ Environment ของ service ตามตารางด้านล่าง แล้ว deploy
+
+**4. Vercel** — import repo นี้ ตั้ง Root Directory เป็น `frontend` ตั้งค่า env ตามตารางด้านล่าง แล้ว deploy
+
+**5. ปิดวงจร** — Render กับ Vercel ต้องรู้ URL ของกันและกัน (`FRONTEND_ORIGIN` บน Render ↔
+`NEXT_PUBLIC_API_BASE_URL`/`API_BASE_URL` บน Vercel) ซึ่งจะมีก็ต่อเมื่อทั้งคู่ deploy ไปแล้วครั้งหนึ่ง
+เกิด chicken-and-egg เล็กน้อย: deploy ทั้งคู่ครั้งแรกด้วยค่าใดก็ได้ก่อน แล้วกลับมาแก้ env
+ให้ชี้ถูกและกด redeploy อีกครั้งทั้งสองฝั่ง
+
+### ตัวแปรสภาพแวดล้อมที่ต้องตั้งบน Render (backend)
+
+ชื่อตัวแปรเหมือนกับ `backend/.env.example` ทุกตัว ไม่มีตัวไหนเปลี่ยนชื่อ — `render.yaml`
+กำหนดค่าคงที่ไว้ให้ทั้งหมดแล้ว (ดูไฟล์นั้นสำหรับรายการเต็ม) ตารางนี้คือเฉพาะตัวที่ทำเครื่องหมาย
+`sync: false` ไว้ ซึ่งต้องกรอกเองในหน้า Render เพราะเป็นค่าที่ผูกกับบัญชี/โดเมนของคุณ (ไม่ใส่ค่าจริงในไฟล์นี้)
+
+| ตัวแปร | ค่าที่ต้องตั้งบน Render |
+|---|---|
+| `DATABASE_URL` | connection string จาก Supabase |
+| `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` | สุ่มใหม่ ยาวอย่างน้อย 32 ตัวอักษร (ห้ามใช้ค่าตัวอย่างในไฟล์ `.env.example`) |
+| `FRONTEND_ORIGIN` | URL ของ Vercel (เช่น `https://your-app.vercel.app`) |
+| `MINIO_ENDPOINT` / `MINIO_PUBLIC_ENDPOINT` | โฮสต์ของ R2 (`<account-id>.r2.cloudflarestorage.com`) — ตั้งเหมือนกันทั้งสองตัว R2 มี endpoint สาธารณะเดียวที่ทั้งฝั่ง server และ browser ใช้ร่วมกันได้ ไม่ต้องแยกเหมือนตอน MinIO ใน Docker |
+| `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` | จาก R2 API token |
+| `MINIO_BUCKET` | ชื่อ bucket ที่สร้างไว้ |
+| `MAIL_HOST` / `MAIL_PORT` / `MAIL_SECURE` / `MAIL_USER` / `MAIL_PASSWORD` / `MAIL_FROM_NAME` / `MAIL_FROM_ADDRESS` | ค่าของผู้ให้บริการ SMTP จริงที่เลือกใช้ (เช่น Resend, SendGrid, Brevo — ตัวไหนก็ได้ที่คุยผ่าน SMTP มาตรฐาน `mail.service.ts` ไม่ผูกกับผู้ให้บริการรายใดเป็นการเฉพาะ) `MAIL_FROM_ADDRESS` ต้องเป็นโดเมนที่ยืนยันกับผู้ให้บริการแล้ว |
+
+`PROMPTPAY_ID` และตัวแปรค่าคงที่ที่เหลือทั้งหมด (`PORT`, `API_PREFIX`, `JWT_*_EXPIRES_IN`, `BCRYPT_COST`,
+`RATE_LIMIT_*`, `MINIO_PORT`/`MINIO_USE_SSL`/`MINIO_PUBLIC_PORT`/`MINIO_PUBLIC_USE_SSL` (เป็น `443`/`true`
+สำหรับ R2 เสมอ), `MINIO_PRESIGN_*_EXPIRY_SECONDS`, `DEMO_MODE`, `PROMPTPAY_DISPLAY_NAME`, `TOPUP_*`,
+`PLATFORM_DEFAULT_COMMISSION_RATE`) มากับ `render.yaml` แล้ว ไม่ต้องตั้งเพิ่ม — แก้ไขได้ทั้งในไฟล์
+(ถ้าอยากเปลี่ยนสำหรับทุก deploy) หรือ override ในหน้า Environment ของ service ก็ได้
+
+### ตัวแปรสภาพแวดล้อมที่ต้องตั้งบน Vercel (frontend)
+
+| ตัวแปร | ค่าที่ต้องตั้ง |
+|---|---|
+| `NEXT_PUBLIC_API_BASE_URL` | URL ของ Render + `/api` (เช่น `https://getownly-api.onrender.com/api`) |
+| `API_BASE_URL` | ค่าเดียวกับข้างบน — บน Vercel สองค่านี้เท่ากัน ต่างจาก Docker local ที่ Server Component คุยผ่านเครือข่ายภายใน |
+| `NEXT_PUBLIC_SITE_URL` | URL ของ Vercel เอง |
+| `NEXT_PUBLIC_SITE_NAME` | `getownly` หรือชื่อที่ต้องการแสดง |
 
 ---
 

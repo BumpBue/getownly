@@ -1,0 +1,154 @@
+# Render Blueprint for the getownly API — a supplementary online channel,
+# not a replacement for `docker compose --profile full` (CLAUDE.md, ทก.01
+# ข้อ 2.7.4). See README.md, "Deploy ออนไลน์" for the full walkthrough.
+#
+# runtime: docker, not node — deliberately. `backend/Dockerfile` is the exact
+# image already proven by `docker compose --profile full` (build succeeds,
+# migrations run on start, 24/24 steps of the demo-flow rehearsal pass
+# against it). A native Node build here would mean re-deriving the build
+# steps in this file and hoping they behave the same as the tested image,
+# including things the Dockerfile already got right on purpose (node:22-slim
+# for bcrypt's native module and Prisma's OpenSSL requirement — see
+# CLAUDE.md). Reusing the Dockerfile means there is exactly one build recipe
+# to keep working, not two.
+#
+# Because runtime is docker, there is no separate buildCommand/startCommand
+# here: the Dockerfile's own build stage runs `prisma generate` and
+# `nest build`, and its CMD runs `prisma migrate deploy && node dist/main`
+# every time the container starts — never `migrate deploy`'s dangerous
+# cousin `migrate dev`. Those requirements are met inside the Dockerfile,
+# not duplicated in this file.
+services:
+  - type: web
+    name: getownly-api
+    runtime: docker
+    plan: starter
+    region: singapore
+
+    # dockerfilePath and dockerContext are relative to the REPO ROOT, always
+    # — not to rootDir below. The context has to be the repo root because
+    # the API depends on @getownly/shared, resolved through
+    # pnpm-workspace.yaml, exactly as documented at the top of the
+    # Dockerfile itself.
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+
+    # Scopes Render's auto-deploy trigger to the paths this service actually
+    # depends on. backend/** alone would miss it: a change to
+    # packages/shared/src/limits.ts (course price ceiling, upload size caps —
+    # see CLAUDE.md) changes API behaviour too, so it has to be watched here.
+    rootDir: backend
+    buildFilter:
+      include:
+        - backend/**
+        - packages/shared/**
+
+    # No purpose-built /health endpoint exists yet (grep confirms it — the
+    # comment in storage.service.ts about "/health" was aspirational, not a
+    # route). GET /api is the closest thing that already exists: @Public(),
+    # touches neither the database nor storage, and returns 200 the moment
+    # Nest has finished booting and routing requests — which is exactly what
+    # a liveness check needs. Add a real /health endpoint later if it should
+    # also assert the database and storage are reachable; that is a bigger
+    # change than this Render migration.
+    healthCheckPath: /api
+
+    envVars:
+      # --- fixed, same for every environment — safe to commit literally ---
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: '4000'
+      - key: API_PREFIX
+        value: api
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      # SameSite=None; Secure only makes sense once there is HTTPS in front
+      # of the API, which Render provides by default — see CLAUDE.md for why
+      # no code change was needed to support this.
+      - key: COOKIE_SECURE
+        value: 'true'
+      - key: COOKIE_SAME_SITE
+        value: none
+      - key: BCRYPT_COST
+        value: '12'
+      - key: PASSWORD_RESET_EXPIRES_MINUTES
+        value: '60'
+      - key: RATE_LIMIT_LOGIN_LIMIT
+        value: '5'
+      - key: RATE_LIMIT_LOGIN_TTL_SECONDS
+        value: '60'
+      - key: RATE_LIMIT_FORGOT_PASSWORD_LIMIT
+        value: '3'
+      - key: RATE_LIMIT_FORGOT_PASSWORD_TTL_SECONDS
+        value: '3600'
+      # R2's S3 API is always HTTPS on 443, for every bucket and account —
+      # unlike local MinIO, this never varies per deployment.
+      - key: MINIO_PORT
+        value: '443'
+      - key: MINIO_USE_SSL
+        value: 'true'
+      - key: MINIO_PUBLIC_PORT
+        value: '443'
+      - key: MINIO_PUBLIC_USE_SSL
+        value: 'true'
+      - key: MINIO_PRESIGN_EXPIRY_SECONDS
+        value: '3600'
+      - key: MINIO_PRESIGN_UPLOAD_EXPIRY_SECONDS
+        value: '900'
+      - key: DEMO_MODE
+        value: 'true'
+      - key: PROMPTPAY_DISPLAY_NAME
+        value: 'GETOWNLY PLATFORM (สาธิต)'
+      # Placeholder on purpose, same reason as backend/.env.example: a real
+      # PromptPay ID here means every QR this system prints asks strangers
+      # to send money to that account. Change it only in the Render
+      # dashboard, never by editing this committed file.
+      - key: PROMPTPAY_ID
+        value: '0000000000'
+      - key: TOPUP_MIN_AMOUNT
+        value: '20'
+      - key: TOPUP_MAX_AMOUNT
+        value: '50000'
+      - key: TOPUP_QUOTE_EXPIRY_MINUTES
+        value: '15'
+      - key: PLATFORM_DEFAULT_COMMISSION_RATE
+        value: '0.30'
+
+      # --- deployment-specific — set for real in the Render dashboard,
+      # never committed here (sync: false is Render's way of declaring "this
+      # key is required" without a value ever touching the repo) ---
+      - key: DATABASE_URL
+        sync: false # Supabase connection string
+      - key: JWT_ACCESS_SECRET
+        sync: false # long random string, different from JWT_REFRESH_SECRET
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false # the Vercel URL
+      - key: MINIO_ENDPOINT
+        sync: false # <account-id>.r2.cloudflarestorage.com
+      - key: MINIO_ACCESS_KEY
+        sync: false # from the R2 API token
+      - key: MINIO_SECRET_KEY
+        sync: false
+      - key: MINIO_BUCKET
+        sync: false
+      - key: MINIO_PUBLIC_ENDPOINT
+        sync: false # same host as MINIO_ENDPOINT for R2 — see README
+      - key: MAIL_HOST
+        sync: false # SMTP host of whichever provider is chosen (e.g. Resend)
+      - key: MAIL_PORT
+        sync: false
+      - key: MAIL_SECURE
+        sync: false
+      - key: MAIL_USER
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM_NAME
+        sync: false
+      - key: MAIL_FROM_ADDRESS
+        sync: false # must be on a domain verified with the SMTP provider

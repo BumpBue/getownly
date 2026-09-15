@@ -344,6 +344,81 @@ URL ที่ใช้ตอน dev
 > และ e2e ยังไม่มี ทั้งที่ทำไปแล้ว) **เอกสารที่บอกสถานะผิดอันตรายกว่าไม่มีเอกสาร เพราะคนอ่านจะเชื่อ**
 > จบงานทุกรอบให้กลับมาแก้ย่อหน้านี้ก่อนย่อหน้าอื่น
 
+### เตรียม deploy ออนไลน์เป็นช่องทางเสริม (Vercel + Render + Supabase + R2)
+
+**นี่ไม่ใช่การเปลี่ยนช่องทางหลัก** — `docker compose --profile full` ตาม ทก.01 ข้อ 2.7.4
+ยังเป็นช่องทางที่ใช้วันสอบจริงเหมือนเดิมทุกประการ งานรอบนี้แค่ทำให้ **มีช่องทางเสริมผ่านอินเทอร์เน็ต**
+ให้กรรมการเข้าดูได้ก่อนวันสอบ กติกาที่ยึดตลอดรอบนี้คือทุกอย่างต้องมาเป็น env var ที่เลือกได้
+ห้ามเขียนทับพฤติกรรมของ `pnpm dev`/Docker local แม้แต่จุดเดียว — ดูหัวข้อ "Deploy ออนไลน์" ใน
+[README.md](README.md) สำหรับขั้นตอนและตัวแปรที่ต้องตั้ง
+
+- **cookie/CORS ไม่ต้องแก้โค้ดเลยสักบรรทัด** ตอนสำรวจก่อนลงมือพบว่า `COOKIE_SECURE`/`COOKIE_SAME_SITE`
+  ([common/cookies.ts](backend/src/common/cookies.ts)) และ `FRONTEND_ORIGIN`
+  ([app.setup.ts](backend/src/app.setup.ts)) เป็น env var มาตั้งแต่ตอนทำระบบยืนยันตัวตนแล้ว ไม่ได้ผูกกับ
+  `NODE_ENV` ในโค้ดที่ต้องเพิ่ม `if` ใหม่ — การรองรับ cross-domain cookie (`SameSite=None; Secure`)
+  จึงเป็นแค่การตั้งค่า env บน Render (`COOKIE_SECURE=true`, `COOKIE_SAME_SITE=none`) ไม่ใช่งานเขียนโค้ด
+  · ตัดสินใจไม่รองรับ CORS หลาย origin (เช่น Vercel preview URL) เพราะ `FRONTEND_ORIGIN` เป็น production
+  domain เดียวพอสำหรับความต้องการตอนนี้ — ถ้าจะรองรับหลาย origin ในอนาคตต้องแก้ `app.setup.ts` ให้
+  `origin` เป็น callback ตรวจจาก allow-list แทนสตริงเดียว
+- **`StorageService` เปลี่ยนจาก `minio` SDK เป็น `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner`**
+  ทั้งไฟล์ ([storage.service.ts](backend/src/infra/storage/storage.service.ts)) เพราะแม้ endpoint/port/key
+  จะ config ผ่าน env ได้ทั่วไปอยู่แล้ว ตัว client library เดิมเป็นของ MinIO เอง ไม่มีอะไรยืนยันว่าใช้กับ
+  R2 ได้จริงนอกจาก "น่าจะ" — AWS SDK เป็นมาตรฐานที่ผู้ให้บริการ S3-compatible ทุกเจ้ารวม R2 ทดสอบด้วยจริง
+  · **ชื่อ env var ทั้งหมดเหมือนเดิมทุกตัว** (`MINIO_ENDPOINT`, `MINIO_PUBLIC_ENDPOINT` ฯลฯ) ไม่เปลี่ยนชื่อ
+  แม้จะไม่ใช่ MinIO อีกต่อไปแล้วก็ตาม เพื่อไม่ให้ docker-compose.yml และ `.env` ของทุกคนพังพร้อมกัน
+- **ลบขั้นตอน "ถาม region จากบัคเก็ตแล้วแก้ signing client" ทิ้งไปเลย** ของเดิม (`getBucketRegionAsync`
+  ใน `onModuleInit`) มีไว้เพราะ `minio-js` เซ็น URL แบบไม่มี region แล้วต้องถามเซิร์ฟเวอร์ก่อนเสมอ
+  AWS SDK ไม่มีพฤติกรรมแบบนี้ — ใส่ region คงที่ไปเลยพอ **ใช้ `'auto'` เป็นค่าคงที่ตัวเดียวสำหรับทั้ง
+  MinIO และ R2** (`auto` คือค่าที่เอกสาร R2 บอกให้ใช้ตรงๆ ส่วน MinIO ไม่ตรวจ region อย่างเข้มงวดถ้าไม่ได้
+  ตั้ง `MINIO_REGION` ไว้ที่ฝั่งเซิร์ฟเวอร์เอง ซึ่งของเราไม่ได้ตั้ง) พิสูจน์แล้วว่ายังพรีไซน์/สตรีมกับ MinIO
+  local ได้ปกติทั้ง 486 เทสต์
+- **ไม่มีการตั้ง ACL ใน request ไหนเลยโดยตั้งใจ** เดิมก็ไม่เคยตั้ง (`presignedPutObject` ของ minio-js
+  ไม่ส่ง ACL อยู่แล้ว) และ **R2 ปฏิเสธ request ที่มี ACL header ทันที** ไม่รองรับ concept นี้เลย
+  โค้ดใหม่จึงคงพฤติกรรม "ไม่ตั้ง ACL" ไว้ ไม่ใช่เพิ่มอะไรใหม่
+- **โครง client สองตัว (`client`/`signingClient`) ยังอยู่เหมือนเดิม ไม่ได้รวมเป็นตัวเดียว** แม้ R2 จะมี
+  endpoint สาธารณะตัวเดียวที่ server กับ browser ใช้ร่วมกันได้ (ไม่ต้องแยกเหมือน MinIO ใน Docker) —
+  เก็บโครงไว้เพราะ MinIO local ยังต้องแยกอยู่ ส่วนบน R2 สองค่านี้ตั้งให้เหมือนกันเฉยๆ ต้นทุนที่เสียคือศูนย์
+- **ทำไมเลือก Cloudflare R2 ไม่ใช่ MinIO บน cloud VM** R2 ไม่มีค่า egress ตอนสตรีมวิดีโอออก ซึ่งเป็น
+  รูปแบบการใช้งานหลักของระบบนี้ (`GET /lessons/:id/stream` proxy ผ่าน API ทุก request) ในขณะที่ MinIO
+  บน VM ทั่วไปจะเจอค่า bandwidth ขาออกของผู้ให้บริการ cloud ตามปกติ — เลือกที่ไม่มีค่าใช้จ่ายผันแปรตามการ
+  ใช้งานของกรรมการที่เข้ามาดูก่อนวันสอบ
+- **⚠️ R2 ต้องตั้ง CORS policy ที่ตัวบัคเก็ตเองด้วย เป็นเรื่องใหม่ที่ MinIO local ไม่ต้องทำ** เพราะ
+  presigned PUT/GET ยิงตรงจากเบราว์เซอร์เข้า storage เลย ไม่ผ่าน backend — MinIO ค่าเริ่มต้นเปิดกว้างจึง
+  ไม่เคยเป็นปัญหาตอน dev แต่ R2 ต้องตั้งเองผ่าน dashboard/`wrangler` มิฉะนั้นเบราว์เซอร์จะบล็อกคำขอ PUT
+  เงียบๆ โดย backend ไม่มีทางรู้เลยเพราะ request ไม่เคยไปถึง backend — รายละเอียดอยู่ใน README
+- **เลือก Render ไม่ใช่ Railway** — ตัดสินใจแรกคือ Railway ด้วยเหตุผลเดียวกับที่ตอนนี้ใช้กับ Render
+  (มี `backend/Dockerfile` พิสูจน์แล้วอยู่ก่อน) แต่ **free tier ของ Railway หมดแล้วระหว่างที่ยังไม่ได้
+  ลงมือสมัครจริง** จึงเปลี่ยนมาใช้ Render แทน — ไม่ใช่เพราะ Render ดีกว่าเชิงเทคนิค เหตุผลเชิงสถาปัตยกรรม
+  เหมือนเดิมทุกประการ (ดูข้อถัดไป) ถ้าวันหน้ามีเหตุต้องย้ายอีก ให้ตรวจ free tier ของผู้ให้บริการใหม่ก่อนเลือก
+- **บน Render ใช้ `runtime: docker` ไม่ใช่ `runtime: node`** เพราะมี `backend/Dockerfile` ที่พิสูจน์แล้วว่า
+  ทำงานถูกต้องจาก `docker compose --profile full` อยู่แล้ว (migration รันเองตอน container start ผ่าน
+  `CMD` เดิม) — `render.yaml` ที่ root ชี้ `dockerfilePath`/`dockerContext` ไปที่ไฟล์เดียวกันตรงๆ
+  โดยไม่ต้องเขียน buildCommand/startCommand ใหม่เลย (Docker runtime ของ Render ใช้ build stage และ
+  `CMD` ของ Dockerfile เองอยู่แล้ว) จึงไม่มีความเสี่ยงที่ path การ deploy ออนไลน์จะ diverge จาก path
+  ที่ทดสอบมาแล้วบน Docker local — ถ้าเลือก `runtime: node` แทน จะต้องเขียน build/start command ใหม่ใน
+  `render.yaml` ที่ไม่มีอะไรยืนยันว่าพฤติกรรมตรงกับ Dockerfile ที่ทดสอบแล้ว 100%
+  · **`render.yaml` ตั้ง `rootDir: backend` แต่ `dockerContext: .`** สองค่านี้ตั้งใจให้ต่างกัน —
+  `dockerContext` ของ Render เป็น path เทียบกับ **root ของ repo เสมอ ไม่ว่า `rootDir` จะเป็นอะไร**
+  (Render เอกสารระบุไว้ชัดว่าไม่ผูกกัน) `rootDir` จึงมีไว้ควบคุมแค่ **ตัวกรองว่า path ไหนที่ทำให้ auto-deploy
+  ทริกเกอร์** ตั้งเป็น `backend` เฉยๆ จะพลาด `packages/shared` ที่ backend พึ่งพาอยู่ จึงต้องเพิ่ม
+  `buildFilter.include` ครอบทั้ง `backend/**` และ `packages/shared/**` เอง ไม่งั้นแก้ `limits.ts`
+  (เพดานราคาคอร์ส, ขนาดไฟล์ ฯลฯ) แล้ว push จะไม่ trigger deploy ใหม่บน Render โดยไม่มีอะไรเตือน
+  · **`healthCheckPath: /api`** ไม่ใช่ `/health` เพราะ **ไม่มี route `/health` อยู่จริงในระบบ**
+  (คอมเมนต์ใน `storage.service.ts` ที่พูดถึง `/health` เป็นความตั้งใจในอนาคต ไม่ใช่ endpoint ที่มีอยู่)
+  ใช้ `GET /api` ที่มีอยู่แล้ว (`@Public()`, ไม่แตะ DB/storage, ตอบ 200 ทันทีที่ Nest บูตเสร็จ) แทนไปก่อน
+  ถ้าจะเพิ่ม `/health` จริงที่เช็ค DB/storage ด้วยในอนาคต ต้องแก้ `healthCheckPath` ตามด้วย
+- **Vercel ใช้ค่าเริ่มต้นได้เลย ไม่มี `vercel.json`** — `frontend/next.config.ts` ว่างเปล่าอยู่แล้ว
+  (ไม่มี `images.remotePatterns` เพราะไม่มีที่ไหนส่ง MinIO/R2 URL เข้า `next/image` เลยตามที่บันทึกไว้ใน
+  หัวข้อ "ตัดสินใจเพิ่มตอนยกทั้งกองขึ้น Docker" ด้านล่าง) ตั้งแค่ Root Directory เป็น `frontend` บนหน้า
+  ตั้งค่าโปรเจกต์ก็พอ
+- **พิสูจน์แล้ว**: `pnpm test` backend ทั้งชุด 486 ข้อผ่านกับ MinIO local จริงผ่าน SDK ใหม่ (ไม่ใช่แค่
+  typecheck ผ่าน) และ `docker compose --profile full` build + up ใหม่ทั้งกองด้วยโค้ด SDK ใหม่แล้ว
+  ยังทำงานถูกต้อง — พิสูจน์กติกา "ห้ามพัง Docker local แม้แต่จุดเดียว" ด้วยการรันจริง ไม่ใช่แค่อ่านโค้ดแล้วเดา
+- **ตรวจ migration ทั้ง 16 ใบแล้วก่อนลงมือ (รวม CHECK constraint และ partial unique index ที่ Prisma
+  มองไม่เห็น)**: เป็น SQL มาตรฐานล้วน ไม่มี extension, role, schema, หรือสิ่งใดที่ผูกกับ container —
+  รันกับ Supabase ผ่าน `prisma migrate deploy` ได้โดยไม่ต้องแก้ ข้อควรระวังเดิมเรื่องห้ามใช้ `migrate dev`
+  กับฐานข้อมูลที่มีของสองอย่างนี้ยังใช้เหมือนเดิม (ดูหัวข้อ "CHECK constraint ที่ Prisma ไม่รู้จัก" ด้านล่าง)
+
 ### หน้าจอสร้างแบบทดสอบ และ snapshot เกณฑ์ผ่าน (ทก.01 A7)
 
 **กติกาใหม่: ชุดที่มีคนทำแล้ว แก้ชื่อและเกณฑ์ผ่านได้เสมอ แต่คำถาม/ตัวเลือก/เฉลย แช่แข็ง และลบไม่ได้**
