@@ -7,6 +7,15 @@ import type { NextConfig } from "next";
 // optimiser cannot fetch what it is pointed at. Files from storage are
 // rendered with a plain <img>, the same way slips, QR codes and avatars
 // always have been.
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'https://getownly-backend.onrender.com/api/:path*',
+      },
+    ];
+  },
+};
 
 export default nextConfig;
