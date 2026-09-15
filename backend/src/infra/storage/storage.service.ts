@@ -253,6 +253,9 @@ export class StorageService implements OnModuleInit {
 
 function buildEndpoint(host: string, port: number, useSSL: boolean): string {
   const protocol = useSSL ? 'https' : 'http';
+  if ((useSSL && port === 443) || (!useSSL && port === 80)) {
+    return `${protocol}://${host}`;
+  }
   return `${protocol}://${host}:${port}`;
 }
 
