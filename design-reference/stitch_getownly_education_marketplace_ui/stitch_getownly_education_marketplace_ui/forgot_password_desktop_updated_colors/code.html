@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+
+<html lang="th"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ลืมรหัสผ่าน - getownly</title>
+<!-- Google Fonts: IBM Plex Sans Thai -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration (Design Tokens) -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-on-surface": "#f0f1f2",
+                    "outline-variant": "#c4c6cf",
+                    "primary-fixed-dim": "#adc8f2",
+                    "on-primary-fixed": "#001c39",
+                    "surface-variant": "#e1e3e4",
+                    "on-background": "#191c1d",
+                    "on-primary-fixed-variant": "#2d486b",
+                    "tertiary": "#312000",
+                    "on-secondary-fixed-variant": "#5f410c",
+                    "surface-dim": "#d9dadb",
+                    "secondary-fixed-dim": "#ebbf7f",
+                    "surface-tint": "#456084",
+                    "outline": "#74777f",
+                    "on-tertiary-container": "#c19d5f",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed-dim": "#e8c080",
+                    "surface-container-lowest": "#ffffff",
+                    "surface": "#f8f9fa",
+                    "secondary-container": "#fdd08e",
+                    "on-surface-variant": "#43474e",
+                    "secondary": "#c9a063",
+                    "surface-bright": "#f8f9fa",
+                    "tertiary-fixed": "#ffdeab",
+                    "surface-container-low": "#f3f4f5",
+                    "on-surface": "#191c1d",
+                    "tertiary-container": "#4d3400",
+                    "background": "#f8f9fa",
+                    "surface-container": "#edeeef",
+                    "on-tertiary-fixed-variant": "#5d420d",
+                    "primary-fixed": "#d3e3ff",
+                    "surface-container-high": "#e7e8e9",
+                    "on-secondary": "#ffffff",
+                    "on-primary-container": "#8aa4cc",
+                    "on-tertiary-fixed": "#271900",
+                    "on-primary": "#ffffff",
+                    "primary": "#1e3a5c",
+                    "error": "#ba1a1a",
+                    "inverse-surface": "#2e3132",
+                    "on-tertiary": "#ffffff",
+                    "secondary-fixed": "#ffddb0",
+                    "primary-container": "#1e3a5c",
+                    "on-secondary-container": "#785722",
+                    "surface-container-highest": "#e1e3e4",
+                    "on-error-container": "#93000a",
+                    "error-container": "#ffdad6",
+                    "inverse-primary": "#adc8f2",
+                    "on-secondary-fixed": "#281800"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "1280px",
+                    "margin-desktop": "40px",
+                    "gutter": "24px",
+                    "unit": "8px",
+                    "margin-mobile": "16px",
+                    "accent-bar-width": "4px"
+            },
+            "fontFamily": {
+                    "body-md": ["IBM Plex Sans Thai"],
+                    "caption": ["IBM Plex Sans Thai"],
+                    "body-lg": ["IBM Plex Sans Thai"],
+                    "display-lg": ["IBM Plex Sans Thai"],
+                    "headline-lg": ["IBM Plex Sans Thai"],
+                    "headline-md": ["IBM Plex Sans Thai"],
+                    "headline-lg-mobile": ["IBM Plex Sans Thai"],
+                    "label-md": ["IBM Plex Sans Thai"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                    "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                    "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                    "display-lg": ["48px", { "lineHeight": "60px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                    "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                    "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                    "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                    "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500" }]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        /* Custom styles for Material Symbols to ensure proper rendering */
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Subtle background pattern for a premium feel */
+        .bg-pattern {
+            background-image: radial-gradient(var(--tw-colors-outline-variant) 1px, transparent 1px);
+            background-size: 24px 24px;
+            background-position: -12px -12px;
+        }
+
+        /* Card hover elevation transition */
+        .card-elevation {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0px 4px 20px rgba(30, 58, 92, 0.08);
+        }
+        
+        /* Input focus reset to match brand guidelines */
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--tw-colors-primary);
+        }
+    </style>
+</head>
+<body class="bg-background min-h-screen flex items-center justify-center p-margin-mobile md:p-margin-desktop bg-pattern relative overflow-hidden">
+<!-- Ambient Glow (Background) -->
+<div class="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
+<div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/5 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
+<!-- Main Card Container -->
+<div class="max-w-[440px] w-full bg-surface-container-lowest rounded-xl card-elevation relative border-t-accent-bar-width border-secondary z-10" id="main-card">
+<!-- View 1: Request Password Reset Form -->
+<div class="p-8 md:p-10 transition-opacity duration-300 opacity-100" id="request-view">
+<!-- Brand Header -->
+<div class="text-center mb-8">
+<div class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-surface-container mb-4">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="lock_reset">lock_reset</span>
+</div>
+<h1 class="font-headline-md text-headline-md text-on-surface mb-2">ลืมรหัสผ่าน?</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                    กรุณากรอกอีเมลที่ใช้ลงทะเบียน เราจะส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปให้คุณ
+                </p>
+</div>
+<!-- Form -->
+<form class="space-y-6" id="reset-form">
+<div class="space-y-2">
+<label class="block font-label-md text-label-md text-on-surface-variant" for="email">
+                        อีเมล
+                    </label>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline text-xl" data-icon="mail">mail</span>
+</span>
+<input class="block w-full pl-10 pr-3 py-3 border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface bg-surface-container-lowest focus:border-primary focus:ring-0 transition-colors" id="email" name="email" placeholder="example@email.com" required="" type="email"/>
+</div>
+</div>
+<button class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm font-label-md text-label-md font-bold text-on-primary bg-primary hover:bg-primary-container hover:shadow-md hover:-translate-y-0.5 transition-all duration-200" type="submit">
+                    ส่งลิงก์รีเซ็ตรหัสผ่าน
+                </button>
+</form>
+<!-- Footer Action -->
+<div class="mt-8 text-center">
+<a class="inline-flex items-center gap-1 font-label-md text-label-md text-on-surface-variant hover:text-secondary transition-colors group" href="#">
+<span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform" data-icon="arrow_back">arrow_back</span>
+                    กลับไปหน้าเข้าสู่ระบบ
+                </a>
+</div>
+</div>
+<!-- View 2: Confirmation State (Initially Hidden) -->
+<div class="p-8 md:p-10 hidden absolute inset-0 bg-surface-container-lowest rounded-xl flex flex-col justify-center items-center text-center opacity-0 transition-opacity duration-300" id="confirmation-view">
+<div class="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-green-600 text-4xl" data-icon="mark_email_read">mark_email_read</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-3">ตรวจสอบอีเมลของคุณ</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-8 px-4">
+                เราได้ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลของคุณแล้ว
+            </p>
+<p class="font-caption text-caption text-outline mb-8 px-4">
+                หากไม่พบอีเมลในกล่องจดหมายเข้า กรุณาตรวจสอบในโฟลเดอร์จดหมายขยะ (Spam)
+            </p>
+<button class="w-full flex justify-center py-3 px-4 border border-outline border-solid rounded-lg shadow-sm font-label-md text-label-md font-bold text-primary bg-transparent hover:bg-surface-container transition-all duration-200" onclick="window.location.reload()">
+                กลับไปหน้าเข้าสู่ระบบ
+            </button>
+</div>
+</div>
+<!-- Interaction Script -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('reset-form');
+            const requestView = document.getElementById('request-view');
+            const confirmationView = document.getElementById('confirmation-view');
+            const mainCard = document.getElementById('main-card');
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault(); // Prevent actual submission
+                
+                // Optional: Show loading state on button here
+                const btn = form.querySelector('button[type="submit"]');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = `<span class="material-symbols-outlined animate-spin" data-icon="progress_activity">progress_activity</span>`;
+                btn.disabled = true;
+
+                // Simulate network request delay
+                setTimeout(() => {
+                    // Transition Out Request View
+                    requestView.classList.remove('opacity-100');
+                    requestView.classList.add('opacity-0');
+                    
+                    setTimeout(() => {
+                        requestView.classList.add('hidden');
+                        
+                        // Setup Confirmation View
+                        confirmationView.classList.remove('hidden');
+                        // Small delay to allow display:block to apply before animating opacity
+                        requestAnimationFrame(() => {
+                            confirmationView.classList.remove('opacity-0');
+                            confirmationView.classList.add('opacity-100');
+                        });
+                        
+                        // Update card border color for success context slightly
+                        mainCard.classList.remove('border-secondary');
+                        mainCard.classList.add('border-green-500');
+
+                    }, 300); // Wait for fade out
+                }, 800); // Simulated 0.8s network request
+            });
+        });
+    </script>
+</body></html>

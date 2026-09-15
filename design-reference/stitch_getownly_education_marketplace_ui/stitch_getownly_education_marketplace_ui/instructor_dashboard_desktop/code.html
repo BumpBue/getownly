@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+
+<html class="light" lang="th"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Instructor Dashboard - getownly</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#191c1d",
+                        "inverse-surface": "#2e3132",
+                        "on-secondary-fixed-variant": "#5f410c",
+                        "outline": "#74777f",
+                        "surface-container-high": "#e7e8e9",
+                        "on-error": "#ffffff",
+                        "primary": "#022445",
+                        "border-light": "#E7E8E9",
+                        "surface": "#f8f9fa",
+                        "background": "#f8f9fa",
+                        "text-muted": "rgba(30, 58, 92, 0.70)",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#e8c080",
+                        "on-tertiary-fixed": "#271900",
+                        "surface-tint": "#456084",
+                        "tertiary-fixed": "#ffdeab",
+                        "primary-container": "#1e3a5c",
+                        "on-tertiary-fixed-variant": "#5d420d",
+                        "surface-dim": "#d9dadb",
+                        "on-surface-variant": "#43474e",
+                        "primary-fixed-dim": "#adc8f2",
+                        "surface-variant": "#e1e3e4",
+                        "on-tertiary-container": "#c19d5f",
+                        "surface-container-low": "#f3f4f5",
+                        "on-surface": "#191c1d",
+                        "surface-container": "#edeeef",
+                        "secondary-fixed": "#ffddb0",
+                        "on-secondary-fixed": "#281800",
+                        "surface-container-highest": "#e1e3e4",
+                        "inverse-primary": "#adc8f2",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#785722",
+                        "surface-white": "#FFFFFF",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#4d3400",
+                        "on-primary-fixed-variant": "#2d486b",
+                        "primary-fixed": "#d3e3ff",
+                        "on-primary": "#ffffff",
+                        "secondary": "#795823",
+                        "secondary-container": "#fdd08e",
+                        "secondary-fixed-dim": "#ebbf7f",
+                        "text-primary": "#1E3A5C",
+                        "on-error-container": "#93000a",
+                        "error": "#BA1A1A",
+                        "inverse-on-surface": "#f0f1f2",
+                        "on-primary-fixed": "#001c39",
+                        "on-primary-container": "#8aa4cc",
+                        "on-tertiary": "#ffffff",
+                        "outline-variant": "#c4c6cf",
+                        "tertiary": "#312000",
+                        "success": "#2D6A4F",
+                        "surface-bright": "#f8f9fa"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "40px",
+                        "margin-mobile": "16px",
+                        "accent-bar": "4px",
+                        "base": "8px",
+                        "gutter": "24px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "caption": ["IBM Plex Sans"],
+                        "headline-lg-mobile": ["IBM Plex Sans"],
+                        "label-md": ["IBM Plex Sans"],
+                        "body-lg": ["IBM Plex Sans"],
+                        "body-md": ["IBM Plex Sans"],
+                        "headline-md": ["IBM Plex Sans"],
+                        "display-lg": ["IBM Plex Sans"],
+                        "headline-lg": ["IBM Plex Sans"]
+                    },
+                    "fontSize": {
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "60px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    },
+                    "boxShadow": {
+                        'soft': '0px 4px 20px rgba(30, 58, 92, 0.08)',
+                        'soft-hover': '0px 8px 30px rgba(30, 58, 92, 0.12)',
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'IBM Plex Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col md:flex-row">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-desktop bg-surface-white h-16 border-b border-border-light flat no shadows md:hidden">
+<div class="font-headline-md text-headline-md font-bold text-primary">getownly</div>
+<nav class="hidden md:flex gap-6">
+<a class="text-on-surface-variant pb-2 font-label-md text-label-md hover:text-primary transition-colors" href="#">Browse</a>
+<a class="text-on-surface-variant pb-2 font-label-md text-label-md hover:text-primary transition-colors" href="#">My Courses</a>
+<a class="text-on-surface-variant pb-2 font-label-md text-label-md hover:text-primary transition-colors" href="#">Instructors</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="A small, professional headshot of an instructor in a bright, modern studio setting with a clean white background. High resolution, corporate aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAv0NweW2dlQ8ozOTo7N_baMshsldxP_zVhTI_hfsa1NqOJplTyRcAmv3j6CE_uCEP5gq2932eJpSS25u-3S1sRN1k4QWjCGNaK_tOLW1Y3LCSeEwmo82lnTtQeqlqFZLTdkBj2pmSQoo4rpy_9FglbabfQeWXczaS4k35RxhpPeR6gwrvX-rxJYDsd_e_f7X3tAtkTiggGEBkBJL2mzGKKADnvSE8bwIQ4cmlVj8Kdj1kWe7X9MXMV"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-64 flex flex-col z-40 bg-primary shadow-lg hidden md:flex">
+<!-- Header -->
+<div class="p-6 border-b border-primary-container">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded-full bg-surface-white/20 overflow-hidden shrink-0">
+<img alt="Admin User Profile" class="w-full h-full object-cover" data-alt="A small, professional headshot of an instructor in a bright, modern studio setting with a clean white background. High resolution, corporate aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCS_Qmktx9mI-XUezIBVvzlJs06-hKq0Gm59GWAEGfxXpHmYORtJcqU8rih6D9Z3_ZFFyCaxc1exkL-Ks9DEmLxTnYzGmpm9A1UNU5_RipI8n51O3Ys-0lAXHwc8aTgTCfSKjQkA1i0m_Qy4n6yG6kZgbxtDzQh4pWZ3YMBGnHn2uiCr-0kOmgE6yQDyg8AMsj0KKPINwD1hZi5qkqC7VEclgZFdecMdhuZkdhPuv2BlsEA5KNYnAq5"/>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-secondary-fixed truncate">Admin Portal</h2>
+<p class="font-caption text-caption text-on-primary/70">Management Console</p>
+</div>
+</div>
+<button class="w-full bg-secondary text-on-primary font-label-md text-label-md py-2 rounded-lg hover:opacity-90 transition-opacity">
+                Create New Course
+            </button>
+</div>
+<!-- Navigation Links -->
+<nav class="flex-1 py-4 flex flex-col gap-1 overflow-y-auto">
+<!-- Active Tab: Dashboard -->
+<a class="flex items-center text-on-primary bg-primary-container border-l-accent-bar border-secondary-fixed px-4 py-3 font-label-md text-label-md translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-secondary-fixed">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center text-on-primary-container px-4 py-3 opacity-70 font-label-md text-label-md hover:bg-primary-container hover:opacity-100 transition-all" href="#">
+<span class="material-symbols-outlined mr-3">folder_managed</span>
+                Management
+            </a>
+<a class="flex items-center text-on-primary-container px-4 py-3 opacity-70 font-label-md text-label-md hover:bg-primary-container hover:opacity-100 transition-all" href="#">
+<span class="material-symbols-outlined mr-3">assessment</span>
+                Reports
+            </a>
+<a class="flex items-center text-on-primary-container px-4 py-3 opacity-70 font-label-md text-label-md hover:bg-primary-container hover:opacity-100 transition-all" href="#">
+<span class="material-symbols-outlined mr-3">analytics</span>
+                Analytics
+            </a>
+<a class="flex items-center text-on-primary-container px-4 py-3 opacity-70 font-label-md text-label-md hover:bg-primary-container hover:opacity-100 transition-all" href="#">
+<span class="material-symbols-outlined mr-3">settings</span>
+                Settings
+            </a>
+</nav>
+<!-- Footer Links -->
+<div class="mt-auto p-4 border-t border-primary-container flex flex-col gap-1">
+<a class="flex items-center text-on-primary-container px-4 py-2 opacity-70 font-label-md text-label-md hover:bg-primary-container hover:opacity-100 transition-all rounded-md" href="#">
+<span class="material-symbols-outlined mr-3">help</span>
+                Help Center
+            </a>
+<a class="flex items-center text-on-primary-container px-4 py-2 opacity-70 font-label-md text-label-md hover:bg-primary-container hover:opacity-100 transition-all rounded-md" href="#">
+<span class="material-symbols-outlined mr-3">logout</span>
+                Logout
+            </a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 md:ml-64 pt-16 md:pt-0 p-margin-mobile md:p-margin-desktop bg-surface min-h-screen">
+<div class="max-w-container-max mx-auto space-y-8">
+<!-- Page Header -->
+<div class="flex justify-between items-end pb-4 border-b border-border-light relative">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-primary">ภาพรวมสถิติ</h1>
+<p class="font-body-md text-body-md text-text-muted mt-1">ข้อมูลล่าสุด ณ วันที่ 24 ตุลาคม 2024</p>
+</div>
+<button class="border border-border-light bg-surface-white text-primary font-label-md text-label-md px-4 py-2 rounded-DEFAULT hover:bg-surface-container-low transition-colors flex items-center gap-2 shadow-soft">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                    ดาวน์โหลดรายงาน
+                </button>
+</div>
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- Stat Card 1 -->
+<div class="bg-surface-white p-6 rounded-xl shadow-soft hover:shadow-soft-hover hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+<div class="flex justify-between items-start mb-4">
+<span class="font-label-md text-label-md text-text-muted">ผู้เรียนทั้งหมด</span>
+<div class="w-8 h-8 rounded-full bg-primary-fixed/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">groups</span>
+</div>
+</div>
+<div>
+<div class="font-display-lg text-display-lg text-primary mb-1">1,248</div>
+<div class="font-caption text-caption text-success flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+                            +12% จากเดือนที่แล้ว
+                        </div>
+</div>
+</div>
+<!-- Stat Card 2 -->
+<div class="bg-surface-white p-6 rounded-xl shadow-soft hover:shadow-soft-hover hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+<div class="flex justify-between items-start mb-4">
+<span class="font-label-md text-label-md text-text-muted">รายได้รวม (THB)</span>
+<div class="w-8 h-8 rounded-full bg-secondary-container/30 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">payments</span>
+</div>
+</div>
+<div>
+<div class="font-display-lg text-display-lg text-secondary mb-1">฿452K</div>
+<div class="font-caption text-caption text-success flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+                            +8.4% จากเดือนที่แล้ว
+                        </div>
+</div>
+</div>
+<!-- Stat Card 3 -->
+<div class="bg-surface-white p-6 rounded-xl shadow-soft hover:shadow-soft-hover hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+<div class="flex justify-between items-start mb-4">
+<span class="font-label-md text-label-md text-text-muted">คอร์สที่เปิดสอน</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">menu_book</span>
+</div>
+</div>
+<div>
+<div class="font-display-lg text-display-lg text-primary mb-1">12</div>
+<div class="font-caption text-caption text-text-muted flex items-center gap-1">
+                            2 คอร์สกำลังร่าง
+                        </div>
+</div>
+</div>
+<!-- Stat Card 4 -->
+<div class="bg-surface-white p-6 rounded-xl shadow-soft hover:shadow-soft-hover hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+<div class="flex justify-between items-start mb-4">
+<span class="font-label-md text-label-md text-text-muted">คะแนนเฉลี่ย</span>
+<div class="w-8 h-8 rounded-full bg-secondary-container/30 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">star</span>
+</div>
+</div>
+<div>
+<div class="font-display-lg text-display-lg text-primary mb-1">4.8</div>
+<div class="font-caption text-caption text-text-muted flex items-center gap-1">
+                            จาก 342 รีวิว
+                        </div>
+</div>
+</div>
+</div>
+<!-- Chart & List Section (Bento Grid Style) -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+<!-- Chart Area -->
+<div class="lg:col-span-2 bg-surface-white p-6 rounded-xl shadow-soft flex flex-col">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline-md text-headline-md text-primary">ยอดขายรายเดือน</h3>
+<select class="border-border-light rounded-DEFAULT text-label-md font-label-md text-primary focus:ring-primary focus:border-primary py-1 px-3 bg-surface">
+<option>ปี 2024</option>
+<option>ปี 2023</option>
+</select>
+</div>
+<div class="flex-1 relative min-h-[300px] flex items-end justify-between gap-2 border-b border-border-light pb-4">
+<!-- Mock Bar Chart -->
+<div class="w-full flex justify-between items-end h-[250px] px-4 gap-4">
+<div class="w-full bg-primary-container rounded-t-sm h-[40%] hover:bg-primary transition-colors cursor-pointer group relative">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-surface-white text-caption font-caption px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">฿45k</div>
+</div>
+<div class="w-full bg-primary-container rounded-t-sm h-[60%] hover:bg-primary transition-colors cursor-pointer group relative">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-surface-white text-caption font-caption px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">฿68k</div>
+</div>
+<div class="w-full bg-primary-container rounded-t-sm h-[30%] hover:bg-primary transition-colors cursor-pointer group relative">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-surface-white text-caption font-caption px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">฿34k</div>
+</div>
+<div class="w-full bg-secondary rounded-t-sm h-[85%] hover:bg-secondary-container transition-colors cursor-pointer group relative shadow-[0_0_15px_rgba(201,160,99,0.4)]">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-surface-white text-caption font-caption px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">฿98k</div>
+</div>
+<div class="w-full bg-primary-container rounded-t-sm h-[50%] hover:bg-primary transition-colors cursor-pointer group relative">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-surface-white text-caption font-caption px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">฿56k</div>
+</div>
+<div class="w-full bg-primary-container rounded-t-sm h-[70%] hover:bg-primary transition-colors cursor-pointer group relative">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-surface-white text-caption font-caption px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">฿79k</div>
+</div>
+</div>
+</div>
+<div class="flex justify-between px-4 mt-4 text-caption font-caption text-text-muted">
+<span>ม.ค.</span>
+<span>ก.พ.</span>
+<span>มี.ค.</span>
+<span class="text-secondary font-bold">เม.ย.</span>
+<span>พ.ค.</span>
+<span>มิ.ย.</span>
+</div>
+</div>
+<!-- Recent Activities / Quick Actions -->
+<div class="bg-surface-white p-6 rounded-xl shadow-soft">
+<h3 class="font-headline-md text-headline-md text-primary mb-6">กิจกรรมล่าสุด</h3>
+<div class="space-y-6">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center text-success shrink-0">
+<span class="material-symbols-outlined text-[20px]">person_add</span>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-surface">ผู้เรียนใหม่ 24 คนลงทะเบียนคอร์ส <span class="font-semibold">UX Design Fundamentals</span></p>
+<p class="font-caption text-caption text-text-muted mt-1">2 ชั่วโมงที่แล้ว</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-full bg-secondary-container/30 flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[20px]">reviews</span>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-surface">ได้รับรีวิว 5 ดาวใหม่ในคอร์ส <span class="font-semibold">Advanced React</span></p>
+<p class="font-caption text-caption text-text-muted mt-1">5 ชั่วโมงที่แล้ว</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">edit_document</span>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-surface">แบบร่างคอร์ส <span class="font-semibold">Data Science 101</span> ถูกบันทึก</p>
+<p class="font-caption text-caption text-text-muted mt-1">1 วันที่แล้ว</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-8 py-3 border border-primary text-primary font-label-md text-label-md rounded-lg hover:bg-surface-container-low transition-colors">
+                        ดูการแจ้งเตือนทั้งหมด
+                    </button>
+</div>
+</div>
+<!-- Course Table -->
+<div class="bg-surface-white rounded-xl shadow-soft overflow-hidden">
+<div class="p-6 border-b border-border-light flex justify-between items-center">
+<h3 class="font-headline-md text-headline-md text-primary">คอร์สเรียนของคุณ</h3>
+<button class="text-secondary font-label-md text-label-md hover:underline">ดูทั้งหมด</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-text-muted font-label-md text-label-md">
+<th class="p-4 font-medium border-b border-border-light">ชื่อคอร์ส</th>
+<th class="p-4 font-medium border-b border-border-light">ยอดขาย</th>
+<th class="p-4 font-medium border-b border-border-light">ราคา</th>
+<th class="p-4 font-medium border-b border-border-light">สถานะ</th>
+<th class="p-4 font-medium border-b border-border-light"></th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md text-on-surface">
+<tr class="hover:bg-surface transition-colors border-b border-border-light group">
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded bg-surface-container-highest overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="A small, stylized thumbnail image representing a UX Design course, featuring clean geometric shapes, wireframes, and a modern color palette of navy and gold. High contrast." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUW6Ng0lM-HCSkxbWEuSKZ4aJqItdHgR1odTeFodd7QJwjHcRXu5ZG9GlJU--i-ooS_Tc9n_w6ZgB6IujnO9TAzDRH4whD3-4sFn62_2B50Xu2ORYizMyV25scjTGY_NphBhKglsXrHa6fmG9Lc98aAUcOLy5dtYsh-JkF6i_qMb6Ttgs15ST4s9RgU_Io1K4r1x82iZMr-jVF79k4NwfNECdy_zo1XadLg5yRrY5Hls-DkNT4wXQa"/>
+</div>
+<div>
+<p class="font-semibold text-primary">UX Design Fundamentals</p>
+<p class="font-caption text-caption text-text-muted">อัปเดตล่าสุด: 12 ต.ค. 2024</p>
+</div>
+</div>
+</td>
+<td class="p-4">428</td>
+<td class="p-4 font-semibold text-secondary">฿2,500</td>
+<td class="p-4">
+<!-- Status Badge: Enrolled/Published -->
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-surface-container-low rounded-full">
+<div class="w-2 h-2 rounded-full bg-success"></div>
+<span class="font-label-md text-label-md text-primary">เปิดสอน</span>
+</div>
+</td>
+<td class="p-4 text-right">
+<button class="text-text-muted hover:text-primary p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface transition-colors border-b border-border-light group">
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded bg-surface-container-highest overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="A small, abstract thumbnail image representing an Advanced React course, featuring glowing code snippets and modern UI elements on a dark navy background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRGm0k64Ch7afqtozT8mDLo1GYySI_Px2IGt1wc2b6Nk2VmXOXb9vOexZHUjaI8_OhDS3aVVfIO_3BQt4xqT70guEpvFOmv3ZwDGydoCV3xVswHZwKbvKscmk0V6URQZvrmgL6NrcwkirrrNVM5FauJAnCrZ979Xt_WtgiCjV0IW71K4ctXG3GSTBdRbmwx3V5gI60bxobui-onUIcALJ3iHBb4tn2v3C3WcktfF3ryFsgc1UpZWnI"/>
+</div>
+<div>
+<p class="font-semibold text-primary">Advanced React patterns</p>
+<p class="font-caption text-caption text-text-muted">อัปเดตล่าสุด: 05 ก.ย. 2024</p>
+</div>
+</div>
+</td>
+<td class="p-4">156</td>
+<td class="p-4 font-semibold text-secondary">฿3,900</td>
+<td class="p-4">
+<!-- Status Badge: Enrolled/Published -->
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-surface-container-low rounded-full">
+<div class="w-2 h-2 rounded-full bg-success"></div>
+<span class="font-label-md text-label-md text-primary">เปิดสอน</span>
+</div>
+</td>
+<td class="p-4 text-right">
+<button class="text-text-muted hover:text-primary p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface transition-colors border-b border-border-light group">
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded bg-surface-container-highest overflow-hidden shrink-0 flex items-center justify-center text-text-muted">
+<span class="material-symbols-outlined">image</span>
+</div>
+<div>
+<p class="font-semibold text-primary">Data Science 101</p>
+<p class="font-caption text-caption text-text-muted">กำลังจัดทำเนื้อหา</p>
+</div>
+</div>
+</td>
+<td class="p-4 text-text-muted">-</td>
+<td class="p-4 font-semibold text-secondary">฿4,500</td>
+<td class="p-4">
+<!-- Status Badge: In Progress/Draft -->
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-surface-container-low rounded-full">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<span class="font-label-md text-label-md text-primary">กำลังดำเนินการ</span>
+</div>
+</td>
+<td class="p-4 text-right">
+<button class="text-text-muted hover:text-primary p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface transition-colors group">
+<td class="p-4">
+<div class="flex items-center gap-3 opacity-60">
+<div class="w-12 h-12 rounded bg-surface-container-highest overflow-hidden shrink-0 grayscale">
+<img class="w-full h-full object-cover" data-alt="A small, muted thumbnail image representing a legacy HTML/CSS course. Minimalist design, low contrast." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4tnQJQoBJ8fB13Z_u2xEML8qUeJ1jpJaFbXQ9KcvclXlaEA8Ju2DZyHYD02lPpskhomcV7sv99VkdqwIa8QTTlWRpfMtumWUOTvcj2KJcfdOr5-mT2UeHOpK9leA3NP7FGfVmIqb03AAGar6R9boUJMzqHveqsy1RM266ZN93cg22_cblVHequZdS8bklVUMOxaXGK1p_uO1R3dxSPWMuTKQZllZdHqdihRv6xC1hgYu1bDAZp9lA"/>
+</div>
+<div>
+<p class="font-semibold text-primary">Legacy HTML/CSS</p>
+<p class="font-caption text-caption text-text-muted">ปิดรับสมัครเมื่อ 2023</p>
+</div>
+</div>
+</td>
+<td class="p-4 text-text-muted">890</td>
+<td class="p-4 font-semibold text-text-muted">฿1,200</td>
+<td class="p-4">
+<!-- Status Badge: Not Started/Closed -->
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-surface-container-low rounded-full">
+<div class="w-2 h-2 rounded-full bg-outline"></div>
+<span class="font-label-md text-label-md text-text-muted">ปิดรับสมัคร</span>
+</div>
+</td>
+<td class="p-4 text-right">
+<button class="text-text-muted hover:text-primary p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+</body></html>

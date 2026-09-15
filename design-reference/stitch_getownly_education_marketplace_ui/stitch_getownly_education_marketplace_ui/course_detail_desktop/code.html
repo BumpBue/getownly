@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html lang="th"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>รายละเอียดคอร์สเรียน - getownly</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#191c1d",
+                        "inverse-surface": "#2e3132",
+                        "on-secondary-fixed-variant": "#5f410c",
+                        "outline": "#74777f",
+                        "surface-container-high": "#e7e8e9",
+                        "on-error": "#ffffff",
+                        "primary": "#022445",
+                        "border-light": "#E7E8E9",
+                        "surface": "#f8f9fa",
+                        "background": "#f8f9fa",
+                        "text-muted": "rgba(30, 58, 92, 0.70)",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#e8c080",
+                        "on-tertiary-fixed": "#271900",
+                        "surface-tint": "#456084",
+                        "tertiary-fixed": "#ffdeab",
+                        "primary-container": "#1e3a5c",
+                        "on-tertiary-fixed-variant": "#5d420d",
+                        "surface-dim": "#d9dadb",
+                        "on-surface-variant": "#43474e",
+                        "primary-fixed-dim": "#adc8f2",
+                        "surface-variant": "#e1e3e4",
+                        "on-tertiary-container": "#c19d5f",
+                        "surface-container-low": "#f3f4f5",
+                        "on-surface": "#191c1d",
+                        "surface-container": "#edeeef",
+                        "secondary-fixed": "#ffddb0",
+                        "on-secondary-fixed": "#281800",
+                        "surface-container-highest": "#e1e3e4",
+                        "inverse-primary": "#adc8f2",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#785722",
+                        "surface-white": "#FFFFFF",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#4d3400",
+                        "on-primary-fixed-variant": "#2d486b",
+                        "primary-fixed": "#d3e3ff",
+                        "on-primary": "#ffffff",
+                        "secondary": "#795823",
+                        "secondary-container": "#fdd08e",
+                        "secondary-fixed-dim": "#ebbf7f",
+                        "text-primary": "#1E3A5C",
+                        "on-error-container": "#93000a",
+                        "error": "#BA1A1A",
+                        "inverse-on-surface": "#f0f1f2",
+                        "on-primary-fixed": "#001c39",
+                        "on-primary-container": "#8aa4cc",
+                        "on-tertiary": "#ffffff",
+                        "outline-variant": "#c4c6cf",
+                        "tertiary": "#312000",
+                        "success": "#2D6A4F",
+                        "surface-bright": "#f8f9fa",
+                        "warm-gold": "#C9A063"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px",
+                        "card": "16px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "40px",
+                        "margin-mobile": "16px",
+                        "accent-bar": "4px",
+                        "base": "8px",
+                        "gutter": "24px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "caption": ["IBM Plex Sans"],
+                        "headline-lg-mobile": ["IBM Plex Sans"],
+                        "label-md": ["IBM Plex Sans"],
+                        "body-lg": ["IBM Plex Sans"],
+                        "body-md": ["IBM Plex Sans"],
+                        "headline-md": ["IBM Plex Sans"],
+                        "display-lg": ["IBM Plex Sans"],
+                        "headline-lg": ["IBM Plex Sans"]
+                    },
+                    "fontSize": {
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "60px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    },
+                    "boxShadow": {
+                        "card": "0px 4px 20px rgba(30, 58, 92, 0.08)",
+                        "card-hover": "0px 8px 30px rgba(30, 58, 92, 0.12)"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'IBM Plex Sans', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .material-symbols-outlined[data-weight="fill"] { font-variation-settings: 'FILL' 1; }
+        
+        /* Interactive Card Elevation */
+        .interactive-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .interactive-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0px 8px 30px rgba(30, 58, 92, 0.12);
+        }
+        
+        /* Gold Accent Bar */
+        .gold-accent-left {
+            position: relative;
+        }
+        .gold-accent-left::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: #C9A063;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-desktop bg-surface-white dark:bg-inverse-surface h-16 border-b border-border-light dark:border-outline flat no shadows">
+<div class="flex items-center gap-gutter">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-inverse-primary cursor-pointer">getownly</span>
+<nav class="hidden md:flex gap-gutter h-16">
+<a class="text-on-surface-variant dark:text-surface-variant pb-2 hover:text-primary dark:hover:text-inverse-primary transition-colors flex items-center h-full pt-2" href="#">Browse</a>
+<a class="text-on-surface-variant dark:text-surface-variant pb-2 hover:text-primary dark:hover:text-inverse-primary transition-colors flex items-center h-full pt-2" href="#">My Courses</a>
+<a class="text-on-surface-variant dark:text-surface-variant pb-2 hover:text-primary dark:hover:text-inverse-primary transition-colors flex items-center h-full pt-2" href="#">Instructors</a>
+</nav>
+</div>
+<div class="flex items-center gap-base">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-border-light ml-2 cursor-pointer">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="A professional headshot of a student or professional in a modern, well-lit environment. Light mode aesthetic, sharp focus, corporate modern feel." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2B9rpOatL64kHQwfSOWEcSktLdAjPLBHnwPqGUBGzl0tRFoovfxe5wrwDFNKNdlAU2NM7lKFMQwVoahIfYsyznmsMQYUOp3b_voR6xpV8nAQZsCx2tq-R5PYjserm7temaqvMC-U8_-uhzlh_IBShaOHDx7IaT4X3TUQ4_xC2xb7AbmFGoTY-M-xskotkMa8WlMKAVWshBlkS_tfpfdSoCgMyc1nGXPysz-eNSHtjJhG71DnT5taw"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-[88px] pb-margin-desktop px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full">
+<!-- Breadcrumb -->
+<nav aria-label="Breadcrumb" class="flex text-caption font-caption text-text-muted mb-gutter">
+<ol class="flex items-center space-x-2">
+<li><a class="hover:text-primary" href="#">หน้าหลัก</a></li>
+<li><span class="material-symbols-outlined text-[16px]">chevron_right</span></li>
+<li><a class="hover:text-primary" href="#">หมวดหมู่ทั้งหมด</a></li>
+<li><span class="material-symbols-outlined text-[16px]">chevron_right</span></li>
+<li aria-current="page" class="text-primary font-medium">การจัดการธุรกิจยุคดิจิทัล</li>
+</ol>
+</nav>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Left Column: Course Content -->
+<div class="md:col-span-8 flex flex-col gap-gutter">
+<!-- Hero Video Section -->
+<section class="bg-surface-white rounded-card shadow-card overflow-hidden">
+<div class="relative w-full aspect-video bg-surface-container-high group cursor-pointer flex items-center justify-center">
+<div class="absolute inset-0 bg-cover bg-center w-full h-full opacity-80 group-hover:opacity-90 transition-opacity" data-alt="A high-quality cinematic still of a modern corporate training video. A diverse group of professionals collaborating in a sleek glass-walled boardroom. High-key lighting, modern corporate aesthetic, deep blues and crisp whites." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAm51RllRRg8PrugQxafwikinc82CxQ3lH0LwRRmzAV55nS-YRE0FBnoFejOf4S6xPMABiUOKNLHRx3H-HMtBylcHSKmDN_5s0_TgIyfhxvnkO7wKDv-jnop6ugkwJjTd6Cb2u3I54F0DTqX2ah6fg7hpRbs-Cc3qWD1HTgvGzriCYWdEX3dookg43_hU0YNTrRSIkpAh9dn6Pc_m23NQf0cVMwsZeg7u1sR5mRUZ38KT6IiOe-4gTy')"></div>
+<div class="absolute inset-0 bg-primary/20 group-hover:bg-primary/10 transition-colors"></div>
+<button class="relative z-10 w-16 h-16 bg-surface-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-primary shadow-lg group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[32px] ml-1" data-weight="fill">play_arrow</span>
+</button>
+</div>
+<div class="p-gutter">
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-4">
+                            การจัดการธุรกิจยุคดิจิทัลขั้นสูง (Advanced Digital Business Management)
+                        </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-6">
+                            เรียนรู้กลยุทธ์การปรับตัวขององค์กรในยุคดิจิทัลดิสรัปชัน เจาะลึกการใช้ข้อมูลเพื่อการตัดสินใจ และการสร้างนวัตกรรมทางธุรกิจที่ยั่งยืน เหมาะสำหรับผู้บริหารและผู้ประกอบการ
+                        </p>
+<div class="flex flex-wrap gap-4 items-center font-label-md text-label-md text-text-muted">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">person</span>
+<span>ดร. สมชาย วิทยากุล (ผู้เชี่ยวชาญด้านกลยุทธ์องค์กร)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+<span>12 ชั่วโมง 30 นาที</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">star</span>
+<span class="text-warm-gold font-bold">4.9</span>
+<span>(245 รีวิว)</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Lessons Accordion -->
+<section class="bg-surface-white rounded-card shadow-card p-gutter">
+<div class="flex justify-between items-center mb-6">
+<h2 class="font-headline-md text-headline-md text-primary gold-accent-left pl-3">เนื้อหาหลักสูตร</h2>
+<span class="font-label-md text-label-md text-text-muted">6 บทเรียน • 24 วิดีโอ</span>
+</div>
+<div class="space-y-4">
+<!-- Module 1 -->
+<div class="border border-border-light rounded-lg overflow-hidden">
+<button class="w-full flex justify-between items-center p-4 bg-surface-container-low hover:bg-surface-container transition-colors text-left focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.arrow').classList.toggle('rotate-180')">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-text-muted mb-1">บทที่ 1</span>
+<span class="font-body-lg text-body-lg text-primary font-medium">ภาพรวมของ Digital Disruption ในธุรกิจปัจจุบัน</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-caption text-caption text-text-muted hidden sm:block">4 วิดีโอ • 45 นาที</span>
+<span class="material-symbols-outlined arrow transition-transform duration-200">keyboard_arrow_down</span>
+</div>
+</button>
+<div class="hidden">
+<div class="p-4 bg-surface-white border-t border-border-light flex flex-col gap-2">
+<!-- Lesson Item -->
+<div class="flex items-center justify-between p-2 hover:bg-surface-container-low rounded transition-colors group cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary group-hover:text-warm-gold transition-colors">play_circle</span>
+<span class="font-body-md text-body-md text-on-surface-variant group-hover:text-primary transition-colors">บทนำ: ทำไมธุรกิจต้องปรับตัว?</span>
+</div>
+<span class="font-caption text-caption text-text-muted">10:15</span>
+</div>
+<div class="flex items-center justify-between p-2 hover:bg-surface-container-low rounded transition-colors group cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary group-hover:text-warm-gold transition-colors">play_circle</span>
+<span class="font-body-md text-body-md text-on-surface-variant group-hover:text-primary transition-colors">กรณีศึกษา: บริษัทที่ล้มเหลวและสำเร็จในการทำ Digital Transformation</span>
+</div>
+<span class="font-caption text-caption text-text-muted">15:30</span>
+</div>
+<div class="flex items-center justify-between p-2 hover:bg-surface-container-low rounded transition-colors group cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline">description</span>
+<span class="font-body-md text-body-md text-on-surface-variant group-hover:text-primary transition-colors">เอกสารประกอบการเรียน บทที่ 1 (PDF)</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Module 2 -->
+<div class="border border-border-light rounded-lg overflow-hidden">
+<button class="w-full flex justify-between items-center p-4 bg-surface-container-low hover:bg-surface-container transition-colors text-left focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.arrow').classList.toggle('rotate-180')">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-text-muted mb-1">บทที่ 2</span>
+<span class="font-body-lg text-body-lg text-primary font-medium">Data-Driven Decision Making (การตัดสินใจบนพื้นฐานข้อมูล)</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-caption text-caption text-text-muted hidden sm:block">5 วิดีโอ • 1 ชั่วโมง 20 นาที</span>
+<span class="material-symbols-outlined arrow transition-transform duration-200">keyboard_arrow_down</span>
+</div>
+</button>
+<div class="hidden">
+<div class="p-4 bg-surface-white border-t border-border-light flex flex-col gap-2">
+<div class="flex items-center justify-between p-2 hover:bg-surface-container-low rounded transition-colors group cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary group-hover:text-warm-gold transition-colors">play_circle</span>
+<span class="font-body-md text-body-md text-on-surface-variant group-hover:text-primary transition-colors">ความสำคัญของข้อมูลในยุคดิจิทัล</span>
+</div>
+<span class="font-caption text-caption text-text-muted">12:00</span>
+</div>
+<div class="flex items-center justify-between p-2 hover:bg-surface-container-low rounded transition-colors group cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline">lock</span>
+<span class="font-body-md text-body-md text-text-muted">เครื่องมือและแพลตฟอร์มสำหรับการวิเคราะห์ข้อมูลเบื้องต้น</span>
+</div>
+<span class="font-caption text-caption text-text-muted">20:45</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Sticky Sticky Sidebar Card -->
+<div class="md:col-span-4 relative">
+<div class="sticky top-[88px]">
+<div class="bg-surface-white rounded-card shadow-card overflow-hidden p-gutter flex flex-col gap-6">
+<!-- Price Tag -->
+<div class="text-center">
+<span class="font-headline-md text-headline-md text-on-surface-variant line-through mr-2 opacity-60">฿ 5,900</span>
+<span class="font-display-lg text-display-lg text-warm-gold block mt-2">฿ 3,500</span>
+<span class="font-caption text-caption text-text-muted uppercase tracking-wider block mt-2">ราคาพิเศษเฉพาะช่วงนี้</span>
+</div>
+<!-- CTA Button -->
+<button class="w-full bg-[#C9A063] hover:bg-[#b58c50] text-surface-white font-label-md text-label-md py-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-md">
+                            ลงทะเบียนเรียนทันที
+                            <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+<button class="w-full border border-primary text-primary hover:bg-surface-container-low font-label-md text-label-md py-3 rounded-lg transition-colors">
+                            เพิ่มลงตะกร้า
+                        </button>
+<hr class="border-border-light my-2"/>
+<!-- Value Props -->
+<div class="flex flex-col gap-3">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary mt-1">all_inclusive</span>
+<div>
+<span class="font-label-md text-label-md text-on-surface block">เข้าเรียนได้ตลอดชีพ</span>
+<span class="font-caption text-caption text-text-muted">เรียนซ้ำได้ไม่จำกัดจำนวนครั้ง</span>
+</div>
+</div>
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary mt-1">workspace_premium</span>
+<div>
+<span class="font-label-md text-label-md text-on-surface block">รับประกาศนียบัตร</span>
+<span class="font-caption text-caption text-text-muted">เมื่อเรียนจบและผ่านแบบทดสอบ</span>
+</div>
+</div>
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary mt-1">devices</span>
+<div>
+<span class="font-label-md text-label-md text-on-surface block">เรียนได้ทุกอุปกรณ์</span>
+<span class="font-caption text-caption text-text-muted">รองรับทั้งคอมพิวเตอร์ แท็บเล็ต และมือถือ</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-base px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-gutter bg-surface-container-lowest dark:bg-inverse-surface border-t border-border-light mt-auto">
+<div class="font-headline-md text-headline-md text-primary">getownly</div>
+<div class="flex flex-wrap gap-4 items-center justify-center font-body-md text-body-md text-text-muted">
+<a class="hover:text-primary hover:underline transition-all" href="#">เกี่ยวกับเรา</a>
+<a class="hover:text-primary hover:underline transition-all" href="#">ข้อกำหนดการใช้งาน</a>
+<a class="hover:text-primary hover:underline transition-all" href="#">นโยบายความเป็นส่วนตัว</a>
+<a class="hover:text-primary hover:underline transition-all" href="#">ติดต่อเรา</a>
+</div>
+<div class="font-caption text-caption text-text-muted text-center md:text-right">
+            © 2024 getownly. สงวนลิขสิทธิ์ทุกประการ.
+        </div>
+</footer>
+</body></html>

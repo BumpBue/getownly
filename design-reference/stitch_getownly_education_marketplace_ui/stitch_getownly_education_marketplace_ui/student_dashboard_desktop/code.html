@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html lang="th"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Student Dashboard - getownly</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-background": "#191c1d",
+                      "inverse-surface": "#2e3132",
+                      "on-secondary-fixed-variant": "#5f410c",
+                      "outline": "#74777f",
+                      "surface-container-high": "#e7e8e9",
+                      "on-error": "#ffffff",
+                      "primary": "#022445",
+                      "border-light": "#E7E8E9",
+                      "surface": "#f8f9fa",
+                      "background": "#f8f9fa",
+                      "text-muted": "rgba(30, 58, 92, 0.70)",
+                      "error-container": "#ffdad6",
+                      "tertiary-fixed-dim": "#e8c080",
+                      "on-tertiary-fixed": "#271900",
+                      "surface-tint": "#456084",
+                      "tertiary-fixed": "#ffdeab",
+                      "primary-container": "#1e3a5c",
+                      "on-tertiary-fixed-variant": "#5d420d",
+                      "surface-dim": "#d9dadb",
+                      "on-surface-variant": "#43474e",
+                      "primary-fixed-dim": "#adc8f2",
+                      "surface-variant": "#e1e3e4",
+                      "on-tertiary-container": "#c19d5f",
+                      "surface-container-low": "#f3f4f5",
+                      "on-surface": "#191c1d",
+                      "surface-container": "#edeeef",
+                      "secondary-fixed": "#ffddb0",
+                      "on-secondary-fixed": "#281800",
+                      "surface-container-highest": "#e1e3e4",
+                      "inverse-primary": "#adc8f2",
+                      "on-secondary": "#ffffff",
+                      "on-secondary-container": "#785722",
+                      "surface-white": "#FFFFFF",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary-container": "#4d3400",
+                      "on-primary-fixed-variant": "#2d486b",
+                      "primary-fixed": "#d3e3ff",
+                      "on-primary": "#ffffff",
+                      "secondary": "#795823",
+                      "secondary-container": "#fdd08e",
+                      "secondary-fixed-dim": "#ebbf7f",
+                      "text-primary": "#1E3A5C",
+                      "on-error-container": "#93000a",
+                      "error": "#BA1A1A",
+                      "inverse-on-surface": "#f0f1f2",
+                      "on-primary-fixed": "#001c39",
+                      "on-primary-container": "#8aa4cc",
+                      "on-tertiary": "#ffffff",
+                      "outline-variant": "#c4c6cf",
+                      "tertiary": "#312000",
+                      "success": "#2D6A4F",
+                      "surface-bright": "#f8f9fa"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-desktop": "40px",
+                      "margin-mobile": "16px",
+                      "accent-bar": "4px",
+                      "base": "8px",
+                      "gutter": "24px",
+                      "container-max": "1280px"
+              },
+              "fontFamily": {
+                      "caption": ["IBM Plex Sans"],
+                      "headline-lg-mobile": ["IBM Plex Sans"],
+                      "label-md": ["IBM Plex Sans"],
+                      "body-lg": ["IBM Plex Sans"],
+                      "body-md": ["IBM Plex Sans"],
+                      "headline-md": ["IBM Plex Sans"],
+                      "display-lg": ["IBM Plex Sans"],
+                      "headline-lg": ["IBM Plex Sans"]
+              },
+              "fontSize": {
+                      "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                      "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                      "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                      "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                      "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                      "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                      "display-lg": ["48px", { "lineHeight": "60px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                      "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        .custom-shadow { box-shadow: 0px 4px 20px rgba(30, 58, 92, 0.08); }
+        .hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .hover-lift:hover { transform: translateY(-4px); box-shadow: 0px 8px 30px rgba(30, 58, 92, 0.12); }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col font-body-md">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-desktop bg-surface-white border-b border-border-light h-16">
+<div class="flex items-center gap-gutter">
+<span class="font-headline-md text-headline-md font-bold text-primary">getownly</span>
+<!-- Top Nav Links (Hidden on Mobile, relying on SideNav for primary routing, but present per JSON) -->
+<nav class="hidden md:flex gap-8 ml-8">
+<a class="font-label-md text-label-md text-on-surface-variant pb-2 hover:text-primary transition-colors mt-2" href="#">Browse</a>
+<a class="font-label-md text-label-md text-on-surface-variant pb-2 hover:text-primary transition-colors mt-2" href="#">My Courses</a>
+<a class="font-label-md text-label-md text-on-surface-variant pb-2 hover:text-primary transition-colors mt-2" href="#">Instructors</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors rounded-full hover:bg-surface-container">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<img alt="User Profile Avatar" class="w-8 h-8 rounded-full object-cover border border-border-light" data-alt="A professional headshot of an adult student in a modern, well-lit academic setting. The person is smiling gently, wearing smart casual attire. The lighting is soft and bright, creating a clean, trustworthy, and high-end aesthetic typical of premium educational platforms. Colors are natural with deep navy and crisp white undertones in the background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC75Q7h_4zsHn9SFLwIkAqryz_0YwmntSN1NG4ilTV4LeiU7oE9bkwonHGdN5Y5FeE8Tm8VPkP6K3OG1NiYxQm8c_iTx-0t-g8Hl7qrtLr-BNgubb1LzvBvzfPclpvdTa8e9Y1puzClvJcT0EkvnDS-G5ViXRLYF1j4hMWQ5QFP0SaB6Kb8pg8OMfYMdojgRnsvr0YH_PtXq1sNPGD1YVe6ZHnZYbJwZVLEidV2A8AvI2YgJAZYcoEO"/>
+</div>
+</header>
+<div class="flex flex-1 pt-16">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-64 flex flex-col z-40 bg-primary pt-16 shadow-lg hidden md:flex">
+<div class="p-6 border-b border-primary-container">
+<div class="flex items-center gap-3 mb-4">
+<img alt="Admin User Profile" class="w-10 h-10 rounded-full object-cover border-2 border-primary-fixed-dim" data-alt="A professional headshot of an adult student in a modern, well-lit academic setting. The person is smiling gently, wearing smart casual attire. The lighting is soft and bright, creating a clean, trustworthy, and high-end aesthetic typical of premium educational platforms. Colors are natural with deep navy and crisp white undertones in the background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcoV5lfLHOHakQ-fx637cP1_moR53mKh8dY3F6El1SLrKWup9f5jtR1FsKL9ij8OkCXAM0R_663-WAs0W24GS1Yys7FWkdvzGeSo6M91DI0RK6ZFlX6VibMGunOVUZY-kked5dySsAuh82TODKUS1YXKvgEc9UTS0F828yr4e_9AtgJKgol-6g2xA3JqdPbAqnAJ0eliokyj2wcVQDKiIVp5eqnGHeNYgXOHNby_kg2SKf1l7sMwxu"/>
+<div>
+<h2 class="font-label-md text-label-md text-on-primary">Admin Portal</h2>
+<p class="font-caption text-caption text-on-primary-container">Management Console</p>
+</div>
+</div>
+<button class="w-full py-2 bg-secondary text-white font-label-md text-label-md rounded hover:bg-opacity-90 transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+                    Create New Course
+                </button>
+</div>
+<nav class="flex-1 py-4 overflow-y-auto">
+<ul class="space-y-1">
+<!-- Active State: Dashboard -->
+<li>
+<a class="flex items-center text-on-primary bg-primary-container border-l-accent-bar border-secondary-fixed px-4 py-3 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="dashboard">dashboard</span>
+                            Dashboard
+                        </a>
+</li>
+<li>
+<a class="flex items-center text-on-primary-container px-4 py-3 opacity-70 hover:bg-primary-container hover:opacity-100 transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="folder_managed">folder_managed</span>
+                            Management
+                        </a>
+</li>
+<li>
+<a class="flex items-center text-on-primary-container px-4 py-3 opacity-70 hover:bg-primary-container hover:opacity-100 transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="assessment">assessment</span>
+                            Reports
+                        </a>
+</li>
+<li>
+<a class="flex items-center text-on-primary-container px-4 py-3 opacity-70 hover:bg-primary-container hover:opacity-100 transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="analytics">analytics</span>
+                            Analytics
+                        </a>
+</li>
+<li>
+<a class="flex items-center text-on-primary-container px-4 py-3 opacity-70 hover:bg-primary-container hover:opacity-100 transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="settings">settings</span>
+                            Settings
+                        </a>
+</li>
+</ul>
+</nav>
+<div class="p-4 border-t border-primary-container">
+<ul class="space-y-1">
+<li>
+<a class="flex items-center text-on-primary-container px-4 py-2 opacity-70 hover:opacity-100 transition-all font-caption text-caption" href="#">
+<span class="material-symbols-outlined text-[18px] mr-2" data-icon="help">help</span>
+                            Help Center
+                        </a>
+</li>
+<li>
+<a class="flex items-center text-on-primary-container px-4 py-2 opacity-70 hover:opacity-100 transition-all font-caption text-caption" href="#">
+<span class="material-symbols-outlined text-[18px] mr-2" data-icon="logout">logout</span>
+                            Logout
+                        </a>
+</li>
+</ul>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 bg-background min-h-[calc(100vh-64px)] flex flex-col">
+<div class="flex-1 px-margin-mobile md:px-margin-desktop py-8 max-w-container-max mx-auto w-full">
+<!-- Personalized Greeting -->
+<header class="mb-10">
+<h1 class="font-display-lg text-display-lg text-primary mb-2 hidden md:block">สวัสดีคุณสมชาย</h1>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary mb-2 md:hidden">สวัสดีคุณสมชาย</h1>
+<p class="font-body-lg text-body-lg text-text-muted">ยินดีต้อนรับกลับเข้าสู่ห้องเรียนของคุณ (Welcome back to your learning portal)</p>
+</header>
+<!-- 12-Column Grid Layout -->
+<div class="grid grid-cols-4 md:grid-cols-8 lg:grid-cols-12 gap-gutter mb-12">
+<!-- Quick Action Cards (Bento Style) -->
+<div class="col-span-4 md:col-span-4 lg:col-span-3 bg-surface-white rounded-xl p-6 custom-shadow hover-lift flex flex-col justify-between h-40">
+<div class="flex justify-between items-start">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-weight="fill">play_circle</span>
+</div>
+<span class="font-caption text-caption text-text-muted">2 in progress</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-primary">Resume</h3>
+<p class="font-label-md text-label-md text-text-muted">Continue your courses</p>
+</div>
+</div>
+<div class="col-span-4 md:col-span-4 lg:col-span-3 bg-surface-white rounded-xl p-6 custom-shadow hover-lift flex flex-col justify-between h-40">
+<div class="flex justify-between items-start">
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" data-weight="fill">assignment</span>
+</div>
+<span class="flex items-center gap-1 font-caption text-caption text-error">
+<span class="w-2 h-2 rounded-full bg-error"></span> Due Today
+                            </span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-primary">Assignments</h3>
+<p class="font-label-md text-label-md text-text-muted">3 pending tasks</p>
+</div>
+</div>
+<div class="col-span-4 md:col-span-4 lg:col-span-3 bg-surface-white rounded-xl p-6 custom-shadow hover-lift flex flex-col justify-between h-40">
+<div class="flex justify-between items-start">
+<div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-weight="fill">forum</span>
+</div>
+<span class="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center font-caption text-caption">1</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-primary">Discussions</h3>
+<p class="font-label-md text-label-md text-text-muted">New replies</p>
+</div>
+</div>
+<div class="col-span-4 md:col-span-4 lg:col-span-3 bg-primary rounded-xl p-6 custom-shadow hover-lift flex flex-col justify-between h-40 border-t-accent-bar border-secondary">
+<div class="flex justify-between items-start">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-white">
+<span class="material-symbols-outlined" data-weight="fill">explore</span>
+</div>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-white">Explore</h3>
+<p class="font-label-md text-label-md text-on-primary-container">Find new subjects</p>
+</div>
+</div>
+</div>
+<!-- Continue Learning Section -->
+<section class="mb-12">
+<div class="flex items-center mb-6">
+<h2 class="font-headline-lg text-headline-lg text-primary relative inline-block">
+                            Continue Learning
+                            <span class="absolute -bottom-2 left-0 w-full h-[4px] bg-secondary"></span>
+</h2>
+</div>
+<div class="grid grid-cols-4 md:grid-cols-8 lg:grid-cols-12 gap-gutter">
+<!-- Course Card 1 -->
+<div class="col-span-4 md:col-span-4 lg:col-span-6 bg-surface-white rounded-[16px] custom-shadow overflow-hidden group cursor-pointer hover-lift">
+<div class="relative w-full pb-[56.25%] bg-surface-container">
+<img alt="Course Thumbnail" class="absolute inset-0 w-full h-full object-cover" data-alt="A clean, modern workspace featuring a sleek laptop open on a wooden desk next to a notebook and a cup of coffee. The lighting is bright and natural, coming from a nearby window, casting soft shadows. The overall aesthetic is highly professional, inspiring, and academic, utilizing deep navy tones in the accessories and bright whites for a premium digital learning environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4dZn-ABH4IOQFWkE5qD8vetqtL0RJsi-Jwwt6zskyaeDInxBgRglr8Cz7PHzFbvrBwwXkfB67HLp8e-R8ULUolJN3xqT-BQwouLGTW-PDRI4n8TZD9D5CxX3bdZ6Pq2VKsYSWoQA9pLk68scnMWtZd689jtYuenSLSmnAJO-9YgkDn-Ta6xdb7cuQLaNfsNpkvbVUlByhxg7GPNC-qaCXBel6S1oFRm0yYMUhMRMfWrApAF9ywJeI"/>
+<div class="absolute top-4 left-4 bg-surface-white px-3 py-1 rounded-full font-caption text-caption text-primary flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span> In Progress
+                                </div>
+</div>
+<div class="p-6">
+<p class="font-label-md text-label-md text-secondary mb-2 uppercase tracking-wider">Business Strategy</p>
+<h3 class="font-headline-md text-headline-md text-primary mb-4 group-hover:text-surface-tint transition-colors">Advanced Corporate Finance</h3>
+<div class="mb-4">
+<div class="flex justify-between font-caption text-caption text-text-muted mb-1">
+<span>Module 4: Valuation Methods</span>
+<span>65%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-secondary rounded-full" style="width: 65%;"></div>
+</div>
+</div>
+<div class="flex justify-between items-center mt-6">
+<p class="font-caption text-caption text-text-muted flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span> 2h 15m remaining
+                                    </p>
+<button class="bg-primary text-white px-6 py-2 rounded font-label-md text-label-md hover:bg-primary-container transition-colors">Resume</button>
+</div>
+</div>
+</div>
+<!-- Course Card 2 -->
+<div class="col-span-4 md:col-span-4 lg:col-span-6 bg-surface-white rounded-[16px] custom-shadow overflow-hidden group cursor-pointer hover-lift">
+<div class="relative w-full pb-[56.25%] bg-surface-container">
+<img alt="Course Thumbnail" class="absolute inset-0 w-full h-full object-cover" data-alt="An abstract visualization of data analytics with clean geometric lines, soft glowing nodes, and subtle graphs on a dark navy background. The lighting is sophisticated, with a warm gold accent highlighting a specific trend line. The composition feels highly modern, corporate, and structured, reflecting a premium analytical education course." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcZjBl3HxroJzgF-fUQ0xooEAE9-eKSVuxcHEyiVJNPhJtpsdNcAwXjncRnRyQLxox7bKopwN9B3VHTxSSm6u_ef4bK1AMRbes6_1hsipLwwNKXFkBSTL3GZVwuKdbouqPe4SqadEf7K4YSWZ2JLDuvUiBZnbkto4N4QuciAr5pNX7Pk8C0Wba1WNTK10hlmy8sTkvvkyJKFYok81U0k2YSE8VkjH9M96sNINVtfjJSmegIs32mUeS"/>
+<div class="absolute top-4 left-4 bg-surface-white px-3 py-1 rounded-full font-caption text-caption text-primary flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span> In Progress
+                                </div>
+</div>
+<div class="p-6">
+<p class="font-label-md text-label-md text-secondary mb-2 uppercase tracking-wider">Data Science</p>
+<h3 class="font-headline-md text-headline-md text-primary mb-4 group-hover:text-surface-tint transition-colors">Predictive Modeling Fundamentals</h3>
+<div class="mb-4">
+<div class="flex justify-between font-caption text-caption text-text-muted mb-1">
+<span>Module 2: Linear Regression</span>
+<span>32%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-secondary rounded-full" style="width: 32%;"></div>
+</div>
+</div>
+<div class="flex justify-between items-center mt-6">
+<p class="font-caption text-caption text-text-muted flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span> 4h 30m remaining
+                                    </p>
+<button class="bg-primary text-white px-6 py-2 rounded font-label-md text-label-md hover:bg-primary-container transition-colors">Resume</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer -->
+<footer class="w-full py-base px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-gutter border-t border-border-light bg-surface-container-lowest mt-auto">
+<div class="font-headline-md text-headline-md text-primary">
+                    getownly
+                </div>
+<div class="font-body-md text-body-md text-text-muted">
+                    © 2024 getownly. สงวนลิขสิทธิ์ทุกประการ.
+                </div>
+<nav class="flex flex-wrap gap-4 justify-center md:justify-end font-caption text-caption">
+<a class="text-text-muted hover:text-primary hover:underline transition-all" href="#">เกี่ยวกับเรา</a>
+<a class="text-text-muted hover:text-primary hover:underline transition-all" href="#">ข้อกำหนดการใช้งาน</a>
+<a class="text-text-muted hover:text-primary hover:underline transition-all" href="#">นโยบายความเป็นส่วนตัว</a>
+<a class="text-text-muted hover:text-primary hover:underline transition-all" href="#">ติดต่อเรา</a>
+</nav>
+</footer>
+</main>
+</div>
+</body></html>

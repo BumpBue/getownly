@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html lang="th"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>แดชบอร์ดผู้ดูแลระบบ - getownly</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-background": "#191c1d",
+                    "inverse-surface": "#2e3132",
+                    "on-secondary-fixed-variant": "#5f410c",
+                    "outline": "#74777f",
+                    "surface-container-high": "#e7e8e9",
+                    "on-error": "#ffffff",
+                    "primary": "#022445",
+                    "border-light": "#E7E8E9",
+                    "surface": "#f8f9fa",
+                    "background": "#f8f9fa",
+                    "text-muted": "rgba(30, 58, 92, 0.70)",
+                    "error-container": "#ffdad6",
+                    "tertiary-fixed-dim": "#e8c080",
+                    "on-tertiary-fixed": "#271900",
+                    "surface-tint": "#456084",
+                    "tertiary-fixed": "#ffdeab",
+                    "primary-container": "#1e3a5c",
+                    "on-tertiary-fixed-variant": "#5d420d",
+                    "surface-dim": "#d9dadb",
+                    "on-surface-variant": "#43474e",
+                    "primary-fixed-dim": "#adc8f2",
+                    "surface-variant": "#e1e3e4",
+                    "on-tertiary-container": "#c19d5f",
+                    "surface-container-low": "#f3f4f5",
+                    "on-surface": "#191c1d",
+                    "surface-container": "#edeeef",
+                    "secondary-fixed": "#ffddb0",
+                    "on-secondary-fixed": "#281800",
+                    "surface-container-highest": "#e1e3e4",
+                    "inverse-primary": "#adc8f2",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-container": "#785722",
+                    "surface-white": "#FFFFFF",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-container": "#4d3400",
+                    "on-primary-fixed-variant": "#2d486b",
+                    "primary-fixed": "#d3e3ff",
+                    "on-primary": "#ffffff",
+                    "secondary": "#795823",
+                    "secondary-container": "#fdd08e",
+                    "secondary-fixed-dim": "#ebbf7f",
+                    "text-primary": "#1E3A5C",
+                    "on-error-container": "#93000a",
+                    "error": "#BA1A1A",
+                    "inverse-on-surface": "#f0f1f2",
+                    "on-primary-fixed": "#001c39",
+                    "on-primary-container": "#8aa4cc",
+                    "on-tertiary": "#ffffff",
+                    "outline-variant": "#c4c6cf",
+                    "tertiary": "#312000",
+                    "success": "#2D6A4F",
+                    "surface-bright": "#f8f9fa"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "40px",
+                    "margin-mobile": "16px",
+                    "accent-bar": "4px",
+                    "base": "8px",
+                    "gutter": "24px",
+                    "container-max": "1280px"
+            },
+            "fontFamily": {
+                    "caption": ["IBM Plex Sans"],
+                    "headline-lg-mobile": ["IBM Plex Sans"],
+                    "label-md": ["IBM Plex Sans"],
+                    "body-lg": ["IBM Plex Sans"],
+                    "body-md": ["IBM Plex Sans"],
+                    "headline-md": ["IBM Plex Sans"],
+                    "display-lg": ["IBM Plex Sans"],
+                    "headline-lg": ["IBM Plex Sans"]
+            },
+            "fontSize": {
+                    "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                    "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                    "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                    "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                    "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                    "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                    "display-lg": ["48px", { "lineHeight": "60px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                    "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body { font-family: 'IBM Plex Sans', sans-serif; }
+        .card-shadow { box-shadow: 0px 4px 20px rgba(30, 58, 92, 0.08); }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0px 8px 25px rgba(30, 58, 92, 0.12); }
+    </style>
+</head>
+<body class="bg-background text-on-background flex h-screen overflow-hidden antialiased">
+<!-- SideNavBar Component (From JSON) -->
+<nav class="hidden md:flex flex-col fixed left-0 top-0 h-full w-64 z-40 bg-primary dark:bg-on-background shadow-lg">
+<!-- Brand / Header -->
+<div class="p-6 border-b border-surface-tint/30 flex flex-col items-center">
+<div class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-3xl text-secondary-fixed">shield_person</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-secondary-fixed text-center w-full truncate">Admin Portal</h1>
+<p class="font-caption text-caption text-on-primary-container mt-1">Management Console</p>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 overflow-y-auto py-4 flex flex-col gap-1">
+<!-- Active Tab: Dashboard -->
+<a class="flex items-center text-on-primary bg-primary-container border-l-accent-bar border-secondary-fixed px-4 py-3 transition-all translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined mr-3">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<!-- Inactive Tabs -->
+<a class="flex items-center text-on-primary-container px-4 py-3 opacity-70 hover:bg-primary-container hover:opacity-100 transition-all" href="#">
+<span class="material-symbols-outlined mr-3">folder_managed</span>
+<span class="font-label-md text-label-md">Management</span>
+</a>
+<a class="flex items-center text-on-primary-container px-4 py-3 opacity-70 hover:bg-primary-container hover:opacity-100 transition-all" href="#">
+<span class="material-symbols-outlined mr-3">assessment</span>
+<span class="font-label-md text-label-md">Reports</span>
+</a>
+<a class="flex items-center text-on-primary-container px-4 py-3 opacity-70 hover:bg-primary-container hover:opacity-100 transition-all" href="#">
+<span class="material-symbols-outlined mr-3">analytics</span>
+<span class="font-label-md text-label-md">Analytics</span>
+</a>
+<a class="flex items-center text-on-primary-container px-4 py-3 opacity-70 hover:bg-primary-container hover:opacity-100 transition-all" href="#">
+<span class="material-symbols-outlined mr-3">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</div>
+<!-- CTA & Footer Actions -->
+<div class="p-4 border-t border-surface-tint/30 space-y-2">
+<button class="w-full bg-secondary text-on-secondary font-label-md text-label-md py-2 px-4 rounded-DEFAULT hover:opacity-90 transition-opacity mb-4">
+                Create New Course
+            </button>
+<a class="flex items-center text-on-primary-container px-2 py-2 opacity-70 hover:bg-primary-container hover:opacity-100 transition-all rounded" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]">help</span>
+<span class="font-label-md text-label-md">Help Center</span>
+</a>
+<a class="flex items-center text-on-primary-container px-2 py-2 opacity-70 hover:bg-primary-container hover:opacity-100 transition-all rounded" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]">logout</span>
+<span class="font-label-md text-label-md">Logout</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 ml-0 md:ml-64 h-full overflow-y-auto bg-surface relative">
+<div class="p-margin-mobile md:p-margin-desktop max-w-container-max mx-auto space-y-8 pb-20">
+<!-- Page Header -->
+<header class="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mt-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-primary font-bold">ภาพรวมระบบ</h2>
+<p class="font-body-md text-body-md text-text-muted mt-1">ยินดีต้อนรับกลับ, ตรวจสอบสถานะและกิจกรรมล่าสุดของแพลตฟอร์ม</p>
+</div>
+<div class="flex items-center gap-2 bg-surface-white px-4 py-2 rounded-lg border border-border-light shadow-sm">
+<span class="material-symbols-outlined text-outline">calendar_today</span>
+<span class="font-label-md text-label-md text-on-surface-variant">24 ตุลาคม 2024</span>
+</div>
+</header>
+<!-- Prominent Action / Pending Items (Navy Boxes) -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Pending Course Approvals -->
+<div class="bg-primary text-on-primary rounded-xl p-6 relative overflow-hidden card-hover transition-transform duration-300">
+<div class="absolute top-0 right-0 p-6 opacity-10">
+<span class="material-symbols-outlined text-[120px]">assignment_late</span>
+</div>
+<div class="relative z-10 flex flex-col h-full justify-between">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary">school</span>
+</div>
+<h3 class="font-headline-md text-headline-md font-semibold">รออนุมัติหลักสูตร</h3>
+</div>
+<div>
+<div class="font-display-lg text-display-lg font-bold mb-2 text-secondary-fixed">12</div>
+<p class="font-body-md text-body-md text-on-primary-container">หลักสูตรใหม่ที่ต้องการตรวจสอบเนื้อหาและโครงสร้าง</p>
+</div>
+<button class="mt-6 flex items-center gap-2 text-secondary-fixed font-label-md text-label-md hover:underline w-fit">
+<span>ตรวจสอบเลย</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Pending Instructor Approvals -->
+<div class="bg-primary text-on-primary rounded-xl p-6 relative overflow-hidden card-hover transition-transform duration-300">
+<div class="absolute top-0 right-0 p-6 opacity-10">
+<span class="material-symbols-outlined text-[120px]">how_to_reg</span>
+</div>
+<div class="relative z-10 flex flex-col h-full justify-between">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary">person_add</span>
+</div>
+<h3 class="font-headline-md text-headline-md font-semibold">รออนุมัติผู้สอน</h3>
+</div>
+<div>
+<div class="font-display-lg text-display-lg font-bold mb-2 text-secondary-fixed">5</div>
+<p class="font-body-md text-body-md text-on-primary-container">ผู้สมัครใหม่ที่ส่งเอกสารยืนยันตัวตนเรียบร้อยแล้ว</p>
+</div>
+<button class="mt-6 flex items-center gap-2 text-secondary-fixed font-label-md text-label-md hover:underline w-fit">
+<span>พิจารณาคำขอ</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+<!-- High-level Stats (Bento Grid Style) -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Stat Card 1 -->
+<div class="bg-surface-white rounded-xl p-6 card-shadow card-hover transition-transform duration-300 border border-border-light/50">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">group</span>
+</div>
+<span class="flex items-center text-success font-label-md text-label-md bg-success/10 px-2 py-1 rounded">
+<span class="material-symbols-outlined text-[16px] mr-1">trending_up</span> +12%
+                        </span>
+</div>
+<p class="font-label-md text-label-md text-text-muted mb-1">ผู้ใช้งานทั้งหมด</p>
+<h4 class="font-headline-lg text-headline-lg text-primary font-bold">24,592</h4>
+</div>
+<!-- Stat Card 2 -->
+<div class="bg-surface-white rounded-xl p-6 card-shadow card-hover transition-transform duration-300 border border-border-light/50">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">menu_book</span>
+</div>
+<span class="flex items-center text-success font-label-md text-label-md bg-success/10 px-2 py-1 rounded">
+<span class="material-symbols-outlined text-[16px] mr-1">trending_up</span> +5%
+                        </span>
+</div>
+<p class="font-label-md text-label-md text-text-muted mb-1">หลักสูตรที่เปิดสอน</p>
+<h4 class="font-headline-lg text-headline-lg text-primary font-bold">1,204</h4>
+</div>
+<!-- Stat Card 3 (Highlight Value) -->
+<div class="bg-surface-white rounded-xl p-6 card-shadow card-hover transition-transform duration-300 border-t-4 border-t-secondary border-x border-b border-border-light/50">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary">payments</span>
+</div>
+<span class="font-caption text-caption text-text-muted">เดือนนี้</span>
+</div>
+<p class="font-label-md text-label-md text-text-muted mb-1">รายได้รวม (บาท)</p>
+<h4 class="font-headline-lg text-headline-lg text-secondary font-bold">฿845,200</h4>
+</div>
+</section>
+<!-- Latest Activity Feed -->
+<section class="bg-surface-white rounded-xl card-shadow border border-border-light/50 overflow-hidden">
+<div class="p-6 border-b border-border-light flex justify-between items-center bg-surface-container-lowest">
+<h3 class="font-headline-md text-headline-md text-primary font-semibold flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">history</span>
+                        กิจกรรมล่าสุด
+                    </h3>
+<button class="font-label-md text-label-md text-primary hover:text-secondary transition-colors">ดูทั้งหมด</button>
+</div>
+<div class="divide-y divide-border-light">
+<!-- Feed Item 1 -->
+<div class="p-4 md:p-6 hover:bg-surface-container-lowest transition-colors flex items-start gap-4">
+<img alt="User Avatar" class="w-10 h-10 rounded-full object-cover shadow-sm flex-shrink-0" data-alt="A close-up portrait of a professional Asian woman with short black hair, wearing a navy blazer, smiling warmly in a bright modern office setting. High-key lighting, corporate but approachable style, soft blurred background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmefEllfE8F99uQY5g0ZQpDsGzqClrRdYcjXLVrHuStb_ATG5uvfEs40u_IOByhnur3WjmcuTY2BeE3ZX2OA5tNyVWfOwkTbBsOyphZmQ84s1l7rzdpl6Zse1lpQIMcWlR_NUiEbJj8Z3Bo3MK_qFxUkTzO3v6q0cAIPTKOkAP5Y5_u4GsMbIdKYVehNrfTsqz-JcHBjPgGpcsnR2a3Q9Mu1DpIxudtvnyJ0o14C0yw6KLfiaDbiEv"/>
+<div class="flex-1">
+<p class="font-body-md text-body-md text-on-surface">
+<span class="font-semibold text-primary">คุณสมศรี ใจดี</span> ได้สมัครเข้าเป็นผู้สอนใหม่และส่งเอกสารครบถ้วนแล้ว
+                            </p>
+<p class="font-caption text-caption text-text-muted mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 15 นาทีที่แล้ว
+                            </p>
+</div>
+<div class="hidden md:flex flex-shrink-0">
+<span class="font-label-md text-label-md bg-surface-container px-3 py-1 rounded text-primary border border-border-light">ตรวจสอบเอกสาร</span>
+</div>
+</div>
+<!-- Feed Item 2 -->
+<div class="p-4 md:p-6 hover:bg-surface-container-lowest transition-colors flex items-start gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-primary">publish</span>
+</div>
+<div class="flex-1">
+<p class="font-body-md text-body-md text-on-surface">
+                                หลักสูตร <span class="font-semibold text-primary">"การออกแบบ UX/UI สำหรับองค์กร"</span> ถูกสร้างขึ้นใหม่โดย <span class="font-semibold text-secondary">อาจารย์วิทย์</span>
+</p>
+<p class="font-caption text-caption text-text-muted mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 1 ชั่วโมงที่แล้ว
+                            </p>
+</div>
+<div class="hidden md:flex flex-shrink-0">
+<span class="font-label-md text-label-md bg-primary text-on-primary px-3 py-1 rounded shadow-sm">ดูรายละเอียดหลักสูตร</span>
+</div>
+</div>
+<!-- Feed Item 3 -->
+<div class="p-4 md:p-6 hover:bg-surface-container-lowest transition-colors flex items-start gap-4">
+<img alt="User Avatar" class="w-10 h-10 rounded-full object-cover shadow-sm flex-shrink-0" data-alt="A portrait of a young Asian male student with glasses, looking focused, wearing a casual light blue shirt, sitting in a brightly lit coffee shop environment. Modern, optimistic, lifestyle photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLlrU6pv7NUIlxEJr98SDOHf-kZSOtrFy6K7PEE2M5Cp-3pWWPlRSS0OYi8x1qwEzXI7xRGDRmt4omJcAbRGpDopC9ekVYaYusyDrwX93e-isQXpBF72JCo494PRp0Ilyg8-uz9pFZCxS8pWNSWkVFDU_0WWQ1arLulyR35r3WoSvS5RgLL68Yzx1r95pnOvfMuH83kaG_b5kI6hnmw1qjXLIM3PxlXs3kjSQnI3_wb4oYff8_S_fs"/>
+<div class="flex-1">
+<p class="font-body-md text-body-md text-on-surface">
+<span class="font-semibold text-primary">คุณธนพล รักเรียน</span> ได้รายงานปัญหาเกี่ยวกับการเล่นวิดีโอในหมวดหมู่โปรแกรมมิ่ง
+                            </p>
+<p class="font-caption text-caption text-text-muted mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 3 ชั่วโมงที่แล้ว
+                            </p>
+</div>
+<div class="hidden md:flex flex-shrink-0">
+<span class="font-label-md text-label-md bg-error/10 text-error px-3 py-1 rounded border border-error/20">จัดการปัญหา</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</body></html>

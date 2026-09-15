@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+
+<html class="light" lang="th"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>getownly - แคตตาล็อกหลักสูตร</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#191c1d",
+                        "inverse-surface": "#2e3132",
+                        "on-secondary-fixed-variant": "#5f410c",
+                        "outline": "#74777f",
+                        "surface-container-high": "#e7e8e9",
+                        "on-error": "#ffffff",
+                        "primary": "#022445",
+                        "border-light": "#E7E8E9",
+                        "surface": "#f8f9fa",
+                        "background": "#f8f9fa",
+                        "text-muted": "rgba(30, 58, 92, 0.70)",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#e8c080",
+                        "on-tertiary-fixed": "#271900",
+                        "surface-tint": "#456084",
+                        "tertiary-fixed": "#ffdeab",
+                        "primary-container": "#1e3a5c",
+                        "on-tertiary-fixed-variant": "#5d420d",
+                        "surface-dim": "#d9dadb",
+                        "on-surface-variant": "#43474e",
+                        "primary-fixed-dim": "#adc8f2",
+                        "surface-variant": "#e1e3e4",
+                        "on-tertiary-container": "#c19d5f",
+                        "surface-container-low": "#f3f4f5",
+                        "on-surface": "#191c1d",
+                        "surface-container": "#edeeef",
+                        "secondary-fixed": "#ffddb0",
+                        "on-secondary-fixed": "#281800",
+                        "surface-container-highest": "#e1e3e4",
+                        "inverse-primary": "#adc8f2",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#785722",
+                        "surface-white": "#FFFFFF",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#4d3400",
+                        "on-primary-fixed-variant": "#2d486b",
+                        "primary-fixed": "#d3e3ff",
+                        "on-primary": "#ffffff",
+                        "secondary": "#795823",
+                        "secondary-container": "#fdd08e",
+                        "secondary-fixed-dim": "#ebbf7f",
+                        "text-primary": "#1E3A5C",
+                        "on-error-container": "#93000a",
+                        "error": "#BA1A1A",
+                        "inverse-on-surface": "#f0f1f2",
+                        "on-primary-fixed": "#001c39",
+                        "on-primary-container": "#8aa4cc",
+                        "on-tertiary": "#ffffff",
+                        "outline-variant": "#c4c6cf",
+                        "tertiary": "#312000",
+                        "success": "#2D6A4F",
+                        "surface-bright": "#f8f9fa"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "40px",
+                        "margin-mobile": "16px",
+                        "accent-bar": "4px",
+                        "base": "8px",
+                        "gutter": "24px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "caption": ["IBM Plex Sans"],
+                        "headline-lg-mobile": ["IBM Plex Sans"],
+                        "label-md": ["IBM Plex Sans"],
+                        "body-lg": ["IBM Plex Sans"],
+                        "body-md": ["IBM Plex Sans"],
+                        "headline-md": ["IBM Plex Sans"],
+                        "display-lg": ["IBM Plex Sans"],
+                        "headline-lg": ["IBM Plex Sans"]
+                    },
+                    "fontSize": {
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "60px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom shadows based on guidelines */
+        .shadow-tier-2 {
+            box-shadow: 0px 4px 20px rgba(30, 58, 92, 0.08);
+        }
+        .hover-shadow-tier-2:hover {
+            box-shadow: 0px 12px 28px rgba(30, 58, 92, 0.12);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop bg-surface-white dark:bg-inverse-surface h-16 border-b border-border-light dark:border-outline">
+<div class="flex items-center gap-8">
+<a class="font-headline-md text-headline-md font-bold text-primary dark:text-inverse-primary tracking-tight" href="#">getownly</a>
+<div class="hidden md:flex items-center gap-6 h-full">
+<!-- Active Nav Item (Browse) -->
+<a class="h-16 flex items-center font-label-md text-label-md text-primary dark:text-inverse-primary border-b-4 border-secondary pt-1" href="#">
+                    Browse
+                </a>
+<!-- Inactive Nav Items -->
+<a class="h-16 flex items-center font-label-md text-label-md text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-inverse-primary transition-colors border-b-4 border-transparent pt-1" href="#">
+                    My Courses
+                </a>
+<a class="h-16 flex items-center font-label-md text-label-md text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-inverse-primary transition-colors border-b-4 border-transparent pt-1" href="#">
+                    Instructors
+                </a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-primary hover:opacity-80 transition-opacity p-2">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="text-primary hover:opacity-80 transition-opacity p-2">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-high border border-border-light overflow-hidden cursor-pointer">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="A professional headshot of an individual, serving as a user profile avatar. The lighting is soft and flattering, typical of a modern corporate or academic portrait. The background is a neutral, light tone to keep the focus on the subject." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCB294E_D_vfOmGv-XyLiveBspwiTGFWrQQ45XZ19qryzWJ1BmkphZStyYbCqHmtIqhW_qsil7p9NVl0Gtxj-XgMWZR9VbFijunfaNAUAqgImaVjdLPmSOT1xzAyH22Pf9ma204EIpF2_krLinIBRCsZCTvvI2QIIngkxVasQ8f8yj5HbdUmnc-6QpN3Q7urPcXt68o0H8c2sLUgr2qTX3PflYGx2EK9j4JXboSZSWO61yaMaXEDwke"/>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-grow pt-24 pb-16 px-margin-mobile md:px-margin-desktop max-w-[1280px] mx-auto w-full">
+<!-- Page Header -->
+<div class="mb-10">
+<h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary font-semibold mb-2">แคตตาล็อกหลักสูตร</h1>
+<p class="font-body-lg text-body-lg text-text-muted">ค้นหาหลักสูตรที่เหมาะสมกับเป้าหมายทางวิชาชีพของคุณ</p>
+</div>
+<div class="flex flex-col lg:flex-row gap-8">
+<!-- Left Filter Sidebar (3 columns on desktop) -->
+<aside class="w-full lg:w-1/4 flex flex-col gap-6">
+<!-- Search Box -->
+<div class="bg-surface-white p-6 rounded-lg shadow-tier-2 border border-border-light">
+<label class="font-label-md text-label-md text-text-muted block mb-2">ค้นหา</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-10 pr-4 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-primary focus:border-primary font-body-md text-body-md bg-surface" placeholder="ชื่อหลักสูตร, ทักษะ..." type="text"/>
+</div>
+</div>
+<!-- Categories Filter -->
+<div class="bg-surface-white p-6 rounded-lg shadow-tier-2 border border-border-light">
+<h3 class="font-headline-sm text-primary font-semibold mb-4 flex items-center border-b border-border-light pb-2">
+<span class="material-symbols-outlined mr-2">category</span>
+                        หมวดหมู่
+                    </h3>
+<div class="flex flex-col gap-3">
+<label class="flex items-center gap-3 cursor-pointer group">
+<input checked="" class="w-4 h-4 rounded border-outline text-primary focus:ring-primary" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">การจัดการธุรกิจ</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="w-4 h-4 rounded border-outline text-primary focus:ring-primary" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">วิทยาการข้อมูล</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="w-4 h-4 rounded border-outline text-primary focus:ring-primary" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">การออกแบบ UX/UI</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="w-4 h-4 rounded border-outline text-primary focus:ring-primary" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">การเงินและการลงทุน</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="w-4 h-4 rounded border-outline text-primary focus:ring-primary" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">การตลาดดิจิทัล</span>
+</label>
+</div>
+</div>
+<!-- Price Range Filter -->
+<div class="bg-surface-white p-6 rounded-lg shadow-tier-2 border border-border-light">
+<h3 class="font-headline-sm text-primary font-semibold mb-4 flex items-center border-b border-border-light pb-2">
+<span class="material-symbols-outlined mr-2">payments</span>
+                        ช่วงราคา
+                    </h3>
+<div class="flex flex-col gap-4">
+<input class="w-full accent-primary" max="10000" min="0" type="range"/>
+<div class="flex justify-between items-center gap-4">
+<div class="flex-1">
+<label class="font-caption text-caption text-text-muted block mb-1">ต่ำสุด (THB)</label>
+<input class="w-full p-2 border border-border-light rounded-md font-body-md text-body-md text-center focus:ring-2 focus:ring-primary focus:border-primary" type="number" value="0"/>
+</div>
+<span class="text-outline">-</span>
+<div class="flex-1">
+<label class="font-caption text-caption text-text-muted block mb-1">สูงสุด (THB)</label>
+<input class="w-full p-2 border border-border-light rounded-md font-body-md text-body-md text-center focus:ring-2 focus:ring-primary focus:border-primary" type="number" value="10000"/>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full bg-primary-container text-on-primary py-3 rounded-lg font-label-md text-label-md hover:bg-primary transition-colors">
+                    ใช้ตัวกรอง
+                </button>
+</aside>
+<!-- Right Course Grid (9 columns on desktop) -->
+<section class="w-full lg:w-3/4">
+<!-- Sort & Results Header -->
+<div class="flex justify-between items-center mb-6 pb-4 border-b border-border-light">
+<p class="font-body-md text-body-md text-text-muted">พบ 24 หลักสูตร</p>
+<div class="flex items-center gap-2">
+<label class="font-label-md text-label-md text-text-muted">เรียงตาม:</label>
+<select class="border border-border-light rounded-md py-1 pl-3 pr-8 font-body-md text-body-md focus:ring-primary focus:border-primary bg-surface-white">
+<option>ยอดนิยม</option>
+<option>ราคา: ต่ำไปสูง</option>
+<option>ราคา: สูงไปต่ำ</option>
+<option>เพิ่มล่าสุด</option>
+</select>
+</div>
+</div>
+<!-- 3-Column Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Course Card 1 -->
+<div class="bg-surface-white rounded-[16px] shadow-tier-2 hover-shadow-tier-2 hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col border border-border-light group cursor-pointer">
+<div class="relative w-full pb-[56.25%] overflow-hidden bg-surface-container-high">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A high-quality professional photograph representing corporate business strategy. The scene features a sleek, modern boardroom with a digital display showing data analytics. The lighting is crisp and corporate, utilizing a color palette of deep navy blues and clean whites, reflecting a premium, authoritative academic tone." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsz8gVSAPQyZ6Vr7Oyezb4PQdyGMocCCeoMaEHp74JQUmeTAH4N-OpAyL497MKiKW3vjqcN0Zb4lFMdxfGOAXjjr-roJNVVZEnbUaZ69SOYoGnbH0EIdhhURGy8GCz6V4msv3oVlEH0XKBCk0P1yjQ6KrRQaHZJtRnA0AiSvVZjhvDEZAee10RHZh1Xy0qYAb749O8IZH_d0Ygi6LFAtP5sNsN3zDxuV8TPamOfbGFLQ4z4iaYvkEJ"/>
+<div class="absolute top-3 left-3 bg-primary text-on-primary px-2 py-1 rounded text-caption font-label-md shadow-md">
+                                ขายดี
+                            </div>
+</div>
+<div class="p-5 flex flex-col flex-grow">
+<span class="font-caption text-caption text-text-muted mb-1 block uppercase tracking-wider">การจัดการธุรกิจ</span>
+<h3 class="font-headline-md text-body-lg font-semibold text-primary mb-2 line-clamp-2 leading-tight">กลยุทธ์การบริหารองค์กรยุคดิจิทัลระดับสูง</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4 line-clamp-2 flex-grow">เรียนรู้วิธีการปรับโครงสร้างองค์กรและนำเทคโนโลยีมาประยุกต์ใช้เพื่อความได้เปรียบในการแข่งขัน</p>
+<div class="flex items-center gap-1 mb-4">
+<span class="material-symbols-outlined text-secondary-container icon-filled text-[18px]">star</span>
+<span class="font-label-md text-label-md text-primary font-semibold">4.8</span>
+<span class="font-caption text-caption text-text-muted">(1,245 รีวิว)</span>
+</div>
+<div class="flex justify-between items-center pt-4 border-t border-border-light mt-auto">
+<span class="font-headline-md text-[20px] font-bold text-on-tertiary-container">฿ 4,500</span>
+<button class="w-10 h-10 rounded-full border border-primary flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Course Card 2 -->
+<div class="bg-surface-white rounded-[16px] shadow-tier-2 hover-shadow-tier-2 hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col border border-border-light group cursor-pointer">
+<div class="relative w-full pb-[56.25%] overflow-hidden bg-surface-container-high">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A clean, abstract visual representation of data science and coding. Glowing, structured geometric nodes connect in a deep navy and white space, with subtle gold accents highlighting data flow. The image conveys modern intelligence, precision, and high-end technological education." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWRZVN8aLirjbJpWBvEyx0QBT-COWrNKvGZo9sODAJzdnU7Q5WAhXh5Z07jQ_m9tro91DcmgSpx0Fo7FqFsvaGbsVc1I-n5Tkz5KVysJPSWk0SFo6D3YlvuBHgDiAg4S3MKGNgh3EosJsdVxSPC9lPghcj46hF4KrZ8h3iL4HR6-ZftAODSVpeWdD6tgyG8cfMvF0UX0V63dTmZywRswKB8rmikr4QuasQifTaTorZxos5Y3m9ULoO"/>
+</div>
+<div class="p-5 flex flex-col flex-grow">
+<span class="font-caption text-caption text-text-muted mb-1 block uppercase tracking-wider">วิทยาการข้อมูล</span>
+<h3 class="font-headline-md text-body-lg font-semibold text-primary mb-2 line-clamp-2 leading-tight">Data Science for Business Decision Making</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4 line-clamp-2 flex-grow">เปลี่ยนข้อมูลให้เป็นกลยุทธ์ทางธุรกิจที่เฉียบคมด้วยเครื่องมือวิเคราะห์ข้อมูลที่ทันสมัย</p>
+<div class="flex items-center gap-1 mb-4">
+<span class="material-symbols-outlined text-secondary-container icon-filled text-[18px]">star</span>
+<span class="font-label-md text-label-md text-primary font-semibold">4.9</span>
+<span class="font-caption text-caption text-text-muted">(890 รีวิว)</span>
+</div>
+<div class="flex justify-between items-center pt-4 border-t border-border-light mt-auto">
+<span class="font-headline-md text-[20px] font-bold text-on-tertiary-container">฿ 5,200</span>
+<button class="w-10 h-10 rounded-full border border-primary flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Course Card 3 -->
+<div class="bg-surface-white rounded-[16px] shadow-tier-2 hover-shadow-tier-2 hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col border border-border-light group cursor-pointer">
+<div class="relative w-full pb-[56.25%] overflow-hidden bg-surface-container-high">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A modern, minimalist workspace focusing on UX/UI design. A high-resolution monitor displays wireframes and clean interface layouts. The environment is well-lit with natural light, emphasizing a premium, creative, yet highly structured professional atmosphere in light mode." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZz_geEgUKjALpTnihGoZX5HH-YsIYnX35v5TtW-AcWa_8aph40tcI4u3noqZfT7M65r2m7iT2mrbvnLv6ePR-0ItqdTYHH4n9oCThYg7VcOjFbdSNS7HxYRtBAHelHW1ZP8Sma3fKc8Au6Y2hOaSYz9wY-yLqdXaUTa29nrJZClgnRTkjwcLwx4tqC1JwPFaOijb2lgym-LPMkayOSanZ6OzStePECA290pvcEer15FLcT8tUxcYD"/>
+<div class="absolute top-3 left-3 bg-surface-white text-primary px-2 py-1 rounded text-caption font-label-md shadow-md border border-border-light">
+                                ใหม่
+                            </div>
+</div>
+<div class="p-5 flex flex-col flex-grow">
+<span class="font-caption text-caption text-text-muted mb-1 block uppercase tracking-wider">การออกแบบ UX/UI</span>
+<h3 class="font-headline-md text-body-lg font-semibold text-primary mb-2 line-clamp-2 leading-tight">Mastering User Experience Design</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4 line-clamp-2 flex-grow">เจาะลึกกระบวนการออกแบบประสบการณ์ผู้ใช้ที่สร้างผลกระทบต่อธุรกิจอย่างแท้จริง</p>
+<div class="flex items-center gap-1 mb-4">
+<span class="material-symbols-outlined text-secondary-container icon-filled text-[18px]">star</span>
+<span class="font-label-md text-label-md text-primary font-semibold">4.7</span>
+<span class="font-caption text-caption text-text-muted">(450 รีวิว)</span>
+</div>
+<div class="flex justify-between items-center pt-4 border-t border-border-light mt-auto">
+<span class="font-headline-md text-[20px] font-bold text-on-tertiary-container">฿ 3,800</span>
+<button class="w-10 h-10 rounded-full border border-primary flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Course Card 4 -->
+<div class="bg-surface-white rounded-[16px] shadow-tier-2 hover-shadow-tier-2 hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col border border-border-light group cursor-pointer">
+<div class="relative w-full pb-[56.25%] overflow-hidden bg-surface-container-high">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="An elegant visual composition representing finance and investment. Subtle upward-trending charts layered over a sophisticated dark blue and gold background. The design is abstract but clearly conveys wealth management, financial stability, and academic rigor in an executive setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrnO0wTMAfCw0cRWNj89_GJZEaimpxPR0V7W17HjACc96V8BZi1W0HctoPfosvSHUDUCehPk4DCaxGW1OXnw9nEcX4IL9An3c3W-wdal36WdLeUGazYCB12Y1VDW3WBNXpKsMCt9dWEQxMlsDcKABiWsBPi-HbHOM1j1gzKmXceSlRYayzVzlLnNQ9JnrOR-_1yS4nzA77GT1TeZgkTO3fzPdprrTzM9ASHVtbFtAL19N7gL5uKUzN"/>
+</div>
+<div class="p-5 flex flex-col flex-grow">
+<span class="font-caption text-caption text-text-muted mb-1 block uppercase tracking-wider">การเงินและการลงทุน</span>
+<h3 class="font-headline-md text-body-lg font-semibold text-primary mb-2 line-clamp-2 leading-tight">Advanced Financial Modeling</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4 line-clamp-2 flex-grow">สร้างโมเดลทางการเงินระดับมืออาชีพเพื่อการประเมินมูลค่าและการควบรวมกิจการ</p>
+<div class="flex items-center gap-1 mb-4">
+<span class="material-symbols-outlined text-secondary-container icon-filled text-[18px]">star</span>
+<span class="font-label-md text-label-md text-primary font-semibold">5.0</span>
+<span class="font-caption text-caption text-text-muted">(312 รีวิว)</span>
+</div>
+<div class="flex justify-between items-center pt-4 border-t border-border-light mt-auto">
+<span class="font-headline-md text-[20px] font-bold text-on-tertiary-container">฿ 6,500</span>
+<button class="w-10 h-10 rounded-full border border-primary flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Pagination -->
+<div class="flex justify-center items-center gap-2 mt-12">
+<button class="w-10 h-10 flex items-center justify-center rounded-md border border-border-light text-text-muted hover:text-primary hover:border-primary transition-colors disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-md bg-primary text-on-primary font-label-md">1</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-md border border-border-light text-on-surface hover:border-primary hover:text-primary transition-colors font-label-md">2</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-md border border-border-light text-on-surface hover:border-primary hover:text-primary transition-colors font-label-md">3</button>
+<span class="text-text-muted">...</span>
+<button class="w-10 h-10 flex items-center justify-center rounded-md border border-border-light text-text-muted hover:text-primary hover:border-primary transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</section>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-base px-margin-mobile md:px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-gutter bg-surface-container-lowest dark:bg-inverse-surface border-t border-border-light mt-auto">
+<div class="font-headline-md text-headline-md text-primary">getownly</div>
+<div class="flex flex-wrap justify-center gap-6">
+<a class="font-body-md text-body-md text-text-muted hover:text-primary hover:underline transition-all" href="#">เกี่ยวกับเรา</a>
+<a class="font-body-md text-body-md text-text-muted hover:text-primary hover:underline transition-all" href="#">ข้อกำหนดการใช้งาน</a>
+<a class="font-body-md text-body-md text-text-muted hover:text-primary hover:underline transition-all" href="#">นโยบายความเป็นส่วนตัว</a>
+<a class="font-body-md text-body-md text-text-muted hover:text-primary hover:underline transition-all" href="#">ติดต่อเรา</a>
+</div>
+<div class="font-caption text-caption text-text-muted">
+            © 2024 getownly. สงวนลิขสิทธิ์ทุกประการ.
+        </div>
+</footer>
+</body></html>

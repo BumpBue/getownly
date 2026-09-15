@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+
+<html class="light" lang="th"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wallet &amp; Top-up</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#191c1d",
+                        "inverse-surface": "#2e3132",
+                        "on-secondary-fixed-variant": "#5f410c",
+                        "outline": "#74777f",
+                        "surface-container-high": "#e7e8e9",
+                        "on-error": "#ffffff",
+                        "primary": "#022445",
+                        "border-light": "#E7E8E9",
+                        "surface": "#f8f9fa",
+                        "background": "#f8f9fa",
+                        "text-muted": "rgba(30, 58, 92, 0.70)",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#e8c080",
+                        "on-tertiary-fixed": "#271900",
+                        "surface-tint": "#456084",
+                        "tertiary-fixed": "#ffdeab",
+                        "primary-container": "#1e3a5c",
+                        "on-tertiary-fixed-variant": "#5d420d",
+                        "surface-dim": "#d9dadb",
+                        "on-surface-variant": "#43474e",
+                        "primary-fixed-dim": "#adc8f2",
+                        "surface-variant": "#e1e3e4",
+                        "on-tertiary-container": "#c19d5f",
+                        "surface-container-low": "#f3f4f5",
+                        "on-surface": "#191c1d",
+                        "surface-container": "#edeeef",
+                        "secondary-fixed": "#ffddb0",
+                        "on-secondary-fixed": "#281800",
+                        "surface-container-highest": "#e1e3e4",
+                        "inverse-primary": "#adc8f2",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#785722",
+                        "surface-white": "#FFFFFF",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#4d3400",
+                        "on-primary-fixed-variant": "#2d486b",
+                        "primary-fixed": "#d3e3ff",
+                        "on-primary": "#ffffff",
+                        "secondary": "#795823",
+                        "secondary-container": "#fdd08e",
+                        "secondary-fixed-dim": "#ebbf7f",
+                        "text-primary": "#1E3A5C",
+                        "on-error-container": "#93000a",
+                        "error": "#BA1A1A",
+                        "inverse-on-surface": "#f0f1f2",
+                        "on-primary-fixed": "#001c39",
+                        "on-primary-container": "#8aa4cc",
+                        "on-tertiary": "#ffffff",
+                        "outline-variant": "#c4c6cf",
+                        "tertiary": "#312000",
+                        "success": "#2D6A4F",
+                        "surface-bright": "#f8f9fa"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "40px",
+                        "margin-mobile": "16px",
+                        "accent-bar": "4px",
+                        "base": "8px",
+                        "gutter": "24px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "caption": ["IBM Plex Sans"],
+                        "headline-lg-mobile": ["IBM Plex Sans"],
+                        "label-md": ["IBM Plex Sans"],
+                        "body-lg": ["IBM Plex Sans"],
+                        "body-md": ["IBM Plex Sans"],
+                        "headline-md": ["IBM Plex Sans"],
+                        "display-lg": ["IBM Plex Sans"],
+                        "headline-lg": ["IBM Plex Sans"]
+                    },
+                    "fontSize": {
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "60px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'IBM Plex Sans', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .shadow-tier-2 { box-shadow: 0px 4px 20px rgba(30, 58, 92, 0.08); }
+        .hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .hover-lift:hover { transform: translateY(-4px); box-shadow: 0px 8px 30px rgba(30, 58, 92, 0.12); }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased">
+<!-- TopNavBar -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-desktop bg-surface-white dark:bg-inverse-surface h-16 border-b border-border-light dark:border-outline">
+<div class="flex items-center gap-8">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-inverse-primary">getownly</span>
+<div class="hidden md:flex gap-6">
+<a class="text-on-surface-variant dark:text-surface-variant pb-2 hover:text-primary dark:hover:text-inverse-primary transition-colors font-label-md text-label-md" href="#">Browse</a>
+<a class="text-on-surface-variant dark:text-surface-variant pb-2 hover:text-primary dark:hover:text-inverse-primary transition-colors font-label-md text-label-md" href="#">My Courses</a>
+<a class="text-on-surface-variant dark:text-surface-variant pb-2 hover:text-primary dark:hover:text-inverse-primary transition-colors font-label-md text-label-md" href="#">Instructors</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-primary hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<img alt="User Profile Avatar" class="w-8 h-8 rounded-full object-cover border border-border-light" data-alt="A professional headshot of an individual, suitable for a corporate or academic profile avatar. Light background, professional attire." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCh5YEPnxw3YqfglsiYee0cgeQDWRzfKCzQUfgBq12rgi6Y5XleuUQCyUpLKXGSD4ws8Kky3v3V8JwtAZ4_S0vwjA5vGEQwiLEnkmhOlpCtqw4vXVSO0snDcC5yJqGRoo449OP1RayHRFVkwBkgi2tf4gYjTv8txBNThdPum4BR_0RoLn77j0zRTKmyjNsiMjzJxWztEOx5nLBkkObT_DCXtD4zGp92BO0mWnRtO-5EtEf7IooY8s5G"/>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="pt-24 pb-20 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<header class="mb-8">
+<h1 class="font-headline-lg text-headline-lg text-primary mb-2">กระเป๋าเงินและเติมเงิน</h1>
+<p class="font-body-md text-body-md text-text-muted">จัดการยอดคงเหลือและประวัติการทำรายการของคุณ</p>
+</header>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Left Column: Balance & Top-up -->
+<div class="lg:col-span-5 flex flex-col gap-gutter">
+<!-- Balance Card -->
+<div class="bg-surface-white rounded-xl p-6 shadow-tier-2 hover-lift relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-fixed rounded-bl-full opacity-50 pointer-events-none"></div>
+<div class="relative z-10">
+<span class="font-label-md text-label-md text-text-muted block mb-2">ยอดเงินคงเหลือ</span>
+<div class="font-display-lg text-display-lg text-secondary flex items-baseline gap-2">
+<span>12,500</span>
+<span class="font-headline-md text-headline-md">THB</span>
+</div>
+</div>
+</div>
+<!-- Top-up Section -->
+<div class="bg-surface-white rounded-xl p-6 shadow-tier-2">
+<h2 class="font-headline-md text-headline-md text-primary mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+                        เติมเงินเข้ากระเป๋า
+                    </h2>
+<div class="mb-6">
+<label class="font-label-md text-label-md text-text-muted block mb-2">เลือกจำนวนเงินด่วน</label>
+<div class="grid grid-cols-3 gap-3">
+<button class="border border-border-light rounded-lg py-2 font-label-md text-label-md text-primary hover:border-primary hover:bg-surface-container-low transition-colors">500</button>
+<button class="border border-border-light rounded-lg py-2 font-label-md text-label-md text-primary hover:border-primary hover:bg-surface-container-low transition-colors">1,000</button>
+<button class="border border-border-light rounded-lg py-2 font-label-md text-label-md text-primary hover:border-primary hover:bg-surface-container-low transition-colors">2,000</button>
+<button class="border border-border-light rounded-lg py-2 font-label-md text-label-md text-primary hover:border-primary hover:bg-surface-container-low transition-colors">5,000</button>
+<button class="border border-border-light rounded-lg py-2 font-label-md text-label-md text-primary hover:border-primary hover:bg-surface-container-low transition-colors">10,000</button>
+</div>
+</div>
+<div class="mb-6">
+<label class="font-label-md text-label-md text-text-muted block mb-2">หรือระบุจำนวนเงิน</label>
+<div class="relative">
+<input class="w-full border border-border-light rounded-lg py-3 px-4 font-body-lg text-body-lg text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="0.00" type="number"/>
+<span class="absolute right-4 top-1/2 transform -translate-y-1/2 font-body-md text-body-md text-text-muted">THB</span>
+</div>
+</div>
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-3 rounded-lg hover:opacity-90 transition-opacity">
+                        ดำเนินการต่อ
+                    </button>
+</div>
+</div>
+<!-- Right Column: QR & History -->
+<div class="lg:col-span-7 flex flex-col gap-gutter">
+<!-- QR Code Display (Placeholder for when active) -->
+<div class="bg-surface-white rounded-xl p-8 shadow-tier-2 flex flex-col items-center justify-center text-center">
+<h3 class="font-headline-md text-headline-md text-primary mb-2">สแกนเพื่อชำระเงิน</h3>
+<p class="font-body-md text-body-md text-text-muted mb-6">กรุณาสแกน QR Code ด้านล่างผ่านแอปพลิเคชันธนาคาร</p>
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-border-light relative inline-block mb-4">
+<!-- Watermark -->
+<div class="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
+<span class="font-display-lg text-display-lg text-primary transform -rotate-45">getownly</span>
+</div>
+<img alt="PromptPay QR Code" class="w-48 h-48 object-cover" data-alt="A clean, highly legible mock QR code graphic centered on a white background. The QR code should look realistic but not scannable, representing a digital payment method. Bright, modern lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTawWf8fyFRbxIG4x57l-xhlvnN5or_gMovIWgAV1ERbt4paHv96dbVmX7WYLpNMUnQYmqZ1Sa9r8LorWun9hsQQj9FSVCGJFcQphCS0QensaCCRgZ_gNq3HJOFHP_xSui2lld09W4IbCColZqH5XtCAaKdcZedaHgh-EURrc7Tzp4ocUTh1xb3xy6r-nOmIsyqt8X85sDSvrLbG_t7wNyj6WG_aU0VB45_GWxN5AE8vYHniquL0ju"/>
+</div>
+<p class="font-label-md text-label-md text-secondary bg-secondary-fixed py-2 px-4 rounded-full">รอการชำระเงิน: 04:59</p>
+</div>
+<!-- Transaction History -->
+<div class="bg-surface-white rounded-xl p-6 shadow-tier-2">
+<h2 class="font-headline-md text-headline-md text-primary mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined">history</span>
+                        ประวัติการทำรายการ
+                    </h2>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-border-light text-text-muted font-label-md text-label-md">
+<th class="py-3 font-medium">วันที่</th>
+<th class="py-3 font-medium">รายละเอียด</th>
+<th class="py-3 font-medium text-right">จำนวนเงิน</th>
+<th class="py-3 font-medium text-center">สถานะ</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md">
+<tr class="border-b border-border-light hover:bg-surface-container-lowest transition-colors">
+<td class="py-4 text-text-muted">15 ต.ค. 2566</td>
+<td class="py-4 text-primary">เติมเงินผ่าน PromptPay</td>
+<td class="py-4 text-right text-success">+5,000.00</td>
+<td class="py-4 flex justify-center items-center">
+<span class="flex items-center gap-2 font-label-md text-label-md text-success">
+<span class="w-2 h-2 rounded-full bg-success"></span>
+                                            สำเร็จ
+                                        </span>
+</td>
+</tr>
+<tr class="border-b border-border-light hover:bg-surface-container-lowest transition-colors">
+<td class="py-4 text-text-muted">12 ต.ค. 2566</td>
+<td class="py-4 text-primary">ชำระค่าคอร์สเรียน: Advanced UI</td>
+<td class="py-4 text-right text-text-muted">-2,500.00</td>
+<td class="py-4 flex justify-center items-center">
+<span class="flex items-center gap-2 font-label-md text-label-md text-success">
+<span class="w-2 h-2 rounded-full bg-success"></span>
+                                            สำเร็จ
+                                        </span>
+</td>
+</tr>
+<tr class="border-b border-border-light hover:bg-surface-container-lowest transition-colors">
+<td class="py-4 text-text-muted">10 ต.ค. 2566</td>
+<td class="py-4 text-primary">เติมเงินผ่าน บัตรเครดิต</td>
+<td class="py-4 text-right text-success">+10,000.00</td>
+<td class="py-4 flex justify-center items-center">
+<span class="flex items-center gap-2 font-label-md text-label-md text-text-muted">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+                                            รอดำเนินการ
+                                        </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-base px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-gutter bg-surface-container-lowest dark:bg-inverse-surface border-t border-border-light">
+<p class="font-body-md text-body-md text-text-muted">© 2024 getownly. สงวนลิขสิทธิ์ทุกประการ.</p>
+<div class="flex gap-4">
+<a class="font-body-md text-body-md text-text-muted hover:text-primary hover:underline transition-all opacity-70" href="#">เกี่ยวกับเรา</a>
+<a class="font-body-md text-body-md text-text-muted hover:text-primary hover:underline transition-all opacity-70" href="#">ข้อกำหนดการใช้งาน</a>
+<a class="font-body-md text-body-md text-text-muted hover:text-primary hover:underline transition-all opacity-70" href="#">นโยบายความเป็นส่วนตัว</a>
+<a class="font-body-md text-body-md text-text-muted hover:text-primary hover:underline transition-all opacity-70" href="#">ติดต่อเรา</a>
+</div>
+</footer>
+</body></html>

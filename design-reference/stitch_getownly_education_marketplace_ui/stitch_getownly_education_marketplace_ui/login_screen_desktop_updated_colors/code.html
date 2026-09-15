@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+
+<html lang="th"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>เข้าสู่ระบบ | getownly</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-on-surface": "#f0f1f2",
+                        "outline-variant": "#c4c6cf",
+                        "primary-fixed-dim": "#adc8f2",
+                        "on-primary-fixed": "#001c39",
+                        "surface-variant": "#e1e3e4",
+                        "on-background": "#191c1d",
+                        "on-primary-fixed-variant": "#2d486b",
+                        "tertiary": "#312000",
+                        "on-secondary-fixed-variant": "#5f410c",
+                        "surface-dim": "#d9dadb",
+                        "secondary-fixed-dim": "#ebbf7f",
+                        "surface-tint": "#456084",
+                        "outline": "#74777f",
+                        "on-tertiary-container": "#c19d5f",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed-dim": "#e8c080",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#f8f9fa",
+                        "secondary-container": "#fdd08e",
+                        "on-surface-variant": "#43474e",
+                        "secondary": "#c9a063",
+                        "surface-bright": "#f8f9fa",
+                        "tertiary-fixed": "#ffdeab",
+                        "surface-container-low": "#f3f4f5",
+                        "on-surface": "#191c1d",
+                        "tertiary-container": "#4d3400",
+                        "background": "#f8f9fa",
+                        "surface-container": "#edeeef",
+                        "on-tertiary-fixed-variant": "#5d420d",
+                        "primary-fixed": "#d3e3ff",
+                        "surface-container-high": "#e7e8e9",
+                        "on-secondary": "#ffffff",
+                        "on-primary-container": "#8aa4cc",
+                        "on-tertiary-fixed": "#271900",
+                        "on-primary": "#ffffff",
+                        "primary": "#1e3a5c",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#2e3132",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed": "#ffddb0",
+                        "primary-container": "#1e3a5c",
+                        "on-secondary-container": "#785722",
+                        "surface-container-highest": "#e1e3e4",
+                        "on-error-container": "#93000a",
+                        "error-container": "#ffdad6",
+                        "inverse-primary": "#adc8f2",
+                        "on-secondary-fixed": "#281800"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-max": "1280px",
+                        "margin-desktop": "40px",
+                        "gutter": "24px",
+                        "unit": "8px",
+                        "margin-mobile": "16px",
+                        "accent-bar-width": "4px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["IBM Plex Sans Thai"],
+                        "caption": ["IBM Plex Sans Thai"],
+                        "body-lg": ["IBM Plex Sans Thai"],
+                        "display-lg": ["IBM Plex Sans Thai"],
+                        "headline-lg": ["IBM Plex Sans Thai"],
+                        "headline-md": ["IBM Plex Sans Thai"],
+                        "headline-lg-mobile": ["IBM Plex Sans Thai"],
+                        "label-md": ["IBM Plex Sans Thai"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "60px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface h-screen flex overflow-hidden">
+<!-- Left Panel: Navy Branding -->
+<div class="hidden lg:flex lg:w-1/2 bg-primary relative flex-col justify-between p-margin-desktop overflow-hidden">
+<!-- Abstract Background Pattern -->
+<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 32px 32px;"></div>
+<!-- Large Decorative Element -->
+<div class="absolute -right-32 -bottom-32 w-96 h-96 bg-primary-container rounded-full blur-3xl opacity-50"></div>
+<div class="absolute -left-16 top-1/4 w-64 h-64 bg-secondary rounded-full blur-3xl opacity-20"></div>
+<div class="relative z-10">
+<h1 class="text-on-primary font-display-lg">getownly</h1>
+<div class="w-16 h-accent-bar-width bg-secondary mt-unit rounded-full"></div>
+</div>
+<div class="relative z-10 max-w-lg">
+<h2 class="text-on-primary font-headline-lg mb-unit">ยกระดับการเรียนรู้ออนไลน์ของไทย</h2>
+<p class="text-on-primary/80 font-body-lg">เชื่อมต่อความรู้จากผู้เชี่ยวชาญ สู่เป้าหมายในอาชีพของคุณด้วยแพลตฟอร์มที่ออกแบบมาเพื่อการเติบโตอย่างยั่งยืน</p>
+</div>
+<!-- Optional: A high-quality conceptual image embedded in the design -->
+<div class="relative z-10 rounded-xl overflow-hidden shadow-2xl h-64 w-full mt-gutter">
+<img class="object-cover w-full h-full opacity-80 mix-blend-luminosity" data-alt="A sophisticated, modern university classroom or library setting in Thailand, seen through a glass window. The room is bathed in bright, natural sunlight, creating a high-key, optimistic atmosphere. The aesthetic is clean and professional, featuring modern furniture, polished wood, and subtle navy and gold accents. The mood is inspiring and focused, perfect for a premium educational platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBc7hdGUmGv3VyRgho8wLOyoPSxzOtA1MrNxqnUcsIiRlCD_I4DDuaafpOuVaFiA2rVVJsesBEaBbQfl6dhN-kWpa1ByNSavvcpC9aLkxCEgFoQwA3kIdAUCd2LmJXQ2bst65EaQbxDA3y8vnFQkeBI6DJcciP3489Tq5ErY3LvJKVajV5oMNEvBsKASMaD6vr1-ocUL8Gip49I5LkEicpI4dJtp_vmNGtZzLDMAQtFzL0VMiwd749l"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary to-transparent opacity-60"></div>
+</div>
+</div>
+<!-- Right Panel: Login Form -->
+<div class="w-full lg:w-1/2 flex flex-col justify-center items-center p-margin-mobile md:p-margin-desktop bg-surface relative z-10 overflow-y-auto">
+<div class="w-full max-w-md bg-surface-container-lowest p-8 rounded-xl shadow-[0_4px_20px_rgba(30,58,92,0.08)] border border-outline-variant/30">
+<div class="mb-8 text-center lg:text-left">
+<h2 class="font-headline-lg text-primary mb-2 hidden lg:block">เข้าสู่ระบบ</h2>
+<!-- Mobile Logo -->
+<div class="lg:hidden mb-6 flex flex-col items-center">
+<h1 class="text-primary font-display-lg text-3xl">getownly</h1>
+<div class="w-12 h-accent-bar-width bg-secondary mt-1 rounded-full"></div>
+</div>
+<p class="font-body-md text-on-surface-variant">ยินดีต้อนรับกลับ! กรุณากรอกข้อมูลของคุณ</p>
+</div>
+<form class="space-y-6">
+<!-- Email Input -->
+<div class="space-y-1">
+<label class="block font-label-md text-primary/80" for="email">อีเมล</label>
+<input class="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all duration-200 font-body-md text-on-surface placeholder:text-outline" id="email" name="email" placeholder="name@example.com" required="" type="email"/>
+</div>
+<!-- Password Input -->
+<div class="space-y-1">
+<div class="flex justify-between items-center">
+<label class="block font-label-md text-primary/80" for="password">รหัสผ่าน</label>
+<a class="font-caption text-secondary hover:text-secondary-fixed-dim transition-colors" href="#">ลืมรหัสผ่าน?</a>
+</div>
+<div class="relative">
+<input class="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all duration-200 font-body-md text-on-surface placeholder:text-outline" id="password" name="password" placeholder="••••••••" required="" type="password"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">visibility_off</span>
+</button>
+</div>
+</div>
+<!-- Primary Login Button -->
+<button class="w-full bg-primary text-on-primary font-label-md py-3 rounded-lg hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-[1px] flex justify-center items-center gap-2" type="submit">
+                    เข้าสู่ระบบ
+                </button>
+<div class="relative flex items-center py-2">
+<div class="flex-grow border-t border-outline-variant"></div>
+<span class="flex-shrink-0 mx-4 font-caption text-outline">หรือ</span>
+<div class="flex-grow border-t border-outline-variant"></div>
+</div>
+<!-- Google Login Button -->
+<button class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-label-md py-3 rounded-lg hover:bg-surface-container-low transition-all duration-200 flex justify-center items-center gap-3" type="button">
+<svg class="w-5 h-5" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+<path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"></path>
+<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path>
+</svg>
+                    เข้าสู่ระบบด้วย Google
+                </button>
+</form>
+<div class="mt-8 text-center">
+<p class="font-caption text-on-surface-variant">
+                    ยังไม่มีบัญชีใช่ไหม? 
+                    <a class="text-secondary font-label-md hover:underline decoration-secondary decoration-2 underline-offset-4" href="#">สมัครสมาชิก</a>
+</p>
+</div>
+</div>
+<!-- Minimal Footer for Login Page -->
+<div class="mt-8 text-center text-outline font-caption">
+            © 2024 getownly. สงวนลิขสิทธิ์
+        </div>
+</div>
+</body></html>
