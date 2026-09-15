@@ -25,19 +25,39 @@ services:
     plan: starter
     region: singapore
 
-    # dockerfilePath and dockerContext are relative to the REPO ROOT, always
-    # — not to rootDir below. The context has to be the repo root because
-    # the API depends on @getownly/shared, resolved through
-    # pnpm-workspace.yaml, exactly as documented at the top of the
-    # Dockerfile itself.
+    # dockerfilePath and dockerContext are relative to the repo root — but
+    # only when rootDir is NOT set. This service deliberately has no rootDir,
+    # and that absence is load-bearing, not an oversight:
+    #
+    # The first deploy attempt set `rootDir: backend` here, expecting it to
+    # only scope the auto-deploy trigger (Render's own blueprint-spec page
+    # says as much). The real build broke that assumption: it failed at
+    # `COPY backend backend` in backend/Dockerfile with
+    # `failed to compute checksum ... "/backend": not found`, immediately
+    # after `COPY packages/shared packages/shared` succeeded. Render's
+    # monorepo-support docs confirm why once you go looking for it — with
+    # rootDir set, "dockerfilePath" and "dockerContext" are both
+    # reinterpreted as relative to rootDir, not the repo root. With
+    # `rootDir: backend` and `dockerContext: .`, the effective build context
+    # became `backend/` itself, which has no `backend` subfolder to COPY —
+    # exactly the observed error, and two different doc pages disagreeing
+    # with each other about it is why this is spelled out here rather than
+    # left to be rediscovered the same way twice.
+    #
+    # The context has to be the repo root because the API depends on
+    # @getownly/shared, resolved through pnpm-workspace.yaml, exactly as
+    # documented at the top of the Dockerfile itself — so rootDir is left
+    # unset, which Render defaults to the repo root, and every COPY in the
+    # Dockerfile keeps working exactly as it already does under
+    # `docker compose --profile full` (same Dockerfile, same root context).
     dockerfilePath: ./backend/Dockerfile
     dockerContext: .
 
     # Scopes Render's auto-deploy trigger to the paths this service actually
-    # depends on. backend/** alone would miss it: a change to
+    # depends on — independent of rootDir, so removing rootDir above does not
+    # affect this. backend/** alone would miss it: a change to
     # packages/shared/src/limits.ts (course price ceiling, upload size caps —
     # see CLAUDE.md) changes API behaviour too, so it has to be watched here.
-    rootDir: backend
     buildFilter:
       include:
         - backend/**

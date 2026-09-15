@@ -264,8 +264,9 @@ Vercel (Next.js)  →  Render (NestJS, Docker image เดียวกับท�
 
 - **Backend และไฟล์ `backend/Dockerfile` เป็นไฟล์เดียวกับที่ `docker compose --profile full` ใช้อยู่แล้ว**
   ไม่มี Dockerfile แยกสำหรับ Render — `render.yaml` ที่ root ของ repo สั่ง Render ให้ build
-  จากไฟล์นี้โดยตรง (`dockerContext` เป็น root ของ repo เหมือนตอน build local แม้ `rootDir` จะชี้ที่
-  `backend` — ดูคอมเมนต์ใน `render.yaml`) migration จึงรันอัตโนมัติตอนคอนเทนเนอร์เริ่มด้วยคำสั่งเดิม
+  จากไฟล์นี้โดยตรง โดยตั้งใจ**ไม่ใส่ `rootDir`** เพื่อให้ `dockerContext: .` หมายถึง root ของ repo
+  เหมือนตอน build local เป๊ะ (ลองตั้ง `rootDir: backend` มาก่อนแล้ว build พังจริง — ดูคอมเมนต์อธิบาย
+  เต็มใน `render.yaml` และหัวข้อที่เกี่ยวข้องใน `CLAUDE.md`) migration จึงรันอัตโนมัติตอนคอนเทนเนอร์เริ่มด้วยคำสั่งเดิม
   ทุกประการ (`prisma migrate deploy && node dist/main` — ดูบรรทัด `CMD` ท้ายไฟล์) **ไม่ต้องตั้งค่า
   build/start command เพิ่มบน Render เลย เพราะ `runtime: docker` ให้ Dockerfile เป็นคนกำหนดทั้งสองขั้นตอน**
 - **Storage เปลี่ยนจาก MinIO เป็น Cloudflare R2 ผ่านการตั้งค่า env เท่านั้น** `StorageService`

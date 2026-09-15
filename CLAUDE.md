@@ -397,12 +397,22 @@ URL ที่ใช้ตอน dev
   `CMD` ของ Dockerfile เองอยู่แล้ว) จึงไม่มีความเสี่ยงที่ path การ deploy ออนไลน์จะ diverge จาก path
   ที่ทดสอบมาแล้วบน Docker local — ถ้าเลือก `runtime: node` แทน จะต้องเขียน build/start command ใหม่ใน
   `render.yaml` ที่ไม่มีอะไรยืนยันว่าพฤติกรรมตรงกับ Dockerfile ที่ทดสอบแล้ว 100%
-  · **`render.yaml` ตั้ง `rootDir: backend` แต่ `dockerContext: .`** สองค่านี้ตั้งใจให้ต่างกัน —
-  `dockerContext` ของ Render เป็น path เทียบกับ **root ของ repo เสมอ ไม่ว่า `rootDir` จะเป็นอะไร**
-  (Render เอกสารระบุไว้ชัดว่าไม่ผูกกัน) `rootDir` จึงมีไว้ควบคุมแค่ **ตัวกรองว่า path ไหนที่ทำให้ auto-deploy
-  ทริกเกอร์** ตั้งเป็น `backend` เฉยๆ จะพลาด `packages/shared` ที่ backend พึ่งพาอยู่ จึงต้องเพิ่ม
-  `buildFilter.include` ครอบทั้ง `backend/**` และ `packages/shared/**` เอง ไม่งั้นแก้ `limits.ts`
-  (เพดานราคาคอร์ส, ขนาดไฟล์ ฯลฯ) แล้ว push จะไม่ trigger deploy ใหม่บน Render โดยไม่มีอะไรเตือน
+  · **⚠️ `render.yaml` เคยตั้ง `rootDir: backend` คู่กับ `dockerContext: .` แล้ว build จริงพังทันที**
+  รอบแรกเข้าใจว่า `dockerContext`/`dockerfilePath` เป็น path เทียบกับ root ของ repo เสมอไม่ว่า `rootDir`
+  จะเป็นอะไร (อ้างจาก [render.com/docs/blueprint-spec](https://render.com/docs/blueprint-spec) ที่อ่านตอนนั้น)
+  — **เอกสารหน้านั้นผิด หรืออย่างน้อยก็ขัดกับอีกหน้าหนึ่งของ Render เอง** พอ deploy จริงบน Render ได้ error
+  `failed to compute checksum ... "/backend": not found` ที่ `COPY backend backend` ใน `backend/Dockerfile`
+  ทันทีหลัง `COPY packages/shared packages/shared` ผ่าน — ไล่ตาม [render.com/docs/monorepo-support](https://render.com/docs/monorepo-support)
+  แล้วพบประโยคที่ขัดกับหน้าแรก: **"Render runs commands and interacts with files relative to your
+  service's root directory... Docker build context directory"** และ **"update `dockerfilePath`,
+  `dockerContext` ... to be relative to the new root directory"** — พอตั้ง `rootDir: backend` แล้ว
+  `dockerContext: .` เลยกลายเป็น `backend/.` จริงๆ ไม่ใช่ root ของ repo ตามที่เอกสารหน้าแรกบอก
+  ซึ่งไม่มีโฟลเดอร์ `backend` ซ้อนอยู่ในตัวเองให้ COPY ได้ — **แก้โดยเอา `rootDir` ออกทั้งหมด** ปล่อยให้
+  `dockerContext: .` หมายถึง root ของ repo ตามค่าเริ่มต้นเพียงอย่างเดียว (Render: "if omitted, uses the
+  repo root") ตรงกับที่ `docker compose --profile full` ใช้อยู่แล้วเป๊ะ — **บทเรียน: อย่าเชื่อเอกสารหน้าเดียว
+  ของ Render เรื่อง `rootDir` เด็ดขาด ให้ทดสอบ build จริงหรือเทียบสองหน้าเอกสารก่อนเสมอ**
+  · `buildFilter.include` (`backend/**`, `packages/shared/**`) ยังอยู่เหมือนเดิม เพราะเป็นคนละกลไกกับ
+  Docker context — ควบคุมแค่ว่า path ไหนทริกเกอร์ auto-deploy ไม่เกี่ยวกับ `rootDir` ที่เพิ่งเอาออก
   · **`healthCheckPath: /api`** ไม่ใช่ `/health` เพราะ **ไม่มี route `/health` อยู่จริงในระบบ**
   (คอมเมนต์ใน `storage.service.ts` ที่พูดถึง `/health` เป็นความตั้งใจในอนาคต ไม่ใช่ endpoint ที่มีอยู่)
   ใช้ `GET /api` ที่มีอยู่แล้ว (`@Public()`, ไม่แตะ DB/storage, ตอบ 200 ทันทีที่ Nest บูตเสร็จ) แทนไปก่อน
